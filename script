@@ -1,0 +1,12 @@
+#!/bin/bash
+
+var1=start
+
+while [ "$var1" != "end" ]
+do
+	l2ping -f 00:11:F6:05:9E:49 &
+	sleep 1
+	pkill l2ping
+	bccmd coldreset
+	sleep 2
+done 

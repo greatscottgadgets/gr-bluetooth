@@ -1,0 +1,936 @@
+Setting byte to 00
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 01
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 02
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 03
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 04
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 05
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 06
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 07
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 08
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 09
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 0a
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 0b
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 0c
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 0d
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 0e
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 0f
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 10
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 11
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 12
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 13
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 14
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 15
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 16
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 17
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 18
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 19
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 1a
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 1b
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 1c
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 1d
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 1e
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 1f
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 20
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 21
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 22
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 23
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 24
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 25
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 26
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 27
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 28
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 29
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 2a
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 2b
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 2c
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 2d
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 2e
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 2f
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 30
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 31
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 32
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 33
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 34
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 35
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 36
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 37
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 38
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 39
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 3a
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 3b
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 3c
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 3d
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 3e
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 3f
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 40
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 41
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 42
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 43
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 44
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 45
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 46
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 47
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 48
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 49
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 4a
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 4b
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 4c
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 4d
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 4e
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 4f
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 50
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 51
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 52
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 53
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 54
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 55
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 56
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 57
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 58
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 59
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 5a
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 5b
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 5c
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 5d
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 5e
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 5f
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 60
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 61
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 62
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 63
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 64
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 65
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 66
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 67
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 68
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 69
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 6a
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 6b
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 6c
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 6d
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 6e
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 6f
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 70
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 71
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 72
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 73
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 74
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 75
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 76
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 77
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 78
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 79
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 7a
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 7b
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 7c
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 7d
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 7e
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 7f
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 80
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 81
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 82
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 83
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 84
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 85
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 86
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 87
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 88
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 89
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 8a
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 8b
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 8c
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 8d
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 8e
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 8f
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 90
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 91
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 92
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 93
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 94
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to 95
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 96
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 97
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 98
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to 99
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to 9a
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to 9b
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to 9c
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to 9d
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to 9e
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to 9f
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to a0
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to a1
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to a2
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to a3
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to a4
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to a5
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to a6
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to a7
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to a8
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to a9
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to aa
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to ab
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to ac
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to ad
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to ae
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to af
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to b0
+6 d 4 f 
+2 9 0 b 
+
+
+Setting byte to b1
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to b2
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to b3
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to b4
+2 9 0 b 
+6 d 4 f 
+
+
+Setting byte to b5
+3 8 1 a 
+7 c 5 e 
+
+
+Setting byte to b6
+0 b 2 9 
+4 f 6 d 
+
+
+Setting byte to b7
+1 a 3 8 
+5 e 7 c 
+
+
+Setting byte to b8
+5 e 7 c 
+1 a 3 8 
+
+
+Setting byte to b9
+4 f 6 d 
+0 b 2 9 
+
+
+Setting byte to ba
+7 c 5 e 
+3 8 1 a 
+
+
+Setting byte to bb
