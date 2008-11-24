@@ -257,6 +257,7 @@ uint8_t *bluetooth_LAP::acgen(int LAP)
 	data[29] = (retval[8] & 0x10) >> 4;
 
 	cw = codeword(data, 64, 30);
+	free(data);
 
 	retval[0] = cw[0] << 3 | cw[1] << 2 | cw[2] << 1 | cw[3];
 	retval[1] = cw[4] << 7 | cw[5] << 6 | cw[6] << 5 | cw[7] << 4 | cw[8] << 3 | cw[9] << 2 | cw[10] << 1 | cw[11];
@@ -308,13 +309,18 @@ int bluetooth_LAP::check_ac(char *stream)
 
 	for(count = 0; count < 9; count++)
 		convert_to_grformat(ac[count], &grdata[count*8]);
+	free(ac);
 
 	for(count = 0; count < aclength; count++)
 	{
 		if(grdata[count] != stream[count])
+		{
+			free(grdata);
 			return 0;
+		}
 	}
 
+	free(grdata);
 	return LAP;
 }
 
