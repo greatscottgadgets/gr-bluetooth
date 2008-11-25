@@ -61,6 +61,8 @@ bluetooth_LAP::bluetooth_LAP (int x)
 	d_LAP_count = 0;
 	d_LAPs = NULL;
 	d_x = x;
+	// ensure that we are always given at least 72 symbols
+	set_history(72);
 }
 
 //virtual destructor.
@@ -74,35 +76,14 @@ bluetooth_LAP::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	d_stream = (char *) input_items[0];
-	d_consumed = 0;
+	// actual number of samples available to us is noutput_items + 72 (history)
 	d_stream_length = noutput_items;
-	int retval = 0;
-	d_LAP = 0;
+	int retval;
 
-    while(d_stream_length) {
-	if((noutput_items - d_consumed) > 71)
-		retval = sniff_ac();
-	else {
-		//The flag is used to avoid being stuck with <71 input bits in file mode
-		if(d_flag)
-			d_consumed = noutput_items;
-		d_flag = !d_flag;
-		break;
-	}
-	
-	if(-1 == retval) {
-		d_consumed = noutput_items;
-		break;
-	}
+	retval = sniff_ac();
+	d_consumed = (-1 == retval) ? noutput_items : retval + 72;
 
-	d_LAP = 0;
-	d_consumed += 72;
-	d_stream_length = noutput_items - d_consumed;
-    }
     // Tell runtime system how many output items we produced.
-    if(d_consumed >= noutput_items)
-	return noutput_items;
-    else
 	return d_consumed;
 }
 
@@ -327,14 +308,13 @@ int bluetooth_LAP::check_ac(char *stream)
 /* Looks for an AC in the stream */
 int bluetooth_LAP::sniff_ac()
 {
-	int LAP, jump, count, counter, size;
-	char *stream = d_stream;
+	int LAP, jump, count, counter;
+	char *stream;
 	int jumps[16] = {3,2,1,3,3,0,2,3,3,2,0,3,3,1,2,3};
-	size = d_stream_length;
-	count = 0;
 
-	while(size > 72)
+	for(count = 0; count < d_stream_length; count += jump)
 	{
+		stream = &d_stream[count];
 		jump = jumps[stream[0] << 3 | stream[1] << 2 | stream[2] << 1 | stream[3]];
 		if(0 == jump)
 		{
@@ -354,9 +334,6 @@ int bluetooth_LAP::sniff_ac()
 			}
 			jump = 1;
 		}
-		count += jump;
-		stream += jump;
-		size -= jump;
 	}
 	return -1;
 }
