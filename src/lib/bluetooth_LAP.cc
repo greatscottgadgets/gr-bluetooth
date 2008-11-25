@@ -61,6 +61,7 @@ bluetooth_LAP::bluetooth_LAP (int x)
 	d_LAP_count = 0;
 	d_LAPs = NULL;
 	d_x = x;
+	d_cumulative_count = 0;
 	// ensure that we are always given at least 72 symbols
 	set_history(72);
 }
@@ -82,6 +83,7 @@ bluetooth_LAP::work (int noutput_items,
 
 	retval = sniff_ac();
 	d_consumed = (-1 == retval) ? noutput_items : retval + 72;
+	d_cumulative_count += d_consumed;
 
     // Tell runtime system how many output items we produced.
 	return d_consumed;
@@ -328,7 +330,7 @@ int bluetooth_LAP::sniff_ac()
 					timeval tim;
 					gettimeofday(&tim, NULL);
 					//double timenow = tim.tv_usec;
-					printf("GOT PACKET on %d , LAP = %06x at %d %d\n", d_x, LAP, tim.tv_sec, tim.tv_usec);
+					printf("GOT PACKET on %d , LAP = %06x at sample %d, wall time: %d.%06d\n", d_x, LAP, d_cumulative_count + count, tim.tv_sec, tim.tv_usec);
 					return count;
 				}
 			}

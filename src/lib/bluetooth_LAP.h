@@ -64,6 +64,8 @@ private:
   LAP_struct *d_LAPs;
   int d_LAP_count;
   int d_x;
+  // could be 32 bits, but then it would roll over after about 70 minutes
+  uint64_t d_cumulative_count;
 
 void keep_track_of_LAPs();
 
