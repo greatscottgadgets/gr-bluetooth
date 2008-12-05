@@ -38,8 +38,10 @@ class my_top_block(gr.top_block):
 						help="use named input file instead of USRP")
 		parser.add_option("-l", "--lap", type="string", default=None,
 						help="LAP of the master device")
-		parser.add_option("-s", "--sample-rate", type="eng_float", default=0,
+		parser.add_option("-r", "--sample-rate", type="eng_float", default=0,
 						help="sample rate of input (default: use -d)")
+		parser.add_option("-s", "--input-shorts", action="store_true", default=False,
+						help="input interleaved shorts in stead of complex floats")
 		parser.add_option("-p", "--packets", type="int", default=100,
 						help="Number of packets to sniff (default=100)")
 		parser.add_option("-u", "--uap", type="string", default=None,
@@ -86,7 +88,7 @@ class my_top_block(gr.top_block):
 		else:
 			# input from file
 			src = gr.file_source(gr.sizeof_gr_complex, options.input_file)
-	
+
 		# coefficients for filter to select single channel
 		channel_filter = gr.firdes.low_pass(1.0, options.sample_rate, 500e3, 500e3, gr.firdes.WIN_HANN)
 
