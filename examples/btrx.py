@@ -54,6 +54,12 @@ class my_top_block(gr.top_block):
 			parser.print_help()
 			raise SystemExit, 1
 
+		# Bluetooth operates at 1 million symbols per second
+		symbol_rate = 1e6
+
+		# the demodulator needs at least two samples per symbol
+		min_samples_per_symbol = 2
+
 		# use options.sample_rate unless not provided by user
 		if options.sample_rate == 0:
 			if options.usrp2:
@@ -63,6 +69,11 @@ class my_top_block(gr.top_block):
 				# assume original source is USRP
 				adc_rate = 64e6
 			options.sample_rate = adc_rate / options.decim
+
+		if options.input_shorts:
+			input_size = gr.sizeof_short
+		else:
+			input_size = gr.sizeof_gr_complex
 
 		# select input source
 		if options.input_file is None:
@@ -84,29 +95,40 @@ class my_top_block(gr.top_block):
 				subdev.set_gain(options.gain)
 		elif options.input_file == '-':
 			# input from stdin
-			src = gr.file_descriptor_source(gr.sizeof_gr_complex, 0)
+			src = gr.file_descriptor_source(input_size, 0)
 		else:
 			# input from file
-			src = gr.file_source(gr.sizeof_gr_complex, options.input_file)
+			src = gr.file_source(input_size, options.input_file)
 
+		if options.input_shorts:
+			s2c = gr.interleaved_short_to_complex()
+			self.connect(src, s2c)
+			complex_src = s2c
+		else:
+			complex_src = src
+	
 		# coefficients for filter to select single channel
 		channel_filter = gr.firdes.low_pass(1.0, options.sample_rate, 500e3, 500e3, gr.firdes.WIN_HANN)
+
+		# we will decimate by the largest integer that results in enough samples per symbol
+		decimation_rate = int(options.sample_rate/(symbol_rate*min_samples_per_symbol))
+		samples_per_symbol = (options.sample_rate/decimation_rate)/symbol_rate
 
 		# look for packets on each channel specified by options.ddc
 		# this works well for a small number of channels, but a more efficient
 		# method should be possible for a large number of contiguous channels.
 		for ddc_option in options.ddc.split(","):
 			ddc_freq = int(eng_notation.str_to_num(ddc_option))
+
 			# digital downconverter
 			# does three things:
 			# 1. converts frequency so channel of interest is centered at 0 Hz
 			# 2. filters out everything outside the channel
-			# 3. downsamples to 2 Msps (2 samples per symbol)
-			ddc = gr.freq_xlating_fir_filter_ccf(int(options.sample_rate/2e6), channel_filter, ddc_freq, options.sample_rate)
+			# 3. downsamples to 2 Msps (2 samples per symbol) or so
+			ddc = gr.freq_xlating_fir_filter_ccf(decimation_rate, channel_filter, ddc_freq, options.sample_rate)
 
 			# GMSK demodulate baseband to bits
-			demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=2)
-			#demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=2, log=True, verbose=True)
+			demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=samples_per_symbol)
 
 			# bluetooth decoding
 			if options.lap is None:
@@ -120,10 +142,10 @@ class my_top_block(gr.top_block):
 		
 			# connect the blocks
 			if options.nsamples is None:
-					self.connect(src, ddc, demod, dst)
+					self.connect(complex_src, ddc, demod, dst)
 			else:
 				head = gr.head(gr.sizeof_gr_complex, int(options.nsamples))
-				self.connect(src, head, ddc, demod, dst)
+				self.connect(complex_src, head, ddc, demod, dst)
 
 if __name__ == '__main__':
 	try:
