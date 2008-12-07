@@ -321,9 +321,9 @@ int bluetooth_LAP::sniff_ac()
 		if(0 == jump)
 		{
 			/* Found the start, now check the end... */
-			counter = stream[62] << 9 | stream[63] << 8 | stream[64] << 7 | stream[65] << 6 | stream[66] << 5 | stream[67] << 4 | stream[68] << 3 | stream[69] << 2 | stream[70] << 1 | stream[71];
+			counter = stream[61] << 10 | stream[62] << 9 | stream[63] << 8 | stream[64] << 7 | stream[65] << 6 | stream[66] << 5 | stream[67] << 4 | stream[68] << 3 | stream[69] << 2 | stream[70] << 1 | stream[71];
 
-			if((0x0d5 == counter) || (0x32a == counter))
+			if((stream[4] == stream[0]) && ((0x0d5 == counter) || (0x72a == counter)))
 			{
 				if((LAP = check_ac(stream)))
 				{
