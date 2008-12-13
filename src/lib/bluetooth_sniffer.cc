@@ -281,7 +281,7 @@ void bluetooth_sniffer::new_header()
 
 	unfec13(stream, header, 18);
 
-	for(count = 1; count < 64; count++)
+	for(count = 0; count < 64; count++)
 	{
 		unwhiten(header, unwhitened, count, 18, 0);
 
