@@ -203,7 +203,8 @@ int bluetooth_sniffer::payload()
 /* Looks for an AC in the stream */
 int bluetooth_sniffer::sniff_ac()
 {
-	int LAP, jump, count, counter, size;
+	int jump, count, counter, size;
+	uint32_t LAP;
 	char *stream = d_stream;
 	int jumps[16] = {3,2,1,3,3,0,2,3,3,2,0,3,3,1,2,3};
 	size = d_stream_length;

@@ -58,6 +58,9 @@ bluetooth_UAP::bluetooth_UAP (int LAP, int pkts)
 		}
 	}
 	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x and %d packets\n\n", LAP, pkts);
+
+	/* ensure that we are always given at least 126 symbols (AC + header) */
+	set_history(126); //FIXME should this be increased to include CRC?
 }
 
 //virtual destructor.
@@ -73,42 +76,20 @@ bluetooth_UAP::work (int noutput_items,
 	d_stream = (char *) input_items[0];
 	d_consumed = 0;
 	d_stream_length = noutput_items;
-	int retval = 0;
+	int retval;
 
-	while(d_stream_length) {
-		if((noutput_items - d_consumed) > 71)
-			retval = sniff_ac();
-		else {
-			//The flag is used to avoid being stuck with <71 input bits when using a file as input
-			if(flag)
-				d_consumed = noutput_items;
-			flag = !flag;
-			break;
-		}
-	
-		if(-1 == retval) {
-			d_consumed = noutput_items;
-			break;
-		}
-	
-		d_consumed += retval;
-	
-		if(126 <= noutput_items - d_consumed) {
-			header();
-			
-			if(d_limit == 0)
-				print_out();//exit(0);
-		} else { //Drop out and wait to be run again
-			break;
-		}
-	
-		d_consumed += 126;
-		d_stream_length = noutput_items - d_consumed;
+	retval = sniff_ac();
+	if(-1 == retval) {
+		d_consumed = noutput_items;
+	} else {
+		d_consumed = retval;
+		header();
+		if(d_limit == 0)
+			print_out();
+		d_consumed += 54;
 	}
-  // Tell runtime system how many output items we produced.
-  if(d_consumed >= noutput_items)
-	return noutput_items;
-  else
+
+	// Tell runtime system how many output items we produced.
 	return d_consumed;
 }
 
@@ -198,30 +179,29 @@ int bluetooth_UAP::UAP_from_hec(uint8_t *packet)
 /* Looks for an AC in the stream */
 int bluetooth_UAP::sniff_ac()
 {
-	int jump, count, counter, size;
-	char *stream = d_stream;
+	int jump, count;
+	uint16_t trailer; // barker code plus trailer
+	char *stream;
 	int jumps[16] = {3,2,1,3,3,0,2,3,3,2,0,3,3,1,2,3};
-	size = d_stream_length;
-	count = 0;
 
-	while(size > 72)
+	for(count = 0; count < d_stream_length; count += jump)
 	{
+		stream = &d_stream[count];
 		jump = jumps[stream[0] << 3 | stream[1] << 2 | stream[2] << 1 | stream[3]];
 		if(0 == jump)
 		{
 			/* Found the start, now check the end... */
-			counter = stream[62] << 9 | stream[63] << 8 | stream[64] << 7 | stream[65] << 6 | stream[66] << 5 | stream[67] << 4 | stream[68] << 3 | stream[69] << 2 | stream[70] << 1 | stream[71];
-
-			if((0x0d5 == counter) || (0x32a == counter))
+			trailer = air_to_host16(&stream[61], 11);
+			/* stream[4] should probably be used in the jump trick instead of here.
+			 * Then again, an even better solution would have some error tolerance,
+			 * but we would probably have to abandon the jump trick. */
+			if((stream[4] == stream[0]) && ((0x558 == trailer) || (0x2a7 == trailer)))
 			{
 				if(check_ac(stream, d_LAP) || check_ac(stream, general_inquiry_LAP))
 					return count;
 			}
 			jump = 1;
 		}
-		count += jump;
-		stream += jump;
-		size -= jump;
 	}
 	return -1;
 }
