@@ -70,9 +70,6 @@ uint16_t crcgen(uint8_t *packet, int length, int UAP);
 
 int payload();
 
-/* Check that the Access Code is correct for the given LAP */
-int check_ac(char *stream);
-
 int sniff_ac();
 
 char *unfec13(char *stream, uint8_t *output, int length);

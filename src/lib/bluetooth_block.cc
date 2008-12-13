@@ -242,3 +242,41 @@ char *bluetooth_block::unfec23(char *stream, int length)
 	}
 	return stream;
 }
+
+/* Create an Access Code from LAP and check it against stream */
+bool bluetooth_block::check_ac(char *stream, int LAP)
+{
+	int count, aclength;
+	uint8_t *ac, *grdata;
+	aclength = 72;
+
+	/* Generate AC */
+	ac = acgen(LAP);
+
+	/* Check AC */
+	/* Convert it to grformat, 1 bit per byte, in the LSB */
+	grdata = (uint8_t *) malloc(aclength);
+
+	for(count = 0; count < 9; count++)
+		convert_to_grformat(ac[count], &grdata[count*8]);
+	free(ac);
+
+	for(count = 0; count < aclength; count++)
+	{
+		if(grdata[count] != stream[count])
+		{
+			//FIXME do error correction instead of giving up on the first wrong bit
+			free(grdata);
+			return false;
+		}
+	}
+
+	free(grdata);
+	return true;
+}
+
+/* Extract an LAP from a stream */
+int bluetooth_block::get_LAP(char *stream)
+{
+	return stream[38] | stream[39] << 1 | stream[40] << 2 | stream[41] << 3 | stream[42] << 4 | stream[43] << 5 | stream[44] << 6 | stream[45] << 7 | stream[46] << 8 | stream[47] << 9 | stream[48] << 10 | stream[49] << 11 | stream[50] << 12 | stream[51] << 13 | stream[52] << 14 | stream[53] << 15 | stream[54] << 16 | stream[55] << 17 | stream[56] << 18 | stream[57] << 19 | stream[58] << 20 | stream[59] << 21 | stream[60] << 22 | stream[61] << 23;
+}

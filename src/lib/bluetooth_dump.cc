@@ -568,39 +568,6 @@ int bluetooth_dump::payload()
 	return 1;
 }
 
-/* Create an AC and check it*/
-int bluetooth_dump::check_ac(char *stream)
-{
-	int count, LAP, aclength;
-	uint8_t *ac, *grdata;
-	aclength = 72;
-
-	/* Get LAP */
-	LAP = stream[38] | stream[39] << 1 | stream[40] << 2 | stream[41] << 3 | stream[42] << 4 | stream[43] << 5 | stream[44] << 6 | stream[45] << 7 | stream[46] << 8 | stream[47] << 9 | stream[48] << 10 | stream[49] << 11 | stream[50] << 12 | stream[51] << 13 | stream[52] << 14 | stream[53] << 15 | stream[54] << 16 | stream[55] << 17 | stream[56] << 18 | stream[57] << 19 | stream[58] << 20 | stream[59] << 21 | stream[60] << 22 | stream[61] << 23;
-
-	if(0x9e8b33 == LAP)
-		printf("ID??\n");//aclength = 68;
-
-
-	/* Generate AC */
-	ac = acgen(LAP);
-
-	/* Check AC */
-	/* Convert it to grformat, 1 bit per byte, in the LSB */
-	grdata = (uint8_t *) malloc(aclength);
-
-	for(count = 0; count < 9; count++)
-		convert_to_grformat(ac[count], &grdata[count*8]);
-
-	for(count = 0; count < aclength; count++)
-	{
-		if(grdata[count] != stream[count])
-			return 0;
-	}
-
-	return LAP;
-}
-
 /* Looks for an AC in the stream */
 int bluetooth_dump::sniff_ac()
 {
@@ -620,8 +587,11 @@ int bluetooth_dump::sniff_ac()
 
 			if((0x0d5 == counter) || (0x32a == counter))
 			{
-				if((LAP = check_ac(stream)))
+				LAP = get_LAP(stream);
+				if(check_ac(stream, LAP))
 				{
+					if(0x9e8b33 == LAP)
+						printf("ID??\n");//aclength = 68;
 					d_LAP = LAP;
 					return count;
 				}
@@ -629,7 +599,8 @@ int bluetooth_dump::sniff_ac()
 			if(((counter & 0xff0 >> 4 == 0x32)) || ((counter & 0xff0 >> 4 == 0x0d)))
 			{
 				printf("ID??\n");
-				if((LAP = check_ac(stream)))
+				LAP = get_LAP(stream);
+				if(check_ac(stream, LAP))
 				{
 					d_LAP = LAP;
 					printf("d_LAP: %06x\n", d_LAP);

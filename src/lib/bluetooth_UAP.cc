@@ -210,49 +210,6 @@ int bluetooth_UAP::UAP_from_hec(uint8_t *packet)
 	return hec;
 }
 
-/* Create an AC and check it*/
-bool bluetooth_UAP::check_ac(char *stream)
-{
-	int count, aclength;
-	uint8_t *ac, *grdata;
-	aclength = 72;
-	bool retval = 1;
-
-	/* Generate AC */
-	ac = acgen(d_LAP);
-
-	/* Check AC */
-	/* Convert it to grformat, 1 bit per byte, in the LSB */
-	grdata = (uint8_t *) malloc(aclength);
-
-	for(count = 0; count < 9; count++)
-		convert_to_grformat(ac[count], &grdata[count*8]);
-
-	for(count = 0; count < aclength; count++)
-	{
-		if(grdata[count] != stream[count])
-			retval = 0;
-	}
-	if(retval)
-		return retval;
-
-	/* Check for inquiry access code */
-	/* Generate AC */
-	ac = acgen(0x9E8B33);
-	
-	/* Check AC */
-	/* Convert it to grformat, 1 bit per byte, in the LSB */
-	for(count = 0; count < 9; count++)
-		convert_to_grformat(ac[count], &grdata[count*8]);
-
-	for(count = 0; count < aclength; count++)
-	{
-		if(grdata[count] != stream[count])
-			return 0;
-	}
-	return 1;
-}
-
 /* Looks for an AC in the stream */
 int bluetooth_UAP::sniff_ac()
 {
@@ -272,7 +229,7 @@ int bluetooth_UAP::sniff_ac()
 
 			if((0x0d5 == counter) || (0x32a == counter))
 			{
-				if(check_ac(stream))
+				if(check_ac(stream, d_LAP) || check_ac(stream, general_inquiry_LAP))
 					return count;
 			}
 			jump = 1;

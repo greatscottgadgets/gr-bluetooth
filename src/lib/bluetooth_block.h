@@ -30,8 +30,12 @@ static const int OUT = 0;
 
 /* index into whitening data array */
 static const uint8_t d_indicies[64] = {99, 85, 17, 50, 102, 58, 108, 45, 92, 62, 32, 118, 88, 11, 80, 2, 37, 69, 55, 8, 20, 40, 74, 114, 15, 106, 30, 78, 53, 72, 28, 26, 68, 7, 39, 113, 105, 77, 71, 25, 84, 49, 57, 44, 61, 117, 10, 1, 123, 124, 22, 125, 111, 23, 42, 126, 6, 112, 76, 24, 48, 43, 116, 0};
+
 /* whitening data */
 static const uint8_t d_whitening_data[127] = {1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
+
+/* LAP reserved for general inquiry */
+static const int general_inquiry_LAP = 0x9E8B33;
 
 /*!
  * \brief Bluetooth parent class.
@@ -63,9 +67,13 @@ protected:
 	 * before it was encoded with fec2/3 */
 	char *unfec23(char *stream, int length);
 
+	/* Create an Access Code from LAP and check it against stream */
+	bool check_ac(char *stream, int LAP);
+
+	/* Extract an LAP from a stream */
+	int get_LAP(char *stream);
+
 //FIXME more stuff to consider moving here:
-/* Check that the Access Code is correct for the given LAP */
-//int check_ac(char *stream);
 /* Dump the information to the screen */
 //void print_out(); // sniffer and dump same, UAP different
 /* To deal with whitened data */

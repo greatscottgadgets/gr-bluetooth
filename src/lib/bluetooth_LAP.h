@@ -54,8 +54,6 @@ void keep_track_of_LAPs();
 
 void printout();
 
-int check_ac(char *stream);
-
 int sniff_ac();
 
  public:

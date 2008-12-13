@@ -63,9 +63,6 @@ void print_out();
 
 int UAP_from_hec(uint8_t *packet);
 
-/* Check that the Access Code is correct for the given LAP */
-bool check_ac(char *stream);
-
 int sniff_ac();
 
 /* removes the whitening from the header */

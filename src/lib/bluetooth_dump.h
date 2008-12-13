@@ -113,8 +113,6 @@ uint16_t crcgen(char *packet, int length, int UAP);
 
 int payload();
 
-int check_ac(char *stream);
-
 int sniff_ac();
 
  public:
