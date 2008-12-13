@@ -86,7 +86,8 @@ protected:
 	void print_out();
 
 	/* Convert some number of bits of an air order array to a host order integer */
-	uint8_t air_to_host(char *air_order, int bits);
+	uint8_t air_to_host8(char *air_order, int bits);
+	uint16_t air_to_host16(char *air_order, int bits);
 
 	/* Convert some number of bits in a host order integer to an air order array */
 	void host_to_air(uint8_t host_order, char *air_order, int bits);

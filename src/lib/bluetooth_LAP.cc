@@ -81,7 +81,8 @@ bluetooth_LAP::work (int noutput_items,
 /* Looks for an AC in the stream */
 int bluetooth_LAP::sniff_ac()
 {
-	int LAP, jump, count, counter;
+	int LAP, jump, count;
+	uint16_t trailer; // barker code plus trailer
 	char *stream;
 	int jumps[16] = {3,2,1,3,3,0,2,3,3,2,0,3,3,1,2,3};
 
@@ -92,9 +93,11 @@ int bluetooth_LAP::sniff_ac()
 		if(0 == jump)
 		{
 			/* Found the start, now check the end... */
-			counter = stream[61] << 10 | stream[62] << 9 | stream[63] << 8 | stream[64] << 7 | stream[65] << 6 | stream[66] << 5 | stream[67] << 4 | stream[68] << 3 | stream[69] << 2 | stream[70] << 1 | stream[71];
-
-			if((stream[4] == stream[0]) && ((0x0d5 == counter) || (0x72a == counter)))
+			trailer = air_to_host16(&stream[61], 11);
+			/* stream[4] should probably be used in the jump trick instead of here.
+			 * Then again, an even better solution would have some error tolerance,
+			 * but we would probably have to abandon the jump trick. */
+			if((stream[4] == stream[0]) && ((0x558 == trailer) || (0x2a7 == trailer)))
 			{
 				LAP = get_LAP(stream);
 				if(check_ac(stream, LAP))
