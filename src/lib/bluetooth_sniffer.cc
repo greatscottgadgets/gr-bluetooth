@@ -47,12 +47,13 @@ bluetooth_sniffer::bluetooth_sniffer (int lap, int uap)
 {
 	d_LAP = lap;
 	d_UAP = uap;
-	d_payload_size = 0;
-	d_packet_type = -1;
 	d_stream_length = 0;
 	d_consumed = 0;
 	flag = 0;
 	printf("Bluetooth packet sniffer\n\n");
+
+	/* ensure that we are always given at least 126 symbols (AC + header) */
+	set_history(126); //FIXME should this be increased to include payload?
 }
 
 //virtual destructor.
@@ -66,55 +67,19 @@ bluetooth_sniffer::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	d_stream = (char *) input_items[0];
-	d_consumed = 0;
 	d_stream_length = noutput_items;
-	int retval = 0;
-	d_payload_size = 0;
-	d_packet_type = -1;
+	int retval;
 
-while(d_stream_length) {
-	if((noutput_items - d_consumed) > 71)
-		retval = sniff_ac();
-	else {
-		//The flag is used to avoid being stuck with <71 input bits in file mode
-		if(flag)
-			d_consumed = noutput_items;
-		flag = !flag;
-		break;
-	}
-
+	retval = sniff_ac();
 	if(-1 == retval) {
 		d_consumed = noutput_items;
-		break;
-	}
-
-	d_consumed += retval;
-
-	if(126+retval <= noutput_items) {
+	} else {
+		d_consumed = retval;
 		new_header();
-	} else { //Drop out and wait to be run again
-		break;
+		d_consumed += 54;
 	}
 
-	d_consumed += 126;
-
-	retval = payload();
-	if(0 == retval) {
-		print_out();
-		d_consumed += (d_payload_size*8);
-	} else {//We're having payload trouble, dump the stream
-		d_consumed = noutput_items;
-		break;
-	}
-
-    d_payload_size = 0;
-    d_packet_type = -1;
-    d_stream_length = noutput_items - d_consumed;
-}
   // Tell runtime system how many output items we produced.
-  if(d_consumed >= noutput_items)
-	return noutput_items;
-  else
 	return d_consumed;
 }
 
@@ -195,30 +160,27 @@ uint16_t bluetooth_sniffer::crcgen(uint8_t *packet, int length, int UAP)
 	return reg;
 }
 
-int bluetooth_sniffer::payload()
-{
-	return 1;
-}
-
 /* Looks for an AC in the stream */
 int bluetooth_sniffer::sniff_ac()
 {
-	int jump, count, counter, size;
+	int jump, count;
+	uint16_t trailer; // barker code plus trailer
 	uint32_t LAP;
-	char *stream = d_stream;
+	char *stream;
 	int jumps[16] = {3,2,1,3,3,0,2,3,3,2,0,3,3,1,2,3};
-	size = d_stream_length;
-	count = 0;
 
-	while(size > 72)
+	for(count = 0; count < d_stream_length; count += jump)
 	{
+		stream = &d_stream[count];
 		jump = jumps[stream[0] << 3 | stream[1] << 2 | stream[2] << 1 | stream[3]];
 		if(0 == jump)
 		{
 			/* Found the start, now check the end... */
-			counter = stream[62] << 9 | stream[63] << 8 | stream[64] << 7 | stream[65] << 6 | stream[66] << 5 | stream[67] << 4 | stream[68] << 3 | stream[69] << 2 | stream[70] << 1 | stream[71];
-
-			if((0x0d5 == counter) || (0x32a == counter))
+			trailer = air_to_host16(&stream[61], 11);
+			/* stream[4] should probably be used in the jump trick instead of here.
+			 * Then again, an even better solution would have some error tolerance,
+			 * but we would probably have to abandon the jump trick. */
+			if((stream[4] == stream[0]) && ((0x558 == trailer) || (0x2a7 == trailer)))
 			{
 				LAP = air_to_host32(&stream[38], 24);
 				if(LAP == d_LAP && check_ac(stream, LAP))
@@ -232,9 +194,6 @@ int bluetooth_sniffer::sniff_ac()
 			}
 			jump = 1;
 		}
-		count += jump;
-		stream += jump;
-		size -= jump;
 	}
 	return -1;
 }

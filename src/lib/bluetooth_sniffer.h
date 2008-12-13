@@ -65,8 +65,6 @@ void header();
 /* Create the CRC */
 uint16_t crcgen(uint8_t *packet, int length, int UAP);
 
-int payload();
-
 int sniff_ac();
 
 /* removes the whitening from the header */
