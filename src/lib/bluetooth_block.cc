@@ -47,6 +47,8 @@ bluetooth_block::bluetooth_block ()
 
 //This is all imported from packet_LAP.c
 //It has been converted to C++
+
+/* Error correction coding for Access Code */
 uint8_t *bluetooth_block::codeword(uint8_t *data, int length, int k)
 /*
  * Compute redundacy cw[], the coefficients of b(x). The redundancy
@@ -123,9 +125,10 @@ uint8_t bluetooth_block::reverse(char byte)
 	return (byte & 0x80) >> 7 | (byte & 0x40) >> 5 | (byte & 0x20) >> 3 | (byte & 0x10) >> 1 | (byte & 0x08) << 1 | (byte & 0x04) << 3 | (byte & 0x02) << 5 | (byte & 0x01) << 7;
 }
 
-/* Endianness - Assume LAP is MSB first, rest done LSB first */
+/* Generate Access Code from an LAP */
 uint8_t *bluetooth_block::acgen(int LAP)
 {
+	/* Endianness - Assume LAP is MSB first, rest done LSB first */
 	uint8_t *retval, *pn, count, *cw, *data;
 	retval = (uint8_t *) malloc(9);
 	pn = (uint8_t *) malloc(9);
@@ -225,14 +228,16 @@ void bluetooth_block::convert_to_grformat(uint8_t input, uint8_t *output)
 	}
 }
 
-/* stream points to the stream of data
- * length is length in bits of the data
- * before it was encoded with fec2/3 */
+/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
 char *bluetooth_block::unfec23(char *stream, int length)
 {
+	/* stream points to the stream of data
+ 	* length is length in bits of the data
+ 	* before it was encoded with fec2/3 */
 	int count, pointer;
 	pointer = -5;
 
+	//FIXME do error correction instead of ignoring the check digits
 	for(count = 0; count < length; count++)
 	{
 		if((count % 10) == 0)

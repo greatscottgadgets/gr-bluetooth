@@ -58,13 +58,19 @@ protected:
 	uint8_t d_payload_size;
 	int d_packet_type;
 
+	/* Error correction coding for Access Code */
 	uint8_t *codeword(uint8_t *data, int length, int k);
+
+	/* Reverse the bits in a byte */
 	uint8_t reverse(char byte);
+
+	/* Generate Access Code from an LAP */
 	uint8_t *acgen(int LAP);
+
+	/* Convert from normal bytes to one-LSB-per-byte format */
 	void convert_to_grformat(uint8_t input, uint8_t *output);
-	/* stream points to the stream of data foo
-	 * length is length in bits of the data
-	 * before it was encoded with fec2/3 */
+
+	/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
 	char *unfec23(char *stream, int length);
 
 	/* Create an Access Code from LAP and check it against stream */
