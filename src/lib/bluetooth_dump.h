@@ -103,8 +103,6 @@ int FHS(char *stream, int UAP);
 /* NULL packet */
 int null_packet();
 
-void print_out();
-
 int UAP_from_hec(char *packet, uint8_t hec);
 
 void header();

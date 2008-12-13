@@ -57,9 +57,6 @@ char gr_to_normal(char *stream);
 
 char gr_to_normal(uint8_t *stream);
 
-/* Dump the information to the screen */
-void print_out();
-
 int UAP_from_hec(uint8_t *packet);
 
 /* For unwhitened headers */

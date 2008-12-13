@@ -280,3 +280,29 @@ int bluetooth_block::get_LAP(char *stream)
 {
 	return stream[38] | stream[39] << 1 | stream[40] << 2 | stream[41] << 3 | stream[42] << 4 | stream[43] << 5 | stream[44] << 6 | stream[45] << 7 | stream[46] << 8 | stream[47] << 9 | stream[48] << 10 | stream[49] << 11 | stream[50] << 12 | stream[51] << 13 | stream[52] << 14 | stream[53] << 15 | stream[54] << 16 | stream[55] << 17 | stream[56] << 18 | stream[57] << 19 | stream[58] << 20 | stream[59] << 21 | stream[60] << 22 | stream[61] << 23;
 }
+
+void bluetooth_block::print_out()
+{
+	printf("LAP:%06x UAP:%02x\nType: ", d_LAP, d_UAP);
+	switch(d_packet_type)
+	{
+		case 0:printf("NULL Slots:1"); break;
+		case 1:printf("DV Slots:1"); break;
+		case 2:printf("DH1 Slots:1"); break;
+		case 3:printf("EV4 Slots:3"); break;
+		case 4:printf("FHS Slots:1"); break;
+		case 5:printf("DM3 Slots:3"); break;
+		case 6:printf("HV2 Slots:1"); break;
+		case 7:printf("DM5 Slots:5"); break;
+		case 8:printf("POLL Slots:1"); break;
+		case 9:printf("AUX1 Slots:1"); break;
+		case 10:printf("HV1 Slots:1"); break;
+		case 11:printf("EV5 Slots:3"); break;
+		case 12:printf("DM1 Slots:1"); break;
+		case 13:printf("DH3 Slots:3"); break;
+		case 14:printf("HV3/EV3 Slots:1"); break;
+		case 15:printf("DH5 Slots:5"); break;
+	}
+	printf(" Length:%d\n\n", d_payload_size);
+}
+

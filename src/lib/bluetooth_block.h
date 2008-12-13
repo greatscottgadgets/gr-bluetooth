@@ -73,9 +73,10 @@ protected:
 	/* Extract an LAP from a stream */
 	int get_LAP(char *stream);
 
+	/* Print general information about a frame */
+	void print_out();
+
 //FIXME more stuff to consider moving here:
-/* Dump the information to the screen */
-//void print_out(); // sniffer and dump same, UAP different
 /* To deal with whitened data */
 //void header();
 //int sniff_ac();
