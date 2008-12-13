@@ -69,7 +69,6 @@ int payload();
 
 int sniff_ac();
 
-char *unfec13(char *stream, uint8_t *output, int length);
 /* removes the whitening from the header */
 
 void unwhiten(uint8_t *input, uint8_t *output, int clock, int length, int skip);

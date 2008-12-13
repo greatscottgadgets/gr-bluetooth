@@ -70,6 +70,9 @@ protected:
 	/* Convert from normal bytes to one-LSB-per-byte format */
 	void convert_to_grformat(uint8_t input, uint8_t *output);
 
+	/* Decode 1/3 rate FEC, three like symbols in a row */
+	char *unfec13(char *stream, uint8_t *output, int length);
+
 	/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
 	char *unfec23(char *stream, int length);
 
@@ -86,8 +89,6 @@ protected:
 /* To deal with whitened data */
 //void header();
 //int sniff_ac();
-/* stream points to the stream of data, length is length in bits */
-//char *unfec13(char *stream, uint8_t *output, int length); // UAP and sniffer same, dump different
 /* Create the CRC */
 //uint16_t crcgen(uint8_t *packet, int length, int UAP); // UAP and dump same, sniffer different
 //int payload_header(char *stream);

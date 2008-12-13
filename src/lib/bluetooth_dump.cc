@@ -140,6 +140,7 @@ char bluetooth_dump::gr_to_normal(char *stream)
 	return stream[0] << 7 | stream[1] << 6 | stream[2] << 5 | stream[3] << 4 | stream[4] << 3 | stream[5] << 2 | stream[6] << 1 | stream[7];
 }
 
+//FIXME ought to use unfec13 from parent class but not certain what is going on here
 /* stream points to the stream of data, length is length in bits */
 char *bluetooth_dump::unfec13(char *stream, int length)
 {

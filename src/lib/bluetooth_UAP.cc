@@ -118,21 +118,6 @@ char bluetooth_UAP::gr_to_normal(char *stream)
 	return stream[0] << 7 | stream[1] << 6 | stream[2] << 5 | stream[3] << 4 | stream[4] << 3 | stream[5] << 2 | stream[6] << 1 | stream[7];
 }
 
-/* stream points to the stream of data, length is length in bits */
-char *bluetooth_UAP::unfec13(char *stream, uint8_t *output, int length)
-{
-	int count, a, b, c;
-
-	for(count = 0; count < length; count++)
-	{
-		a = 3*count;
-		b = a + 1;
-		c = a + 2;
-		output[count] = ((stream[a] & stream[b]) | (stream[b] & stream[c]) | (stream[c] & stream[a]));
-	}
-	return stream;
-}
-
 void bluetooth_UAP::print_out()
 {
 	int count, counter, max, localmax;

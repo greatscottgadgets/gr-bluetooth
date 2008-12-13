@@ -228,12 +228,27 @@ void bluetooth_block::convert_to_grformat(uint8_t input, uint8_t *output)
 	}
 }
 
+/* Decode 1/3 rate FEC, three like symbols in a row */
+char *bluetooth_block::unfec13(char *stream, uint8_t *output, int length)
+{
+    int count, a, b, c;
+
+    for(count = 0; count < length; count++)
+    {
+        a = 3*count;
+        b = a + 1;
+        c = a + 2;
+        output[count] = ((stream[a] & stream[b]) | (stream[b] & stream[c]) | (stream[c] & stream[a]));
+    }
+    return stream;
+}
+
 /* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
 char *bluetooth_block::unfec23(char *stream, int length)
 {
 	/* stream points to the stream of data
- 	* length is length in bits of the data
- 	* before it was encoded with fec2/3 */
+	 * length is length in bits of the data
+	 * before it was encoded with fec2/3 */
 	int count, pointer;
 	pointer = -5;
 

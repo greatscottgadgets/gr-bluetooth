@@ -268,21 +268,6 @@ void bluetooth_sniffer::unwhiten_char(char* input, uint8_t* output, int clock, i
 	}
 }
 
-/* stream points to the stream of data, length is length in bits */
-char *bluetooth_sniffer::unfec13(char *stream, uint8_t *output, int length)
-{
-	int count, a, b, c;
-
-	for(count = 0; count < length; count++)
-	{
-		a = 3*count;
-		b = a + 1;
-		c = a + 2;
-		output[count] = ((stream[a] & stream[b]) | (stream[b] & stream[c]) | (stream[c] & stream[a]));
-	}
-	return stream;
-}
-
 void bluetooth_sniffer::new_header()
 {
 	char *stream = d_stream + d_consumed + 72;
