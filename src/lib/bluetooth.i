@@ -10,6 +10,7 @@
 #include "bluetooth_sniffer.h"
 #include "bluetooth_LAP.h"
 #include "bluetooth_UAP.h"
+#include "bluetooth_block.h"
 #include "bluetooth_dump.h"
 #include <stdexcept>
 %}
@@ -71,6 +72,4 @@ class bluetooth_dump : public gr_sync_block
 private:
   bluetooth_dump ();
 };
-
-
 

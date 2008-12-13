@@ -22,9 +22,8 @@
 #ifndef INCLUDED_BLUETOOTH_dump_H
 #define INCLUDED_BLUETOOTH_dump_H
 
-#include <gr_sync_block.h>
+#include <bluetooth_block.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 
 class bluetooth_dump;
@@ -39,7 +38,7 @@ bluetooth_dump_sptr bluetooth_make_dump ();
  * \brief Sniff Bluetooth packets.
  * \ingroup block
  */
-class bluetooth_dump : public gr_sync_block
+class bluetooth_dump : public bluetooth_block
 {
 private:
   // The friend declaration allows bluetooth_make_dump to
@@ -49,27 +48,12 @@ private:
 
   bluetooth_dump ();  	// private constructor
 
-  int d_LAP;
-  int d_UAP;
-  uint8_t d_payload_size;
-  int d_packet_type;
-  int d_stream_length;
-  char *d_stream;
-  uint16_t d_consumed;
-  bool flag;
-
-
 int payload_header(char *stream);
 
 int long_payload_header(char *stream);
 
 /* Converts 8 bytes of grformat to a single byte */
 char gr_to_normal(char *stream);
-
-/* stream points to the stream of data
-   length is length in bits of the data
-   before it was encoded with fec2/3 */
-char *unfec23(char *stream, int length);
 
 /* stream points to the stream of data, length is length in bits */
 char *unfec13(char *stream, int length);
@@ -121,12 +105,6 @@ int null_packet();
 
 void print_out();
 
-uint8_t *codeword(uint8_t *data, int length, int k);
-
-uint8_t reverse(char byte);
-
-uint8_t *acgen(int LAP);
-
 int UAP_from_hec(char *packet, uint8_t hec);
 
 void header();
@@ -134,8 +112,6 @@ void header();
 uint16_t crcgen(char *packet, int length, int UAP);
 
 int payload();
-
-void convert_to_grformat(uint8_t input, uint8_t *output);
 
 int check_ac(char *stream);
 

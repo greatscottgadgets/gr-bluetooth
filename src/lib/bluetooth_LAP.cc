@@ -30,7 +30,6 @@
 #endif
 
 #include <bluetooth_LAP.h>
-#include <gr_io_signature.h>
 #include <sys/time.h>
 
 /*
@@ -43,23 +42,13 @@ bluetooth_make_LAP (int x)
   return bluetooth_LAP_sptr (new bluetooth_LAP (x));
 }
 
-
-static const int IN = 1;	// number of input streams
-static const int OUT = 0;	// size and number of output streams
-static const int TRIGGER = 25;  // number of times to see a LAP before quit
-
 //private constructor
 bluetooth_LAP::bluetooth_LAP (int x)
-  : gr_sync_block ("LAP",
-	      gr_make_io_signature (IN, IN, sizeof (char)),
-	      gr_make_io_signature (OUT, OUT, OUT))
+  : bluetooth_block ()
 {
 	d_LAP = 0;
 	d_stream_length = 0;
 	d_consumed = 0;
-	d_flag = 0;
-	d_LAP_count = 0;
-	d_LAPs = NULL;
 	d_x = x;
 	d_cumulative_count = 0;
 	// ensure that we are always given at least 72 symbols
@@ -87,190 +76,6 @@ bluetooth_LAP::work (int noutput_items,
 
     // Tell runtime system how many output items we produced.
 	return d_consumed;
-}
-
-
-
-
-
-//This is all imported from packet_LAP.c
-//It has been converted to C++
-uint8_t *bluetooth_LAP::codeword(uint8_t *data, int length, int k)
-/*
- * Compute redundacy cw[], the coefficients of b(x). The redundancy
- * polynomial b(x) is the remainder after dividing x^(length-k)*data(x)
- * by the generator polynomial g(x).
- */
-{
-	int    i, j;
-	uint8_t *g, *cw, feedback;
-
-	g = (uint8_t *) malloc(35);
-	g[0] = 1;
-	g[1] = 0;
-	g[2] = 0;
-	g[3] = 1;
-	g[4] = 0;
-	g[5] = 1;
-	g[6] = 0;
-	g[7] = 1;
-	g[8] = 1;
-	g[9] = 0;
-	g[10] = 1;
-	g[11] = 1;
-	g[12] = 1;
-	g[13] = 1;
-	g[14] = 0;
-	g[15] = 0;
-	g[16] = 1;
-	g[17] = 0;
-	g[18] = 0;
-	g[19] = 0;
-	g[20] = 1;
-	g[21] = 1;
-	g[22] = 1;
-	g[23] = 0;
-	g[24] = 1;
-	g[25] = 0;
-	g[26] = 1;
-	g[27] = 0;
-	g[28] = 0;
-	g[29] = 0;
-	g[30] = 0;
-	g[31] = 1;
-	g[32] = 1;
-	g[33] = 0;
-	g[34] = 1;
-
-	cw = (uint8_t *) malloc(34);
-
-	for (i = 0; i < length - k; i++)
-		cw[i] = 0;
-	for (i = k - 1; i >= 0; i--) {
-		feedback = data[i] ^ cw[length - k - 1];
-		if (feedback != 0) {
-			for (j = length - k - 1; j > 0; j--)
-				if (g[j] != 0)
-					cw[j] = cw[j - 1] ^ feedback;
-				else
-					cw[j] = cw[j - 1];
-			cw[0] = g[0] && feedback;
-		} else {
-			for (j = length - k - 1; j > 0; j--)
-				cw[j] = cw[j - 1];
-			cw[0] = 0;
-		}
-	}
-	free(g);
-	return cw;
-}
-
-/* Reverse the bits in a byte */
-uint8_t bluetooth_LAP::reverse(char byte)
-{
-	return (byte & 0x80) >> 7 | (byte & 0x40) >> 5 | (byte & 0x20) >> 3 | (byte & 0x10) >> 1 | (byte & 0x08) << 1 | (byte & 0x04) << 3 | (byte & 0x02) << 5 | (byte & 0x01) << 7;
-}
-
-/* Endianness - Assume LAP is MSB first, rest done LSB first */
-uint8_t *bluetooth_LAP::acgen(int LAP)
-{
-	uint8_t *retval, *pn, count, *cw, *data;
-	retval = (uint8_t *) malloc(9);
-	pn = (uint8_t *) malloc(9);
-	data = (uint8_t *) malloc(30);
-
-	LAP = reverse((LAP & 0xff0000)>>16) | (reverse((LAP & 0x00ff00)>>8)<<8) | (reverse(LAP & 0x0000ff)<<16);
-
-	retval[4] = (LAP & 0xc00000)>>22;
-	retval[5] = (LAP & 0x3fc000)>>14;
-	retval[6] = (LAP & 0x003fc0)>>6;
-	retval[7] = (LAP & 0x00003f)<<2;
-
-	/* Trailer */
-	if(LAP & 0x1)
-	{	retval[7] |= 0x03;
-		retval[8] = 0x2a;
-	} else
-		retval[8] = 0xd5;
-
-	pn[0] = 0x03;
-	pn[1] = 0xF2;
-	pn[2] = 0xA3;
-	pn[3] = 0x3D;
-	pn[4] = 0xD6;
-	pn[5] = 0x9B;
-	pn[6] = 0x12;
-	pn[7] = 0x1C;
-	pn[8] = 0x10;
-
-	for(count = 4; count < 9; count++)
-		retval[count] ^= pn[count];
-
-	/* Codeword */
-	//g(d) = 0x585713DA9
-	data[0] = (retval[4] & 0x02) >> 1;
-	data[1] = (retval[4] & 0x01);
-	data[2] = (retval[5] & 0x80) >> 7;
-	data[3] = (retval[5] & 0x40) >> 6;
-	data[4] = (retval[5] & 0x20) >> 5;
-	data[5] = (retval[5] & 0x10) >> 4;
-	data[6] = (retval[5] & 0x08) >> 3;
-	data[7] = (retval[5] & 0x04) >> 2;
-	data[8] = (retval[5] & 0x02) >> 1;
-	data[9] = (retval[5] & 0x01);
-	data[10] = (retval[6] & 0x80) >> 7;
-	data[11] = (retval[6] & 0x40) >> 6;
-	data[12] = (retval[6] & 0x20) >> 5;
-	data[13] = (retval[6] & 0x10) >> 4;
-	data[14] = (retval[6] & 0x08) >> 3;
-	data[15] = (retval[6] & 0x04) >> 2;
-	data[16] = (retval[6] & 0x02) >> 1;
-	data[17] = (retval[6] & 0x01);
-	data[18] = (retval[7] & 0x80) >> 7;
-	data[19] = (retval[7] & 0x40) >> 6;
-	data[20] = (retval[7] & 0x20) >> 5;
-	data[21] = (retval[7] & 0x10) >> 4;
-	data[22] = (retval[7] & 0x08) >> 3;
-	data[23] = (retval[7] & 0x04) >> 2;
-	data[24] = (retval[7] & 0x02) >> 1;
-	data[25] = (retval[7] & 0x01);
-	data[26] = (retval[8] & 0x80) >> 7;
-	data[27] = (retval[8] & 0x40) >> 6;
-	data[28] = (retval[8] & 0x20) >> 5;
-	data[29] = (retval[8] & 0x10) >> 4;
-
-	cw = codeword(data, 64, 30);
-	free(data);
-
-	retval[0] = cw[0] << 3 | cw[1] << 2 | cw[2] << 1 | cw[3];
-	retval[1] = cw[4] << 7 | cw[5] << 6 | cw[6] << 5 | cw[7] << 4 | cw[8] << 3 | cw[9] << 2 | cw[10] << 1 | cw[11];
-	retval[2] = cw[12] << 7 | cw[13] << 6 | cw[14] << 5 | cw[15] << 4 | cw[16] << 3 | cw[17] << 2 | cw[18] << 1 | cw[19];
-	retval[3] = cw[20] << 7 | cw[21] << 6 | cw[22] << 5 | cw[23] << 4 | cw[24] << 3 | cw[25] << 2 | cw[26] << 1 | cw[27];
-	retval[4] = cw[28] << 7 | cw[29] << 6 | cw[30] << 5 | cw[31] << 4 | cw[32] << 3 | cw[33] << 2 | (retval[4] & 0x3);;
-	free(cw);
-
-	for(count = 0; count < 9; count++)
-		retval[count] ^= pn[count];
-	free(pn);
-
-	/* Preamble */
-	if(retval[0] & 0x08)
-		retval[0] |= 0xa0;
-	else
-		retval[0] |= 0x50;
-
-	return retval;
-}
-
-/* Convert from normal bytes to one-LSB-per-byte format */
-void bluetooth_LAP::convert_to_grformat(uint8_t input, uint8_t *output)
-{
-	int count;
-	for(count = 0; count < 8; count++)
-	{
-		output[count] = (input & 0x80) >> 7;
-		input <<= 1;
-	}
 }
 
 /* Create an AC and check it*/

@@ -22,9 +22,8 @@
 #ifndef INCLUDED_BLUETOOTH_SNIFFER_H
 #define INCLUDED_BLUETOOTH_SNIFFER_H
 
-#include <gr_sync_block.h>
+#include <bluetooth_block.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 
 class bluetooth_sniffer;
@@ -39,7 +38,7 @@ bluetooth_sniffer_sptr bluetooth_make_sniffer (int lap, int uap);
  * \brief Sniff Bluetooth packets.
  * \ingroup block
  */
-class bluetooth_sniffer : public gr_sync_block
+class bluetooth_sniffer : public bluetooth_block
 {
 private:
   // The friend declaration allows bluetooth_make_sniffer to
@@ -48,16 +47,6 @@ private:
   friend bluetooth_sniffer_sptr bluetooth_make_sniffer (int lap, int uap);
 
   bluetooth_sniffer (int lap, int uap);  	// private constructor
-
-  int d_LAP;
-  int d_UAP;
-  uint8_t d_payload_size;
-  int d_packet_type;
-  int d_stream_length;
-  char *d_stream;
-  uint16_t d_consumed;
-  bool flag;
-
 
 int payload_header(uint8_t *stream);
 
@@ -68,19 +57,8 @@ char gr_to_normal(char *stream);
 
 char gr_to_normal(uint8_t *stream);
 
-/* stream points to the stream of data
-   length is length in bits of the data
-   before it was encoded with fec2/3 */
-char *unfec23(char *stream, int length);
-
 /* Dump the information to the screen */
 void print_out();
-
-uint8_t *codeword(uint8_t *data, int length, int k);
-
-uint8_t reverse(char byte);
-
-uint8_t *acgen(int LAP);
 
 int UAP_from_hec(uint8_t *packet);
 
@@ -91,8 +69,6 @@ void header();
 uint16_t crcgen(uint8_t *packet, int length, int UAP);
 
 int payload();
-
-void convert_to_grformat(uint8_t input, uint8_t *output);
 
 /* Check that the Access Code is correct for the given LAP */
 int check_ac(char *stream);

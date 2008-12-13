@@ -22,9 +22,8 @@
 #ifndef INCLUDED_BLUETOOTH_LAP_H
 #define INCLUDED_BLUETOOTH_LAP_H
 
-#include <gr_sync_block.h>
+#include <bluetooth_block.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 
 class bluetooth_LAP;
@@ -39,7 +38,7 @@ bluetooth_LAP_sptr bluetooth_make_LAP (int x);
  * \brief Sniff Bluetooth packets.
  * \ingroup block
  */
-class bluetooth_LAP : public gr_sync_block
+class bluetooth_LAP : public bluetooth_block
 {
 private:
   // The friend declaration allows bluetooth_make_LAP to
@@ -49,35 +48,11 @@ private:
 
   bluetooth_LAP (int x);  	// private constructor
 
-  struct LAP_struct
-  {
-        int LAP;
-	int count;
-        LAP_struct *next;
-  };
-
-  int d_LAP;
-  int d_stream_length;
-  char *d_stream;
-  uint16_t d_consumed;
-  bool d_flag;
-  LAP_struct *d_LAPs;
-  int d_LAP_count;
   int d_x;
-  // could be 32 bits, but then it would roll over after about 70 minutes
-  uint64_t d_cumulative_count;
 
 void keep_track_of_LAPs();
 
 void printout();
-
-uint8_t *codeword(uint8_t *data, int length, int k);
-
-uint8_t reverse(char byte);
-
-uint8_t *acgen(int LAP);
-
-void convert_to_grformat(uint8_t input, uint8_t *output);
 
 int check_ac(char *stream);
 

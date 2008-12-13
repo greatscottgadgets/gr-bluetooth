@@ -22,9 +22,8 @@
 #ifndef INCLUDED_BLUETOOTH_UAP_H
 #define INCLUDED_BLUETOOTH_UAP_H
 
-#include <gr_sync_block.h>
+#include <bluetooth_block.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -40,7 +39,7 @@ bluetooth_UAP_sptr bluetooth_make_UAP (int LAP, int pkts);
  * \brief Sniff Bluetooth packets.
  * \ingroup block
  */
-class bluetooth_UAP : public gr_sync_block
+class bluetooth_UAP : public bluetooth_block
 {
 private:
   // The friend declaration allows bluetooth_make_UAP to
@@ -50,13 +49,8 @@ private:
 
   bluetooth_UAP (int LAP, int pkts);	// private constructor
 
-  int d_LAP;
   int d_UAPs[256][8][4];
-  int d_stream_length;
   int d_limit;
-  char *d_stream;
-  uint16_t d_consumed;
-  bool flag;
 
 /* Converts 8 bytes of grformat to a single byte */
 char gr_to_normal(char *stream);
@@ -67,15 +61,7 @@ char *unfec13(char *stream, uint8_t *output, int length);
 /* Dump the information to the screen */
 void print_out();
 
-uint8_t *codeword(uint8_t *data, int length, int k);
-
-uint8_t reverse(char byte);
-
-uint8_t *acgen(int LAP);
-
 int UAP_from_hec(uint8_t *packet);
-
-void convert_to_grformat(uint8_t input, uint8_t *output);
 
 /* Check that the Access Code is correct for the given LAP */
 bool check_ac(char *stream);
