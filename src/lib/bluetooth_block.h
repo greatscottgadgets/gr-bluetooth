@@ -85,6 +85,12 @@ protected:
 	/* Print general information about a frame */
 	void print_out();
 
+	/* Convert some number of bits of an air order array to a host order integer */
+	uint8_t air_to_host(uint8_t *air_order, int bits);
+
+	/* Convert some number of bits in a host order integer to an air order array */
+	void host_to_air(uint8_t host_order, uint8_t *air_order, int bits);
+
 //FIXME more stuff to consider moving here:
 /* To deal with whitened data */
 //void header();
