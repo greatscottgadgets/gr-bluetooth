@@ -561,7 +561,7 @@ int bluetooth_dump::sniff_ac()
 
 			if((0x0d5 == counter) || (0x32a == counter))
 			{
-				LAP = get_LAP(stream);
+				LAP = air_to_host32(&stream[38], 24);
 				if(check_ac(stream, LAP))
 				{
 					if(0x9e8b33 == LAP)
@@ -573,7 +573,7 @@ int bluetooth_dump::sniff_ac()
 			if(((counter & 0xff0 >> 4 == 0x32)) || ((counter & 0xff0 >> 4 == 0x0d)))
 			{
 				printf("ID??\n");
-				LAP = get_LAP(stream);
+				LAP = air_to_host32(&stream[38], 24);
 				if(check_ac(stream, LAP))
 				{
 					d_LAP = LAP;

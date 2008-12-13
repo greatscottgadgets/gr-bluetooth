@@ -295,12 +295,6 @@ bool bluetooth_block::check_ac(char *stream, int LAP)
 	return true;
 }
 
-/* Extract an LAP from a stream */
-int bluetooth_block::get_LAP(char *stream)
-{
-	return stream[38] | stream[39] << 1 | stream[40] << 2 | stream[41] << 3 | stream[42] << 4 | stream[43] << 5 | stream[44] << 6 | stream[45] << 7 | stream[46] << 8 | stream[47] << 9 | stream[48] << 10 | stream[49] << 11 | stream[50] << 12 | stream[51] << 13 | stream[52] << 14 | stream[53] << 15 | stream[54] << 16 | stream[55] << 17 | stream[56] << 18 | stream[57] << 19 | stream[58] << 20 | stream[59] << 21 | stream[60] << 22 | stream[61] << 23;
-}
-
 void bluetooth_block::print_out()
 {
 	printf("LAP:%06x UAP:%02x\nType: ", d_LAP, d_UAP);
@@ -339,6 +333,14 @@ uint16_t bluetooth_block::air_to_host16(char *air_order, int bits)
 {
 	int i;
 	uint16_t host_order = 0;
+	for (i = 0; i < bits; i++)
+		host_order |= (air_order[i] << i);
+	return host_order;
+}
+uint32_t bluetooth_block::air_to_host32(char *air_order, int bits)
+{
+	int i;
+	uint32_t host_order = 0;
 	for (i = 0; i < bits; i++)
 		host_order |= (air_order[i] << i);
 	return host_order;

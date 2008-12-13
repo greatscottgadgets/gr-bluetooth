@@ -219,7 +219,7 @@ int bluetooth_sniffer::sniff_ac()
 
 			if((0x0d5 == counter) || (0x32a == counter))
 			{
-				LAP = get_LAP(stream);
+				LAP = air_to_host32(&stream[38], 24);
 				if(LAP == d_LAP && check_ac(stream, LAP))
 				{
 					/*printf("AC\n");
