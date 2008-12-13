@@ -327,7 +327,7 @@ void bluetooth_block::print_out()
 }
 
 /* Convert some number of bits of an air order array to a host order integer */
-uint8_t bluetooth_block::air_to_host(uint8_t *air_order, int bits)
+uint8_t bluetooth_block::air_to_host(char *air_order, int bits)
 {
 	int i;
 	uint8_t host_order = 0;
@@ -337,7 +337,7 @@ uint8_t bluetooth_block::air_to_host(uint8_t *air_order, int bits)
 }
 
 /* Convert some number of bits in a host order integer to an air order array */
-void bluetooth_block::host_to_air(uint8_t host_order, uint8_t *air_order, int bits)
+void bluetooth_block::host_to_air(uint8_t host_order, char *air_order, int bits)
 {
     int i;
     for (i = 0; i < bits; i++)

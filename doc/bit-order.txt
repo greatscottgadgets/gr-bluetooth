@@ -1,8 +1,9 @@
 We refer to the order of bits in the Bluetooth air interface as "air
 order."  Data in this bit order are typically in the form of an
-array of some integer type with each integer representing one bit.
-This is the form of the stream of input provided by GNU Radio.  Air
-order is LSB first.  Examples: input_items, d_stream
+array of some integer type (normally char) with each integer
+representing one bit.  This is the form of the stream of input
+provided by GNU Radio.  Air order is LSB first.  Examples:
+input_items, d_stream
  
 We call the order of bits in a typical integer (big-endian or
 little-endian depending on the host) "host order."  Data in this bit
@@ -12,5 +13,5 @@ per integer.  Examples: UAP, LAP
 If we need an array of one bit per integer that is MSB first, we
 append "_host" to the variable name for clarity.  Similarly, if we
 need an integer representing more than one bit with the bits
-reversed (with respect to host order), we append "_air" to the   
+reversed (with respect to host order), we append "_air" to the
 variable name.  When possible we try to avoid these situations.  
