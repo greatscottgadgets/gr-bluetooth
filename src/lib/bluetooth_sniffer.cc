@@ -76,7 +76,7 @@ bluetooth_sniffer::work (int noutput_items,
 	} else {
 		d_consumed = retval;
 		new_header();
-		d_consumed += 54;
+		d_consumed += 126;
 	}
 
   // Tell runtime system how many output items we produced.

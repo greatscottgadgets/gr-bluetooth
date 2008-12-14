@@ -74,7 +74,6 @@ bluetooth_UAP::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	d_stream = (char *) input_items[0];
-	d_consumed = 0;
 	d_stream_length = noutput_items;
 	int retval;
 
@@ -86,7 +85,7 @@ bluetooth_UAP::work (int noutput_items,
 		header();
 		if(d_limit == 0)
 			print_out();
-		d_consumed += 54;
+		d_consumed += 126;
 	}
 
 	// Tell runtime system how many output items we produced.
