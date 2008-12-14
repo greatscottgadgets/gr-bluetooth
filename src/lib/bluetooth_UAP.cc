@@ -44,7 +44,6 @@ bluetooth_UAP::bluetooth_UAP (int LAP, int pkts)
 	d_stream_length = 0;
 	d_consumed = 0;
 	d_limit = pkts;
-	flag = 0;
 
 	int count, counter;
 	for(count = 0; count < 256; count++)
@@ -59,8 +58,8 @@ bluetooth_UAP::bluetooth_UAP (int LAP, int pkts)
 	}
 	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x and %d packets\n\n", LAP, pkts);
 
-	/* ensure that we are always given at least 126 symbols (AC + header) */
-	set_history(126); //FIXME should this be increased to include CRC?
+	/* ensure that we are always given at least 3125 symbols (5 time slots) */
+	set_history(3125);
 }
 
 //virtual destructor.
@@ -205,19 +204,6 @@ int bluetooth_UAP::sniff_ac()
 	return -1;
 }
 
-void bluetooth_UAP::unwhiten_header(char *input, char *output, int clock)
-{
-	int count, index;
-	index = d_indicies[clock & 0x3f];
-
-	for(count = 0; count < 18; count++)
-	{
-		output[count] = input[count] ^ d_whitening_data[index];
-		index += 1;
-		index %= 127;
-	}
-}
-
 void bluetooth_UAP::header()
 {
 	char *stream = d_stream + d_consumed + 72;
@@ -231,7 +217,7 @@ void bluetooth_UAP::header()
 
 	for(count = 0; count < 64; count++)
 	{
-		unwhiten_header(header, unwhitened, count);
+		unwhiten(header, unwhitened, count, 18, 0);
 
 		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
 		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
@@ -348,29 +334,13 @@ int bluetooth_UAP::crc_check(char *stream, int type, int size, int clock, uint8_
 
 int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
 {
-	int count, index, pointer;
-
-	index = d_indicies[clock & 0x3f];
-	index += 18; //skip header
-	index %= 127;
-
+	char corrected[144];
 	char payload[144];
-	pointer = -5;
-	for(count = 0; count < 144; count++)
-	{
-		if(0 == (count % 10))
-		{
-			pointer += 5;
-		}
-
-		payload[count] = stream[pointer] ^ d_whitening_data[index];
-		index++;
-		index %= 127;
-		pointer++;
-	}
-
 	uint8_t fhsuap;
 	uint32_t fhslap;
+
+	unfec23(stream, corrected, 144);
+	unwhiten(corrected, payload, clock, 144, 18);
 
 	fhsuap = air_to_host8(&payload[64], 8);
 
@@ -385,66 +355,37 @@ int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
 /* DM 1/3/5 packet (and DV)*/
 int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
 {
-	int count, index, bitlength, length, pointer;
+	int count, index, bitlength, length;
 	uint16_t crc, check;
-
-	index = d_indicies[clock & 0x3f];
-	index += 18; //skip header
-	index %= 127;
 
 	if(pkthdr)
 	{
+		char corrected[16];
 		char hdr[16];
-		pointer = -5;
-		for(count = 0; count < 16; count++)
-		{
-			if(0 == (count % 10))
-				pointer += 5;
-
-			hdr[count] = stream[count] ^ d_whitening_data[index];
-			index++;
-			index %= 127;
-		}
-		index -= 16;
+		unfec23(stream, corrected, 16);
+		unwhiten(corrected, hdr, clock, 16, 18);
 		length = air_to_host16(&hdr[3], 9) + 4;
-		bitlength = length*8;
-		if(bitlength > size)
-			return 1;
 	} else {
 		char hdr[8];
-		pointer = 0;
-		for(count = 0; count < 8; count++)
-		{
-			hdr[count] = stream[pointer] ^ d_whitening_data[index];
-			index++;
-			index %= 127;
-			pointer++;
-		}
-		index -= 8;
+		//unfec23 not needed because we are only looking at the first 8 symbols
+		unwhiten(stream, hdr, clock, 8, 18);
 		length = air_to_host8(&hdr[3], 5) + 3;
-		bitlength = length*8;
-		if(bitlength > size)
-			return 1;
 	}
+	bitlength = length*8;
+	if(bitlength > size)
+		return 1;
 
+	char corrected[bitlength];
 	char payload[bitlength];
-	pointer = -5;
-	for(count = 0; count < bitlength; count++)
-	{
-		if(0 == (count % 10))
-			pointer += 5;
-
-		index %= 127;
-		payload[count] = stream[pointer] ^ d_whitening_data[index];
-		index++;
-		pointer++;
-	}
+	unfec23(stream, corrected, bitlength);
+	unwhiten(corrected, payload, clock, bitlength, 18);
 
 	//Pack the bits into bytes
 	for(count = 0; count < length; count++)
 	{
 		index = 8 * count;
 		payload[count] = payload[index] << 7 | payload[index+1] << 6 | payload[index+2] << 5 | payload[index+3] << 4 | payload[index+4] << 3 | payload[index+5] << 2 | payload[index+6] << 1 | payload[index+7];
+		//FIXME payload now breaks the host/air rules
 	}
 
 	crc = crcgen(payload, length-2, UAP);
@@ -458,57 +399,36 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 }
 
 /* DH 1/3/5 packet */
+/* similar to DM 1/3/5 but without FEC */
 int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
 {
 	int count, index, bitlength, length;
 	uint16_t crc, check;
 
-	index = d_indicies[clock & 0x3f];
-	index += 18; //skip header
-	index %= 127;
-
 	if(pkthdr)
 	{
 		char hdr[16];
-		for(count = 0; count < 16; count++)
-		{
-			hdr[count] = stream[count] ^ d_whitening_data[index];
-			index++;
-			index %= 127;
-		}
-		index -= 16;
+		unwhiten(stream, hdr, clock, 16, 18);
+		//FIXME I think this should be 10 bits, not 9
 		length = air_to_host16(&hdr[3], 9) + 4;
-		bitlength = length*8;
-		if(bitlength > size)
-			return 1;
 	} else {
 		char hdr[8];
-		for(count = 0; count < 8; count++)
-		{
-			hdr[count] = stream[count] ^ d_whitening_data[index];
-			index++;
-			index %= 127;
-		}
-		index -= 8;
+		unwhiten(stream, hdr, clock, 8, 18);
 		length = air_to_host8(&hdr[3], 5) + 3;
-		bitlength = length*8;
-		if(bitlength > size)
-			return 1;
 	}
+	bitlength = length*8;
+	if(bitlength > size)
+		return 1;
 
 	char payload[bitlength];
-	for(count = 0; count < bitlength; count++)
-	{
-		index %= 127;
-		payload[count] = stream[count] ^ d_whitening_data[index];
-		index++;
-	}
+	unwhiten(stream, payload, clock, bitlength, 18);
 
 	//Pack the bits into bytes
 	for(count = 0; count < length; count++)
 	{
 		index = 8 * count;
 		payload[count] = payload[index] << 7 | payload[index+1] << 6 | payload[index+2] << 5 | payload[index+3] << 4 | payload[index+4] << 3 | payload[index+5] << 2 | payload[index+6] << 1 | payload[index+7];
+		//FIXME payload now breaks the host/air rules
 	}
 
 	crc = crcgen(payload, length-2, UAP);
@@ -523,13 +443,9 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 
 int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 {
-	int maxlength, count, counter, pointer, index;
+	int index, maxlength, count;
 	uint16_t crc, check;
 	bool fec;
-
-	index = d_indicies[clock & 0x3f];
-	index += 18; //skip header
-	index %= 127;
 
 	switch (type)
 	{
@@ -539,38 +455,18 @@ int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 		default: return 0;
 	}
 
-	char payload[maxlength];
-	char byte[8];
+	char corrected[(maxlength+2)*8];
+	char payload[(maxlength+2)*8];
 
-	// pack 1 byte at a time, check crc
-	// keep checking through as long as size has 8 more bits
-	for(count = 0; count < maxlength; count++)
+	unfec23(stream, corrected, maxlength * 8);
+	unwhiten(corrected, payload, clock, maxlength * 8, 18);
+
+	/* Check crc for any integer byte length up to maxlength */
+	for(count = 0; count < maxlength+2; count++)
 	{
-		pointer = 8*count;
-		size -= 8;
-		if(size <= 0)
-			return 1;
-
-		if((fec) && (0 == pointer))
-			pointer = -5;
-
-		for(counter = 0; counter < 8; counter++)
-		{/* Pack byte */
-			if((fec) && (0 == pointer %10))
-				{
-					pointer += 5;
-					size -= 5;
-					if(size <= 0)
-						return 1;
-				}
-
-			byte[counter] = stream[pointer] ^ d_whitening_data[index];
-			pointer++;
-			index++;
-			index %= 127;
-		}
-		payload[count] = byte[0] << 7 | byte[1] << 6 | byte[2] << 5 | byte[3] << 4 | byte[4] << 3 | byte[5] << 2 | byte[6] << 1 | byte[7];
-
+		index = 8 * count;
+		payload[count] = payload[index] << 7 | payload[index+1] << 6 | payload[index+2] << 5 | payload[index+3] << 4 | payload[index+4] << 3 | payload[index+5] << 2 | payload[index+6] << 1 | payload[index+7];
+		//FIXME payload now breaks the host/air rules
 		if(count > 1)
 		{
 			crc = crcgen(payload, count-1, UAP);

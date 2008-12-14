@@ -29,7 +29,7 @@ static const int IN = 1;
 static const int OUT = 0;
 
 /* index into whitening data array */
-static const uint8_t d_indicies[64] = {99, 85, 17, 50, 102, 58, 108, 45, 92, 62, 32, 118, 88, 11, 80, 2, 37, 69, 55, 8, 20, 40, 74, 114, 15, 106, 30, 78, 53, 72, 28, 26, 68, 7, 39, 113, 105, 77, 71, 25, 84, 49, 57, 44, 61, 117, 10, 1, 123, 124, 22, 125, 111, 23, 42, 126, 6, 112, 76, 24, 48, 43, 116, 0};
+static const uint8_t d_indices[64] = {99, 85, 17, 50, 102, 58, 108, 45, 92, 62, 32, 118, 88, 11, 80, 2, 37, 69, 55, 8, 20, 40, 74, 114, 15, 106, 30, 78, 53, 72, 28, 26, 68, 7, 39, 113, 105, 77, 71, 25, 84, 49, 57, 44, 61, 117, 10, 1, 123, 124, 22, 125, 111, 23, 42, 126, 6, 112, 76, 24, 48, 43, 116, 0};
 
 /* whitening data */
 static const uint8_t d_whitening_data[127] = {1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
@@ -52,7 +52,6 @@ protected:
 	uint16_t d_consumed;
 	// could be 32 bits, but then it would roll over after about 70 minutes
 	uint64_t d_cumulative_count;
-	bool flag;
 	int d_LAP;
 	int d_UAP;
 	uint8_t d_payload_size;
@@ -74,7 +73,7 @@ protected:
 	char *unfec13(char *stream, char *output, int length);
 
 	/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
-	char *unfec23(char *stream, int length);
+	void unfec23(char *stream, char *output, int length);
 
 	/* Create an Access Code from LAP and check it against stream */
 	bool check_ac(char *stream, int LAP);
@@ -90,6 +89,9 @@ protected:
 
 	/* Convert some number of bits in a host order integer to an air order array */
 	void host_to_air(uint8_t host_order, char *air_order, int bits);
+
+	/* Remove the whitening from an air order array */
+	void unwhiten(char* input, char* output, int clock, int length, int skip);
 
 //FIXME more stuff to consider moving here:
 //void header();

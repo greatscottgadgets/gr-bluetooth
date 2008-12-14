@@ -51,7 +51,6 @@ bluetooth_dump::bluetooth_dump ()
 	d_packet_type = -1;
 	d_stream_length = 0;
 	d_consumed = 0;
-	flag = 0;
 	printf("Bluetooth packet dump\n\n");
 
 	/* ensure that we are always given at least 126 symbols (AC + header) */
@@ -136,7 +135,7 @@ int bluetooth_dump::HV2(char *stream)
 	int length;
 	length = 20;
 	printf(" Length:%d\nUAP could not be confirmed by payload\n", length);
-	stream = unfec23(stream, length*8);
+	//should unfec23
 	d_payload_size = length;
 	return 0;
 }
@@ -154,28 +153,33 @@ int bluetooth_dump::HV3(char *stream)
 /* DV packet */
 int bluetooth_dump::DV(char *stream, int UAP, int size)
 {
-	int length, count;
+	int length, bitlength, count;
 	uint16_t crc, check;
 
-	length = air_to_host8(&stream[3], 5);
-	printf(" Length of data field:%d\n", length);
+	/* data field starts after 80 bit voice field.
+	 * data field includes payload header, payload body, and CRC */
+	length = air_to_host8(&stream[83], 5);
+	printf(" Length of data field payload body:%d\n", length);
+	bitlength = (length+3)*8;
 
 	/*Un-FEC 2/3 it */
-	unfec23(stream+81, (length+2)*8);
+	char corrected[bitlength];
+	unfec23(stream+80, corrected, bitlength);
 
 	length++;
 	size -= 80;
-	size -= 8*(length+2);
+	size -= bitlength;
 
 	if(0 > size)
 		return 1;
 
 	for(count = 0; count < length+2; count++)
-		stream[count+80] = gr_to_normal(stream+(8*count)+80);
+		corrected[count] = gr_to_normal(corrected+(8*count));
+		//FIXME corrected now breaks air/host rules
 
-	crc = crcgen(stream+80, length, UAP);
+	crc = crcgen(corrected, length, UAP);
 
-	check = stream[length+81] | stream[length+80] << 8;
+	check = corrected[length+1] | corrected[length] << 8;
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -206,7 +210,7 @@ int bluetooth_dump::EV5(char *stream, int UAP, int size)
 /* DM1 packet */
 int bluetooth_dump::DM1(char *stream, int UAP, int size)
 {
-	int length, count;
+	int length, bitlength, count;
 	uint16_t crc, check;	
 	length = 0;
 
@@ -214,22 +218,25 @@ int bluetooth_dump::DM1(char *stream, int UAP, int size)
 		return 1;
 
 	length = air_to_host8(&stream[3], 5);
+	bitlength = (length+3)*8;
 
 	/*Un-FEC 2/3 it */
-	unfec23(stream+1, (length+2)*8);
+	char corrected[bitlength];
+	unfec23(stream, corrected, bitlength);
 
 	length++;
-	size -= 8*(length+2);
+	size -= bitlength;
 
 	if(0 > size)
 		return 1;
 
 	for(count = 0; count < length+2; count++)
-		stream[count] = gr_to_normal(stream+(8*count));
+		corrected[count] = gr_to_normal(corrected+(8*count));
+		//FIXME corrected now breaks air/host rules
 
-	crc = crcgen(stream, length, UAP);
+	crc = crcgen(corrected, length, UAP);
 
-	check = stream[length+1] | stream[length] << 8;
+	check = corrected[length+1] | corrected[length] << 8;
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -276,30 +283,35 @@ int bluetooth_dump::DH1(char *stream, int UAP, int size)
 /* DM3 packet */
 int bluetooth_dump::DM3(char *stream, int UAP, int size)
 {
-	int length, count;
+	int length, bitlength, count;
 	uint16_t crc, check;	
+	char corrected_payload_header[16];
 	length = 0;
 
 	if(8 >= size)
 		return 1;
 
-	length = air_to_host16(&stream[3], 9);
+	unfec23(stream, corrected_payload_header, 16);
+	length = air_to_host16(&corrected_payload_header[3], 9);
+	bitlength = (length+4)*8;
 
 	/*Un-FEC 2/3 it */
-	unfec23(stream+1, (length+2)*8);
+	char corrected[bitlength];
+	unfec23(stream, corrected, bitlength);
 
 	length += 2;
-	size -= 8*(length+2);
+	size -= bitlength;
 
 	if(0 > size)
 		return 1;
 
 	for(count = 0; count < length+2; count++)
-		stream[count] = gr_to_normal(stream+(8*count));
+		corrected[count] = gr_to_normal(corrected+(8*count));
+		//FIXME corrected now breaks air/host rules
 
-	crc = crcgen(stream, length, UAP);
+	crc = crcgen(corrected, length, UAP);
 
-	check = stream[length+1] | stream[length] << 8;
+	check = corrected[length+1] | corrected[length] << 8;
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -367,13 +379,16 @@ int bluetooth_dump::POLL()
 /* FHS packet */
 int bluetooth_dump::FHS(char *stream, int UAP)
 {
-	int length, payload_UAP, NAP;
+	int length;
+	uint8_t payload_UAP;
+	uint16_t NAP;
 	length = 10;
-	stream = unfec23(stream, length*8);
+	char corrected[length*8];
+	unfec23(stream, corrected, length*8);
 
-	payload_UAP = stream[64] + stream[65] + stream[66] + stream[67] + stream[68] + stream[69] +stream[70] +stream[71];
+	payload_UAP = air_to_host8(&corrected[64], 8);
 
-	NAP = stream[72] + stream[73] + stream[74] + stream[75] + stream[76] + stream[77] + stream[78] + stream[79] + stream[80] + stream[81] + stream[82] + stream[83] + stream[84] + stream[85] + stream[86] + stream[87];
+	NAP = air_to_host16(&corrected[72], 16);
 
 	if(UAP == payload_UAP)
 	{

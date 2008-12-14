@@ -63,10 +63,6 @@ uint16_t crcgen(char *packet, int length, int UAP);
 
 int sniff_ac();
 
-/* removes the whitening from the header */
-
-void unwhiten(char *input, char *output, int clock, int length, int skip);
-
 /* To deal with whitened data */
 void new_header();
 

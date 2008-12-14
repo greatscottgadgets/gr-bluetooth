@@ -42,7 +42,6 @@ bluetooth_block::bluetooth_block ()
 	d_packet_type = -1;
 	d_stream_length = 0;
 	d_consumed = 0;
-	flag = 0;
 }
 
 //This is all imported from packet_LAP.c
@@ -244,7 +243,7 @@ char *bluetooth_block::unfec13(char *stream, char *output, int length)
 }
 
 /* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
-char *bluetooth_block::unfec23(char *stream, int length)
+void bluetooth_block::unfec23(char *stream, char *output, int length)
 {
 	/* stream points to the stream of data
 	 * length is length in bits of the data
@@ -258,9 +257,8 @@ char *bluetooth_block::unfec23(char *stream, int length)
 		if((count % 10) == 0)
 			pointer += 5;
 
-		stream[count] = stream[pointer++];
+		output[count] = stream[pointer++];
 	}
-	return stream;
 }
 
 /* Create an Access Code from LAP and check it against stream */
@@ -353,3 +351,20 @@ void bluetooth_block::host_to_air(uint8_t host_order, char *air_order, int bits)
     for (i = 0; i < bits; i++)
         air_order[i] = (host_order >> i) & 0x01;
 }
+
+/* Remove the whitening from an air order array */
+void bluetooth_block::unwhiten(char* input, char* output, int clock, int length, int skip)
+{
+	int count, index;
+	index = d_indices[clock & 0x3f];
+	index += skip;
+	index %= 127;
+
+	for(count = 0; count < length; count++)
+	{
+		output[count] = input[count] ^ d_whitening_data[index];
+		index += 1;
+		index %= 127;
+	}
+}
+

@@ -49,7 +49,6 @@ bluetooth_sniffer::bluetooth_sniffer (int lap, int uap)
 	d_UAP = uap;
 	d_stream_length = 0;
 	d_consumed = 0;
-	flag = 0;
 	printf("Bluetooth packet sniffer\n\n");
 
 	/* ensure that we are always given at least 126 symbols (AC + header) */
@@ -186,21 +185,6 @@ int bluetooth_sniffer::sniff_ac()
 	return -1;
 }
 
-void bluetooth_sniffer::unwhiten(char* input, char* output, int clock, int length, int skip)
-{
-	int count, index;
-	index = d_indicies[clock & 0x3f];
-	index += skip;
-	index %= 127;
-
-	for(count = 0; count < length; count++)
-	{
-		output[count] = input[count] ^ d_whitening_data[index];
-		index += 1;
-		index %= 127;
-	}
-}
-
 void bluetooth_sniffer::new_header()
 {
 	char *stream = d_stream + d_consumed + 72;
@@ -293,8 +277,8 @@ int bluetooth_sniffer::DM1(int size, int clock)
 
 	if(8 >= size)
 		return 1;
-	//unfec23(stream, 16);
 
+	//unfec23 not needed because we are only looking at the first 8 symbols
 	unwhiten(stream, header, clock, 8, 18);
 
 	printf("\npayload header: ");
@@ -312,17 +296,19 @@ int bluetooth_sniffer::DM1(int size, int clock)
 
 	length = air_to_host8(&header[3], 5);
 	printf("length = %d\n", length);
+	bitlength = (length+3)*8;
 
 	if((length+3)*12 >= size)
 		return 1;
 
-	unfec23(stream, (length+3)*8);
-	char payload[(length+3)*8];
-	unwhiten(stream, payload, clock, (length+3)*8, 18);
+	char corrected[bitlength];
+	char payload[bitlength];
+	unfec23(stream, corrected, bitlength);
+	unwhiten(corrected, payload, clock, bitlength, 18);
 	int x = 0;
-	for(count = 0; count < (length+3)*8; count++)
+	for(count = 0; count < bitlength; count++)
 	{
-		if(count == ((length+3)*8)-16) {
+		if(count == bitlength-16) {
 			printf("\nPacket CRC:");
 			x = 0;}
 		x <<= 1;
@@ -343,34 +329,37 @@ int bluetooth_sniffer::DM5(int size, int clock)
 	char *stream = d_stream + d_consumed + 126;
 	int count, length, bitlength;
 	uint16_t crc, check;
-	char header[16];
+	char corrected_header[16];
+	char unwhitened_header[16];
 
 	if(16 >= size)
 		return 1;
-	unfec23(stream, 16);
+	unfec23(stream, corrected_header, 16);
 	printf("\nwhitened payload header: ");
 	for(count = 0; count < 16; count++)
 	{
-		printf("%d", stream[count]);
+		printf("%d", corrected_header[count]);
 	}
 	printf("\n");
-	unwhiten(stream, header, clock, 16, 18);
+	unwhiten(corrected_header, unwhitened_header, clock, 16, 18);
 
 	printf("\npayload header: ");
 	for(count = 0; count < 16; count++)
 	{
-		printf("%d", header[count]);
+		printf("%d", unwhitened_header[count]);
 	}
 	printf("\n");
 
-	crc = header[0] | header[1] << 1;
+	crc = unwhitened_header[0] | unwhitened_header[1] << 1;
 	printf("\nLLID -> %d", crc);
 
-	length = air_to_host16(&header[3], 9);
+	length = air_to_host16(&unwhitened_header[3], 9);
 	printf("\nclock = %d  length = %d\n", clock, length);
 
 	if((length+4)*8 >= size)
 		return 1;
 
-	unfec23(stream, length*8);
+	char corrected_payload[length*8];
+	unfec23(stream, corrected_payload, length*8);
+	//FIXME what are we doing here?
 }
