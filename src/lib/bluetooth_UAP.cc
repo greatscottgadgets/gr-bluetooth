@@ -364,7 +364,7 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 		char hdr[16];
 		unfec23(stream, corrected, 16);
 		unwhiten(corrected, hdr, clock, 16, 18);
-		length = air_to_host16(&hdr[3], 9) + 4;
+		length = air_to_host16(&hdr[3], 10) + 4;
 	} else {
 		char hdr[8];
 		//unfec23 not needed because we are only looking at the first 8 symbols
@@ -409,8 +409,7 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 	{
 		char hdr[16];
 		unwhiten(stream, hdr, clock, 16, 18);
-		//FIXME I think this should be 10 bits, not 9
-		length = air_to_host16(&hdr[3], 9) + 4;
+		length = air_to_host16(&hdr[3], 10) + 4;
 	} else {
 		char hdr[8];
 		unwhiten(stream, hdr, clock, 8, 18);

@@ -292,7 +292,7 @@ int bluetooth_dump::DM3(char *stream, int UAP, int size)
 		return 1;
 
 	unfec23(stream, corrected_payload_header, 16);
-	length = air_to_host16(&corrected_payload_header[3], 9);
+	length = air_to_host16(&corrected_payload_header[3], 10);
 	bitlength = (length+4)*8;
 
 	/*Un-FEC 2/3 it */
@@ -331,7 +331,7 @@ int bluetooth_dump::DH3(char *stream, int UAP, int size)
 	if(8 >= size)
 		return 1;
 
-	length = air_to_host16(&stream[3], 9);
+	length = air_to_host16(&stream[3], 10);
 	length += 2;
 	size -= 8*(length+2);
 

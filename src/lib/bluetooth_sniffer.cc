@@ -353,7 +353,7 @@ int bluetooth_sniffer::DM5(int size, int clock)
 	crc = unwhitened_header[0] | unwhitened_header[1] << 1;
 	printf("\nLLID -> %d", crc);
 
-	length = air_to_host16(&unwhitened_header[3], 9);
+	length = air_to_host16(&unwhitened_header[3], 10);
 	printf("\nclock = %d  length = %d\n", clock, length);
 
 	if((length+4)*8 >= size)
