@@ -229,7 +229,7 @@ void bluetooth_block::convert_to_grformat(uint8_t input, uint8_t *output)
 }
 
 /* Decode 1/3 rate FEC, three like symbols in a row */
-char *bluetooth_block::unfec13(char *stream, uint8_t *output, int length)
+char *bluetooth_block::unfec13(char *stream, char *output, int length)
 {
     int count, a, b, c;
 

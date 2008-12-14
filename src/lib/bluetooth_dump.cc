@@ -99,18 +99,6 @@ bluetooth_dump::work (int noutput_items,
 	return d_consumed;
 }
 
-/* returns the payload length */
-int bluetooth_dump::payload_header(char *stream)
-{
-	return stream[3] | stream[4] << 1 | stream[5] << 2 | stream[6] << 3 | stream[7] << 4;
-}
-
-/* returns the payload length */
-int bluetooth_dump::long_payload_header(char *stream)
-{
-	return stream[3] | stream[4] << 1 | stream[5] << 2 | stream[6] << 3 | stream[7] << 4 | stream[8] << 5 | stream[9] << 6 | stream[10] << 7 | stream[11] << 8;
-}
-
 /* Converts 8 bytes of grformat to a single byte */
 char bluetooth_dump::gr_to_normal(char *stream)
 {
@@ -169,7 +157,7 @@ int bluetooth_dump::DV(char *stream, int UAP, int size)
 	int length, count;
 	uint16_t crc, check;
 
-	length = payload_header(stream);
+	length = air_to_host8(&stream[3], 5);
 	printf(" Length of data field:%d\n", length);
 
 	/*Un-FEC 2/3 it */
@@ -225,7 +213,7 @@ int bluetooth_dump::DM1(char *stream, int UAP, int size)
 	if(8 >= size)
 		return 1;
 
-	length = payload_header(stream);
+	length = air_to_host8(&stream[3], 5);
 
 	/*Un-FEC 2/3 it */
 	unfec23(stream+1, (length+2)*8);
@@ -261,7 +249,7 @@ int bluetooth_dump::DH1(char *stream, int UAP, int size)
 	if(8 >= size)
 		return 1;
 
-	length = payload_header(stream);
+	length = air_to_host8(&stream[3], 5);
 	length++;
 	size -= 8*(length+2);
 
@@ -295,7 +283,7 @@ int bluetooth_dump::DM3(char *stream, int UAP, int size)
 	if(8 >= size)
 		return 1;
 
-	length = long_payload_header(stream);
+	length = air_to_host16(&stream[3], 9);
 
 	/*Un-FEC 2/3 it */
 	unfec23(stream+1, (length+2)*8);
@@ -331,7 +319,7 @@ int bluetooth_dump::DH3(char *stream, int UAP, int size)
 	if(8 >= size)
 		return 1;
 
-	length = long_payload_header(stream);
+	length = air_to_host16(&stream[3], 9);
 	length += 2;
 	size -= 8*(length+2);
 
@@ -361,7 +349,7 @@ int bluetooth_dump::AUX1(char *stream, int size)
 	if(8 >= size)
 		return 1;
 
-	length = payload_header(stream);
+	length = air_to_host8(&stream[3], 5);
 	printf(" Length:%d\n", length);
 	length++;
 

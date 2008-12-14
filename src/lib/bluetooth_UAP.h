@@ -63,7 +63,7 @@ int UAP_from_hec(uint8_t *packet);
 int sniff_ac();
 
 /* removes the whitening from the header */
-void unwhiten_header(uint8_t *input, uint8_t *output, int clock);
+void unwhiten_header(char *input, char *output, int clock);
 
 /* To deal with whitened data */
 void header();

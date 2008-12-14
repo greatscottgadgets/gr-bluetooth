@@ -83,18 +83,6 @@ bluetooth_sniffer::work (int noutput_items,
 	return d_consumed;
 }
 
-/* returns the payload length */
-int bluetooth_sniffer::payload_header(uint8_t *stream)
-{
-       return stream[3] | stream[4] << 1 | stream[5] << 2 | stream[6] << 3 | stream[7] << 4;
-}
-
-/* returns the payload length */
-int bluetooth_sniffer::long_payload_header(uint8_t *stream)
-{
-       return stream[3] | stream[4] << 1 | stream[5] << 2 | stream[6] << 3 | stream[7] << 4 | stream[8] << 5 | stream[9] << 6 | stream[10] << 7 | stream[11] << 8;
-}
-
 /* Converts 8 bytes of grformat to a single byte */
 char bluetooth_sniffer::gr_to_normal(char *stream)
 {
@@ -139,7 +127,7 @@ int bluetooth_sniffer::UAP_from_hec(uint8_t *packet)
 
 
 /* Pointer to start of packet, length of packet in bits, UAP */
-uint16_t bluetooth_sniffer::crcgen(uint8_t *packet, int length, int UAP)
+uint16_t bluetooth_sniffer::crcgen(char *packet, int length, int UAP)
 {
 	char byte;
 	uint16_t reg, count, counter;
@@ -198,22 +186,7 @@ int bluetooth_sniffer::sniff_ac()
 	return -1;
 }
 
-void bluetooth_sniffer::unwhiten(uint8_t* input, uint8_t* output, int clock, int length, int skip)
-{
-	int count, index;
-	index = d_indicies[clock & 0x3f];
-	index += skip;
-	index %= 127;
-
-	for(count = 0; count < length; count++)
-	{
-		output[count] = input[count] ^ d_whitening_data[index];
-		index += 1;
-		index %= 127;
-	}
-}
-
-void bluetooth_sniffer::unwhiten_char(char* input, uint8_t* output, int clock, int length, int skip)
+void bluetooth_sniffer::unwhiten(char* input, char* output, int clock, int length, int skip)
 {
 	int count, index;
 	index = d_indicies[clock & 0x3f];
@@ -231,8 +204,9 @@ void bluetooth_sniffer::unwhiten_char(char* input, uint8_t* output, int clock, i
 void bluetooth_sniffer::new_header()
 {
 	char *stream = d_stream + d_consumed + 72;
-	uint8_t header[18];
-	uint8_t unwhitened[18];
+	char header[18];
+	char unwhitened[18];
+	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
 	uint8_t UAP, ltadr;
 	int count, size;
 
@@ -245,18 +219,18 @@ void bluetooth_sniffer::new_header()
 	{
 		unwhiten(header, unwhitened, count, 18, 0);
 
-		unwhitened[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
-		unwhitened[1] = unwhitened[8] << 1 | unwhitened[9];
-		unwhitened[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
+		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
+		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
+		unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
 
-		UAP = UAP_from_hec(unwhitened);
+		UAP = UAP_from_hec(unwhitened_air);
 
 		if(UAP != d_UAP)
 			continue;
 
-		d_packet_type = (unwhitened[0] & 0x1e) >> 1;
+		d_packet_type = (unwhitened_air[0] & 0x1e) >> 1;
 		uint8_t ltadrs[8] = {0, 4, 2, 6, 1, 5, 3, 7};
-		ltadr = ltadrs[(unwhitened[0] & 0xe0) >> 5];
+		ltadr = ltadrs[(unwhitened_air[0] & 0xe0) >> 5];
 
 		if(1 != ltadr)
 			continue;
@@ -268,7 +242,7 @@ void bluetooth_sniffer::new_header()
 			case 1://printf("\nDV Slots:1");
 			break;
 			case 2://printf("\n\nDH1 Slots:1");
-				//printf("\n%02x %02x %02x\n", unwhitened[0], unwhitened[1], unwhitened[2]);
+				//printf("\n%02x %02x %02x\n", unwhitened_air[0], unwhitened_air[1], unwhitened_air[2]);
 				//DH1(size, count);
 				break;
 			case 3://printf("\nEV4 Slots:3");
@@ -278,11 +252,11 @@ void bluetooth_sniffer::new_header()
 			case 5://printf("\nDM3 Slots:3");
 			 break;
 			case 6://printf("\nHV2 Slots:1");
-				//printf("\n%02x %02x %02x\n", unwhitened[0], unwhitened[1], unwhitened[2]);
+				//printf("\n%02x %02x %02x\n", unwhitened_air[0], unwhitened_air[1], unwhitened_air[2]);
 				//HV2(size, count);
 				break;
 			case 7://printf("\nDM5 Slots:5");
-				//printf("\n%02x %02x %02x\n", unwhitened[0], unwhitened[1], unwhitened[2]);
+				//printf("\n%02x %02x %02x\n", unwhitened_air[0], unwhitened_air[1], unwhitened_air[2]);
 				//DM5(size, count);
 				break;
 			case 8://printf("\nPOLL Slots:1");
@@ -312,15 +286,16 @@ void bluetooth_sniffer::new_header()
 int bluetooth_sniffer::DM1(int size, int clock)
 {
 	char *stream = d_stream + d_consumed + 126;
-	int count, length, bitlength;
+	int count, bitlength;
 	uint16_t crc, check;
-	uint8_t header[8];
+	uint8_t length;
+	char header[8];
 
 	if(8 >= size)
 		return 1;
 	//unfec23(stream, 16);
 
-	unwhiten_char(stream, header, clock, 8, 18);
+	unwhiten(stream, header, clock, 8, 18);
 
 	printf("\npayload header: ");
 	for(count = 0; count < 8; count++)
@@ -335,15 +310,15 @@ int bluetooth_sniffer::DM1(int size, int clock)
 		case 2: printf("Start of fragment\n");break;
 	}
 
-	length = payload_header(header);
+	length = air_to_host8(&header[3], 5);
 	printf("length = %d\n", length);
 
 	if((length+3)*12 >= size)
 		return 1;
 
 	unfec23(stream, (length+3)*8);
-	uint8_t payload[(length+3)*8];
-	unwhiten_char(stream, payload, clock, (length+3)*8, 18);
+	char payload[(length+3)*8];
+	unwhiten(stream, payload, clock, (length+3)*8, 18);
 	int x = 0;
 	for(count = 0; count < (length+3)*8; count++)
 	{
@@ -368,7 +343,7 @@ int bluetooth_sniffer::DM5(int size, int clock)
 	char *stream = d_stream + d_consumed + 126;
 	int count, length, bitlength;
 	uint16_t crc, check;
-	uint8_t header[16];
+	char header[16];
 
 	if(16 >= size)
 		return 1;
@@ -379,7 +354,7 @@ int bluetooth_sniffer::DM5(int size, int clock)
 		printf("%d", stream[count]);
 	}
 	printf("\n");
-	unwhiten_char(stream, header, clock, 16, 18);
+	unwhiten(stream, header, clock, 16, 18);
 
 	printf("\npayload header: ");
 	for(count = 0; count < 16; count++)
@@ -391,7 +366,7 @@ int bluetooth_sniffer::DM5(int size, int clock)
 	crc = header[0] | header[1] << 1;
 	printf("\nLLID -> %d", crc);
 
-	length = long_payload_header(header);
+	length = air_to_host16(&header[3], 9);
 	printf("\nclock = %d  length = %d\n", clock, length);
 
 	if((length+4)*8 >= size)

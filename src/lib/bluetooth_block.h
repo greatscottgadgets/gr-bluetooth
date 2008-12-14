@@ -71,7 +71,7 @@ protected:
 	void convert_to_grformat(uint8_t input, uint8_t *output);
 
 	/* Decode 1/3 rate FEC, three like symbols in a row */
-	char *unfec13(char *stream, uint8_t *output, int length);
+	char *unfec13(char *stream, char *output, int length);
 
 	/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
 	char *unfec23(char *stream, int length);
@@ -92,13 +92,9 @@ protected:
 	void host_to_air(uint8_t host_order, char *air_order, int bits);
 
 //FIXME more stuff to consider moving here:
-/* To deal with whitened data */
 //void header();
 //int sniff_ac();
-/* Create the CRC */
 //uint16_t crcgen(uint8_t *packet, int length, int UAP); // UAP and dump same, sniffer different
-//int payload_header(char *stream);
-//int long_payload_header(char *stream);
 // and more. . .
 
 };

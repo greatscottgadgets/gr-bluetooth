@@ -48,10 +48,6 @@ private:
 
   bluetooth_sniffer (int lap, int uap);  	// private constructor
 
-int payload_header(uint8_t *stream);
-
-int long_payload_header(uint8_t *stream);
-
 /* Converts 8 bytes of grformat to a single byte */
 char gr_to_normal(char *stream);
 
@@ -63,15 +59,13 @@ int UAP_from_hec(uint8_t *packet);
 void header();
 
 /* Create the CRC */
-uint16_t crcgen(uint8_t *packet, int length, int UAP);
+uint16_t crcgen(char *packet, int length, int UAP);
 
 int sniff_ac();
 
 /* removes the whitening from the header */
 
-void unwhiten(uint8_t *input, uint8_t *output, int clock, int length, int skip);
-
-void unwhiten_char(char *input, uint8_t *output, int clock, int length, int skip);
+void unwhiten(char *input, char *output, int clock, int length, int skip);
 
 /* To deal with whitened data */
 void new_header();

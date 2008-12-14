@@ -48,10 +48,6 @@ private:
 
   bluetooth_dump ();  	// private constructor
 
-int payload_header(char *stream);
-
-int long_payload_header(char *stream);
-
 /* Converts 8 bytes of grformat to a single byte */
 char gr_to_normal(char *stream);
 

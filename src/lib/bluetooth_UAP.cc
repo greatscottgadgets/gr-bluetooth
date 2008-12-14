@@ -205,7 +205,7 @@ int bluetooth_UAP::sniff_ac()
 	return -1;
 }
 
-void bluetooth_UAP::unwhiten_header(uint8_t *input, uint8_t *output, int clock)
+void bluetooth_UAP::unwhiten_header(char *input, char *output, int clock)
 {
 	int count, index;
 	index = d_indicies[clock & 0x3f];
@@ -221,8 +221,9 @@ void bluetooth_UAP::unwhiten_header(uint8_t *input, uint8_t *output, int clock)
 void bluetooth_UAP::header()
 {
 	char *stream = d_stream + d_consumed + 72;
-	uint8_t header[18];
-	uint8_t unwhitened[18];
+	char header[18];
+	char unwhitened[18];
+	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
 	uint8_t UAP, ltadr, type;
 	int count, group, retval;
 
@@ -232,15 +233,15 @@ void bluetooth_UAP::header()
 	{
 		unwhiten_header(header, unwhitened, count);
 
-		unwhitened[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
-		unwhitened[1] = unwhitened[8] << 1 | unwhitened[9];
-		unwhitened[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
+		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
+		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
+		unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
 
-		UAP = UAP_from_hec(unwhitened);
+		UAP = UAP_from_hec(unwhitened_air);
 
 		/* Make sure we only count it once per packet */
-		ltadr = (unwhitened[0] & 0xe0) >> 5;
-		type = (unwhitened[0] & 0x1e) >> 1;
+		ltadr = (unwhitened_air[0] & 0xe0) >> 5;
+		type = (unwhitened_air[0] & 0x1e) >> 1;
 
 		retval = crc_check(stream+54, type, d_stream_length-(d_consumed + 126), count, UAP);
 
@@ -353,7 +354,7 @@ int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
 	index += 18; //skip header
 	index %= 127;
 
-	uint8_t payload[144];
+	char payload[144];
 	pointer = -5;
 	for(count = 0; count < 144; count++)
 	{
@@ -369,11 +370,11 @@ int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
 	}
 
 	uint8_t fhsuap;
-	int fhslap;
+	uint32_t fhslap;
 
-	fhsuap = payload[64] | payload[65] << 1 | payload[66] << 2 | payload[67] << 3 | payload[68] << 4 | payload[69] << 5 | payload[70] << 6 | payload[71] << 7;
+	fhsuap = air_to_host8(&payload[64], 8);
 
-	fhslap = payload[34] | payload[35] << 1 | payload[36] << 2 | payload[37] << 3 | payload[38] << 4 | payload[39] << 5 | payload[40] << 6 | payload[41] << 7 | payload[42] << 8 | payload[43] << 9 | payload[44] << 10 | payload[45] << 11 | payload[46] << 12 | payload[47] << 13 | payload[48] << 14 | payload[49] << 15 | payload[50] << 16 | payload[51] << 17 | payload[52] << 18 | payload[53] << 19 | payload[54] << 20 | payload[55] << 21 | payload[56] << 22 | payload[57] << 23;
+	fhslap = air_to_host32(&payload[34], 24);
 
 	if((fhsuap == UAP) && (fhslap == d_LAP))
 		return 1000;
