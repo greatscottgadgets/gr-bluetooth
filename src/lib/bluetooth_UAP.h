@@ -78,10 +78,6 @@ int DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int size);
 
 int EV(char *stream, int clock, uint8_t UAP, int type, int size);
 
-int long_payload_length(uint8_t *payload);
-
-int payload_length(uint8_t *payload);
-
 uint16_t crcgen(char *packet, int length, int UAP);
 
 

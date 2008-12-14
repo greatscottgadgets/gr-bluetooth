@@ -393,7 +393,7 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 
 	if(pkthdr)
 	{
-		uint8_t hdr[16];
+		char hdr[16];
 		pointer = -5;
 		for(count = 0; count < 16; count++)
 		{
@@ -405,12 +405,12 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 			index %= 127;
 		}
 		index -= 16;
-		length = long_payload_length(hdr) + 4;
+		length = air_to_host16(&hdr[3], 9) + 4;
 		bitlength = length*8;
 		if(bitlength > size)
 			return 1;
 	} else {
-		uint8_t hdr[8];
+		char hdr[8];
 		pointer = 0;
 		for(count = 0; count < 8; count++)
 		{
@@ -420,7 +420,7 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 			pointer++;
 		}
 		index -= 8;
-		length = payload_length(hdr) + 3;
+		length = air_to_host8(&hdr[3], 5) + 3;
 		bitlength = length*8;
 		if(bitlength > size)
 			return 1;
@@ -468,7 +468,7 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 
 	if(pkthdr)
 	{
-		uint8_t hdr[16];
+		char hdr[16];
 		for(count = 0; count < 16; count++)
 		{
 			hdr[count] = stream[count] ^ d_whitening_data[index];
@@ -476,12 +476,12 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 			index %= 127;
 		}
 		index -= 16;
-		length = long_payload_length(hdr) + 4;
+		length = air_to_host16(&hdr[3], 9) + 4;
 		bitlength = length*8;
 		if(bitlength > size)
 			return 1;
 	} else {
-		uint8_t hdr[8];
+		char hdr[8];
 		for(count = 0; count < 8; count++)
 		{
 			hdr[count] = stream[count] ^ d_whitening_data[index];
@@ -489,7 +489,7 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 			index %= 127;
 		}
 		index -= 8;
-		length = payload_length(hdr) + 3;
+		length = air_to_host8(&hdr[3], 5) + 3;
 		bitlength = length*8;
 		if(bitlength > size)
 			return 1;
@@ -582,16 +582,6 @@ int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 		}
 	}
 	return 0;
-}
-
-int bluetooth_UAP::long_payload_length(uint8_t *payload)
-{
-	return payload[3] | payload[4] << 1 | payload[5] << 2 | payload[6] << 3 | payload[7] << 4 | payload[8] << 5 | payload[9] << 6 | payload[10] << 7 | payload[11] << 8;
-}
-
-int bluetooth_UAP::payload_length(uint8_t *payload)
-{
-	return payload[3] | payload[4] << 1 | payload[5] << 2 | payload[6] << 3 | payload[7] << 4;
 }
 
 /* Pointer to start of packet, length of packet in bytes, UAP */
