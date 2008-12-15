@@ -54,7 +54,7 @@ bluetooth_dump::bluetooth_dump ()
 	printf("Bluetooth packet dump\n\n");
 
 	/* ensure that we are always given at least 126 symbols (AC + header) */
-	set_history(126); //FIXME should this be increased to include payload?
+	set_history(126); //FIXME should this be increased to include payload?  -- we have no idea how big the payload will be until after we've brute forced the whitening
 }
 
 //virtual destructor.
@@ -105,6 +105,7 @@ char bluetooth_dump::gr_to_normal(char *stream)
 }
 
 //FIXME ought to use unfec13 from parent class but not certain what is going on here
+// this just repacks the bits into the first bytes in the stream, it's not the way to do it (neither is most of the rest of this file)
 /* stream points to the stream of data, length is length in bits */
 char *bluetooth_dump::unfec13(char *stream, int length)
 {
