@@ -91,12 +91,6 @@ bluetooth_UAP::work (int noutput_items,
 	return d_consumed;
 }
 
-/* Converts 8 bytes of grformat to a single byte */
-char bluetooth_UAP::gr_to_normal(char *stream)
-{
-	return stream[0] << 7 | stream[1] << 6 | stream[2] << 5 | stream[3] << 4 | stream[4] << 3 | stream[5] << 2 | stream[6] << 1 | stream[7];
-}
-
 void bluetooth_UAP::print_out()
 {
 	int count, counter, max, localmax;
@@ -228,6 +222,7 @@ void bluetooth_UAP::header()
 		/* Make sure we only count it once per packet */
 		ltadr = (unwhitened_air[0] & 0xe0) >> 5;
 		type = (unwhitened_air[0] & 0x1e) >> 1;
+		printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d\n", count, UAP, ltadr, type);
 
 		retval = crc_check(stream+54, type, d_stream_length-(d_consumed + 126), count, UAP);
 

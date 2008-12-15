@@ -129,7 +129,7 @@ int bluetooth_sniffer::UAP_from_hec(uint8_t *packet)
 uint16_t bluetooth_sniffer::crcgen(char *packet, int length, int UAP)
 {
 	char byte;
-	uint16_t reg, count, counter;
+	uint16_t reg, count;
 
 	reg = UAP & 0xff;
 	for(count = 0; count < length; count++)
