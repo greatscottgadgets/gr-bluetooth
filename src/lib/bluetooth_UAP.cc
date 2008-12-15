@@ -222,7 +222,7 @@ void bluetooth_UAP::header()
 		/* Make sure we only count it once per packet */
 		ltadr = (unwhitened_air[0] & 0xe0) >> 5;
 		type = (unwhitened_air[0] & 0x1e) >> 1;
-		printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d\n", count, UAP, ltadr, type);
+		//printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d\n", count, UAP, ltadr, type);
 
 		retval = crc_check(stream+54, type, d_stream_length-(d_consumed + 126), count, UAP);
 
