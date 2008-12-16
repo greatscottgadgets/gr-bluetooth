@@ -227,14 +227,14 @@ void bluetooth_UAP2::header()
 
 	unfec13(stream, header, 18);
 
+	int difference = (d_cumulative_count + d_consumed) - d_previous_packet_time;
+	int quotient = (difference - 312) / 625;
+	int remainder = difference % 625;
+	// the remainder is an indicator of how far off we have drifted
+	printf("remainder = %d/625\n", remainder);
+
 	for(count = 0; count < 64; count++)
 	{
-		int difference = (d_cumulative_count + d_consumed) - d_previous_packet_time;
-		int quotient = difference / 625;
-		int remainder = difference % 625;
-		printf("remainder = %d/625\n", remainder);
-		if(remainder > 312)
-			quotient++;
 		if(d_clock_candidates[count] > 0) {
 			int clock = (count + d_previous_clock_offset + quotient) % 64;
 
