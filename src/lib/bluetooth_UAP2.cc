@@ -24,20 +24,20 @@
 #include "config.h"
 #endif
 
-#include <bluetooth_UAP.h>
+#include <bluetooth_UAP2.h>
 
 /*
- * Create a new instance of bluetooth_UAP and return
+ * Create a new instance of bluetooth_UAP2 and return
  * a boost shared_ptr.  This is effectively the public constructor.
  */
-bluetooth_UAP_sptr 
-bluetooth_make_UAP (int LAP, int pkts)
+bluetooth_UAP2_sptr 
+bluetooth_make_UAP2 (int LAP, int pkts)
 {
-  return bluetooth_UAP_sptr (new bluetooth_UAP (LAP, pkts));
+  return bluetooth_UAP2_sptr (new bluetooth_UAP2 (LAP, pkts));
 }
 
 //private constructor
-bluetooth_UAP::bluetooth_UAP (int LAP, int pkts)
+bluetooth_UAP2::bluetooth_UAP2 (int LAP, int pkts)
   : bluetooth_block ()
 {
 	d_LAP = LAP;
@@ -70,12 +70,12 @@ bluetooth_UAP::bluetooth_UAP (int LAP, int pkts)
 }
 
 //virtual destructor.
-bluetooth_UAP::~bluetooth_UAP ()
+bluetooth_UAP2::~bluetooth_UAP2 ()
 {
 }
 
 int 
-bluetooth_UAP::work (int noutput_items,
+bluetooth_UAP2::work (int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
@@ -106,7 +106,7 @@ bluetooth_UAP::work (int noutput_items,
 	return d_consumed;
 }
 
-void bluetooth_UAP::print_out()
+void bluetooth_UAP2::print_out()
 {
 	int count, counter, max, localmax;
 	int nibbles[16];
@@ -154,7 +154,7 @@ void bluetooth_UAP::print_out()
 }
 
 /* Pointer to start of header, UAP */
-int bluetooth_UAP::UAP_from_hec(uint8_t *packet)
+int bluetooth_UAP2::UAP_from_hec(uint8_t *packet)
 {
 	char byte;
 	int count;
@@ -184,7 +184,7 @@ int bluetooth_UAP::UAP_from_hec(uint8_t *packet)
 }
 
 /* Looks for an AC in the stream */
-int bluetooth_UAP::sniff_ac()
+int bluetooth_UAP2::sniff_ac()
 {
 	int jump, count;
 	uint16_t trailer; // barker code plus trailer
@@ -213,7 +213,7 @@ int bluetooth_UAP::sniff_ac()
 	return -1;
 }
 
-void bluetooth_UAP::header()
+void bluetooth_UAP2::header()
 {
 	char *stream = d_stream + d_consumed + 72;
 	char header[18];
@@ -267,7 +267,7 @@ void bluetooth_UAP::header()
 	d_limit--;
 }
 
-int bluetooth_UAP::crc_check(char *stream, int type, int size, int clock, uint8_t UAP)
+int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8_t UAP)
 {
 	switch(type)
 	{
@@ -289,7 +289,7 @@ int bluetooth_UAP::crc_check(char *stream, int type, int size, int clock, uint8_
 	return 1;
 }
 
-int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
+int bluetooth_UAP2::fhs(char *stream, int clock, uint8_t UAP)
 {
 	char corrected[144];
 	char payload[144];
@@ -310,7 +310,7 @@ int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
 }
 
 /* DM 1/3/5 packet (and DV)*/
-int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
+int bluetooth_UAP2::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
 {
 	int count, index, bitlength, length;
 	uint16_t crc, check;
@@ -357,7 +357,7 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 
 /* DH 1/3/5 packet */
 /* similar to DM 1/3/5 but without FEC */
-int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
+int bluetooth_UAP2::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
 {
 	int count, index, bitlength, length;
 	uint16_t crc, check;
@@ -397,7 +397,7 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 	return 0;
 }
 
-int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
+int bluetooth_UAP2::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 {
 	int index, maxlength, count;
 	uint16_t crc, check;
@@ -438,7 +438,7 @@ int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 }
 
 /* Pointer to start of packet, length of packet in bytes, UAP */
-uint16_t bluetooth_UAP::crcgen(char *packet, int length, int UAP)
+uint16_t bluetooth_UAP2::crcgen(char *packet, int length, int UAP)
 {
 	char byte;
 	uint16_t reg, count, counter;

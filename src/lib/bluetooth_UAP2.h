@@ -27,27 +27,27 @@
 #include <stdlib.h>
 #include <math.h>
 
-class bluetooth_UAP;
-typedef boost::shared_ptr<bluetooth_UAP> bluetooth_UAP_sptr;
+class bluetooth_UAP2;
+typedef boost::shared_ptr<bluetooth_UAP2> bluetooth_UAP2_sptr;
 
 /*!
- * \brief Return a shared_ptr to a new instance of bluetooth_UAP.
+ * \brief Return a shared_ptr to a new instance of bluetooth_UAP2.
  */
-bluetooth_UAP_sptr bluetooth_make_UAP (int LAP, int pkts);
+bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP, int pkts);
 
 /*!
  * \brief Sniff Bluetooth packets.
  * \ingroup block
  */
-class bluetooth_UAP : public bluetooth_block
+class bluetooth_UAP2 : public bluetooth_block
 {
 private:
   // The friend declaration allows bluetooth_make_UAP to
   // access the private constructor.
 
-  friend bluetooth_UAP_sptr bluetooth_make_UAP (int LAP, int pkts);
+  friend bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP, int pkts);
 
-  bluetooth_UAP (int LAP, int pkts);	// private constructor
+  bluetooth_UAP2 (int LAP, int pkts);	// private constructor
 
   int d_UAPs[256][8][4];
   int d_limit;
@@ -84,7 +84,7 @@ uint16_t crcgen(char *packet, int length, int UAP);
 
 
  public:
-  ~bluetooth_UAP ();	// public destructor
+  ~bluetooth_UAP2 ();	// public destructor
 
   // Where all the action really happens
 
