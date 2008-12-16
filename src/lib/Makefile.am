@@ -62,6 +62,7 @@ _bluetooth_la_SOURCES = 			\
 	bluetooth.cc			\
 	bluetooth_LAP.cc		\
 	bluetooth_UAP.cc		\
+	bluetooth_UAP2.cc		\
 	bluetooth_block.cc		\
 	bluetooth_dump.cc		\
 	bluetooth_sniffer.cc
@@ -82,6 +83,7 @@ bluetooth.cc bluetooth.py: $(LOCAL_IFILES) $(ALL_IFILES)
 grinclude_HEADERS =			\
 	bluetooth_LAP.h			\
 	bluetooth_UAP.h			\
+	bluetooth_UAP2.h			\
 	bluetooth_block.h		\
 	bluetooth_dump.h		\
 	bluetooth_sniffer.h
