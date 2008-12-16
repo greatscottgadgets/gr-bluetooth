@@ -51,6 +51,11 @@ private:
 
   int d_UAPs[256][8][4];
   int d_limit;
+  uint64_t d_first_packet_time;
+  int d_clock_candidates[64];
+  int d_previous_packet_time;
+  int d_previous_clock_offset;
+
 
 /* Converts 8 bytes of grformat to a single byte */
 char gr_to_normal(char *stream);

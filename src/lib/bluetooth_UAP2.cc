@@ -60,6 +60,13 @@ bluetooth_UAP::bluetooth_UAP (int LAP, int pkts)
 
 	/* ensure that we are always given at least 3125 symbols (5 time slots) */
 	set_history(3125);
+
+	d_cumulative_count = 0;
+	d_first_packet_time = 0;
+	d_previous_packet_time = 0;
+	d_previous_clock_offset = 0;
+	for(count = 0; count < 64; count++)
+		d_clock_candidates[count] = 1;
 }
 
 //virtual destructor.
@@ -81,11 +88,19 @@ bluetooth_UAP::work (int noutput_items,
 		d_consumed = noutput_items;
 	} else {
 		d_consumed = retval;
+		if(d_first_packet_time == 0)
+		{
+			d_first_packet_time = d_cumulative_count + d_consumed;
+			printf("first packet at %d\n", d_first_packet_time);
+		}
 		header();
+		d_previous_packet_time = d_cumulative_count + d_consumed;
 		if(d_limit == 0)
-			print_out();
+			exit(0);
+			//print_out();
 		d_consumed += 126;
 	}
+	d_cumulative_count += d_consumed;
 
 	// Tell runtime system how many output items we produced.
 	return d_consumed;
@@ -206,55 +221,49 @@ void bluetooth_UAP::header()
 	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
 	uint8_t UAP, ltadr, type;
 	int count, group, retval;
+	int starting = 0;
+	int eliminated = 0;
+	int ending = 0;
 
 	unfec13(stream, header, 18);
 
 	for(count = 0; count < 64; count++)
 	{
-		unwhiten(header, unwhitened, count, 18, 0);
+		int difference = (d_cumulative_count + d_consumed) - d_previous_packet_time;
+		int quotient = difference / 625;
+		int remainder = difference % 625;
+		printf("remainder = %d/625\n", remainder);
+		if(remainder > 312)
+			quotient++;
+		if(d_clock_candidates[count] > 0) {
+			int clock = (count + d_previous_clock_offset + quotient) % 64;
 
-		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
-		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
-		unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
+			unwhiten(header, unwhitened, clock, 18, 0);
+			unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
+			unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
+			unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
 
-		UAP = UAP_from_hec(unwhitened_air);
+			UAP = UAP_from_hec(unwhitened_air);
 
-		/* Make sure we only count it once per packet */
-		ltadr = (unwhitened_air[0] & 0xe0) >> 5;
-		type = (unwhitened_air[0] & 0x1e) >> 1;
-		//printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d\n", count, UAP, ltadr, type);
+			/* Make sure we only count it once per packet */
+			ltadr = (unwhitened_air[0] & 0xe0) >> 5;
+			type = (unwhitened_air[0] & 0x1e) >> 1;
+			//printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d\n", count, UAP, ltadr, type);
 
-		retval = crc_check(stream+54, type, d_stream_length-(d_consumed + 126), count, UAP);
-
-	/* Group is one of control packets, sco connection
-	 * esco connection or acl connection.
-	 * If a link is being used it is likely to be of
-	 * one conenction type, therefore the packets will
-	 * more often be in the same group.  The control
-	 * packets are added to the highest group */
-		switch(type)
-		{
-			case 0:group = 0; break;
-			case 1:group = 1; break;
-			case 2:group = 3; break;
-			case 3:group = 2; break;
-			case 4:group = 0; break;
-			case 5:group = 3; break;
-			case 6:group = 1; break;
-			case 7:group = 3; break;
-			case 8:group = 0; break;
-			case 9:group = 3; break;
-			case 10:group = 1; break;
-			case 11:group = 2; break;
-			case 12:group = 3; break;
-			case 13:group = 3; break;
-			/* Can represent two different types */
-			case 14:d_UAPs[UAP][ltadr][1] += retval; group = 2; break;
-			case 15:group = 3; break;
-			default:group = 0;
-		}
-		d_UAPs[UAP][ltadr][group] += retval;
+			retval = crc_check(stream+54, type, 3125+d_stream_length-(d_consumed + 126), clock, UAP);
+			//printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d, retval = %d\n", clock, UAP, ltadr, type, retval);
+			if(0==retval)
+			{
+				d_clock_candidates[count] = 0;
+				eliminated++;
+			}
+			starting++;
+		} else
+			printf("skipped %d\n", d_clock_candidates[count]);
+		d_previous_clock_offset += quotient;
 	}
+	ending = starting - eliminated;
+	printf("reduced from %d to %d\n", starting, ending);
 	d_limit--;
 }
 
@@ -262,67 +271,20 @@ int bluetooth_UAP::crc_check(char *stream, int type, int size, int clock, uint8_
 {
 	switch(type)
 	{
-		case 1:/* DV - skip 80bits for voice then treat like a DM1 */
-			stream += 80;
-			if(size >= 8)
-				return DM(stream, clock, UAP, 0, size);
-			else
-				return 1;
-
-		case 2:/* DH1 */
-			if(size >= 8)
-				return DH(stream, clock, UAP, 0, size);
-			else
-				return 1;
-
-		case 3:/* EV4 Unknown length, need to cycle through it until CRC matches */
-			return EV(stream, clock, UAP, type, size);
-
-		case 4:/* FHS packets are sent with a UAP of 0x00 in the HEC */
-			if((size >= 240) && (UAP == 0x00))
-				return fhs(stream, clock, UAP);
-			else
-				return 0;
-
-		case 5:/* DM3 */
-			if(size >= 20)
-				return DM(stream, clock, UAP, 1, size);
-			else
-				return 1;
-
-
-		case 7:/* DM5 */
-			if(size >= 20)
-				return DM(stream, clock, UAP, 1, size);
-			else
-				return 1;
-
-		case 11:/* EV5 Unknown length, need to cycle through it until CRC matches */
-			return EV(stream, clock, UAP, type, size);
-
 		case 12:/* DM1 */
 			if(size >= 8)
 				return DM(stream, clock, UAP, 0, size);
 			else
+				{
+				printf("size\n");
 				return 1;
-
-		case 13:/* DH3 */
-			if(size >= 16)
-				return DH(stream, clock, UAP, 1, size);
-			else
-				return 1;
-
-		case 14:/* EV3 Unknown length, need to cycle through it until CRC matches */
-			return EV(stream, clock, UAP, type, size);
-
-		case 15:/* DH5 */
-			if(size >= 16)
-				return DH(stream, clock, UAP, 1, size);
-			else
-				return 1;
+				}
 
 		default :/* All without CRCs */
+			{
+			printf("default\n");
 			return 1;
+			}
 	}
 	return 1;
 }
