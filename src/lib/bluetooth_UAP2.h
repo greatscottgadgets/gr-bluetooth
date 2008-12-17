@@ -19,8 +19,8 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
-#ifndef INCLUDED_BLUETOOTH_UAP_H
-#define INCLUDED_BLUETOOTH_UAP_H
+#ifndef INCLUDED_BLUETOOTH_UAP2_H
+#define INCLUDED_BLUETOOTH_UAP2_H
 
 #include <bluetooth_block.h>
 #include <stdio.h>
@@ -93,4 +93,4 @@ uint16_t crcgen(char *packet, int length, int UAP);
 		    gr_vector_void_star &output_items);
 };
 
-#endif /* INCLUDED_BLUETOOTH_UAP_H */
+#endif /* INCLUDED_BLUETOOTH_UAP2_H */

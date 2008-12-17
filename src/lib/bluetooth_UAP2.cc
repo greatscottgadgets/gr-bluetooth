@@ -228,7 +228,7 @@ void bluetooth_UAP2::header()
 	unfec13(stream, header, 18);
 
 	int difference = (d_cumulative_count + d_consumed) - d_previous_packet_time;
-	int quotient = (difference - 312) / 625;
+	int quotient = (difference + 312) / 625;
 	int remainder = difference % 625;
 	// the remainder is an indicator of how far off we have drifted
 	printf("remainder = %d/625\n", remainder);
@@ -258,8 +258,7 @@ void bluetooth_UAP2::header()
 				eliminated++;
 			}
 			starting++;
-		} else
-			printf("skipped %d\n", d_clock_candidates[count]);
+		}
 		d_previous_clock_offset += quotient;
 	}
 	ending = starting - eliminated;
@@ -281,10 +280,7 @@ int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8
 				}
 
 		default :/* All without CRCs */
-			{
-			printf("default\n");
 			return 1;
-			}
 	}
 	return 1;
 }
