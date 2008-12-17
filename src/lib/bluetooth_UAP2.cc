@@ -232,6 +232,11 @@ void bluetooth_UAP2::header()
 	int remainder = difference % 625;
 	// the remainder is an indicator of how far off we have drifted
 	printf("remainder = %d/625\n", remainder);
+	if((remainder > 156) && (remainder < 468))
+	{
+		printf("terrible wandering\n");
+		exit(0);
+	}
 
 	for(count = 0; count < 64; count++)
 	{
@@ -251,7 +256,7 @@ void bluetooth_UAP2::header()
 			//printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d\n", count, UAP, ltadr, type);
 
 			retval = crc_check(stream+54, type, 3125+d_stream_length-(d_consumed + 126), clock, UAP);
-			//printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d, retval = %d\n", clock, UAP, ltadr, type, retval);
+			printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d, retval = %d\n", clock, UAP, ltadr, type, retval);
 			if(0==retval)
 			{
 				d_clock_candidates[count] = 0;
