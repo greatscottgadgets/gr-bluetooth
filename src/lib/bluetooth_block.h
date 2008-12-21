@@ -93,10 +93,12 @@ protected:
 	/* Remove the whitening from an air order array */
 	void unwhiten(char* input, char* output, int clock, int length, int skip);
 
+	/* Create the 16bit CRC for packet payloads */
+	uint16_t bluetooth_block::crcgen(char *packet, int length, int UAP);
+
 //FIXME more stuff to consider moving here:
 //void header();
 //int sniff_ac();
-//uint16_t crcgen(uint8_t *packet, int length, int UAP); // UAP and dump same, sniffer different
 // and more. . .
 
 };
