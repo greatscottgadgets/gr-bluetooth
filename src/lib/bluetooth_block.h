@@ -73,7 +73,7 @@ protected:
 	char *unfec13(char *stream, char *output, int length);
 
 	/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
-	void unfec23(char *stream, char *output, int length);
+	char *unfec23(char *input, int length);
 
 	/* When passed 10 bits of data this returns a pointer to a 5 bit hamming code */
 	char *fec23gen(char *data);

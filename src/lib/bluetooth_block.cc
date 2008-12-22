@@ -243,22 +243,87 @@ char *bluetooth_block::unfec13(char *stream, char *output, int length)
 }
 
 /* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
-void bluetooth_block::unfec23(char *stream, char *output, int length)
+char *bluetooth_block::unfec23(char *input, int length)
 {
-	/* stream points to the stream of data
+	/* input points to the input data
 	 * length is length in bits of the data
 	 * before it was encoded with fec2/3 */
-	int count, pointer;
-	pointer = -5;
+	char *codeword, *output;
+	int iptr, optr, blocks;
+	uint8_t difference, count;
 
-	//FIXME do error correction instead of ignoring the check digits
-	for(count = 0; count < length; count++)
-	{
-		if((count % 10) == 0)
-			pointer += 5;
+	iptr = -15;
+	optr = -10;
+	difference = length % 10;
+	// padding at end of data
+	if(0!=difference)
+		length += (10 - difference);
 
-		output[count] = stream[pointer++];
+	blocks = length/10;
+	output = malloc(length);
+
+	while(blocks>0) {
+		iptr += 15;
+		optr += 10;
+		blocks--;
+
+		// copy data to output
+		for(count=0;count<10;count++)
+			output[optr+count] = input[iptr+count];
+
+		// call fec23gen on data to generate the codeword
+		codeword = fec23gen(input+iptr);
+
+		// compare codeword to the 5 received bits
+		difference = 0;
+		for(count=0;count<5;count++)
+			if(codeword[count]!=input[iptr+10+count])
+				difference++;
+
+		/* no errors or single bit errors (errors in the parity bit):
+		 * (a strong hint it's a real packet) */
+		if((0==difference) || (1==difference)) {
+		    free(codeword);
+		    continue;
+		}
+
+
+		// multiple different bits in the codeword
+		for(count=0;count<5;count++) {
+			difference |= codeword[count] ^ input[ptr+10+count];
+			difference <<= 1;
+		}
+		free(codeword);
+
+		switch (difference) {
+		/* comments are the bit that's wrong and the value
+		 * of difference in binary, from the BT spec */
+			// 1000000000 11010
+			case 26: output[optr] ^= 1; break;
+			// 0100000000 01101
+			case 13: output[optr+1] ^= 1; break;
+			// 0010000000 11100
+			case 28: output[optr+2] ^= 1; break;
+			// 0001000000 01110
+			case 14: output[optr+3] ^= 1; break;
+			// 0000100000 00111
+			case 7: output[optr+4] ^= 1; break;
+			// 0000010000 11001
+			case 25: output[optr+5] ^= 1; break;
+			// 0000001000 10110
+			case 22: output[optr+6] ^= 1; break;
+			// 0000000100 01011
+			case 11: output[optr+7] ^= 1; break;
+			// 0000000010 11111
+			case 31: output[optr+8] ^= 1; break;
+			// 0000000001 10101
+			case 21: output[optr+9] ^= 1; break;
+			/* not one of these errors, probably multiple bit errors
+			 * or maybe not a real packet, safe to drop it? */
+			case default: free(output); return NULL;
+		}
 	}
+	return output;
 }
 
 /* When passed 10 bits of data this returns a pointer to a 5 bit hamming code */
@@ -277,9 +342,9 @@ char *bluetooth_block::fec23gen(char *data)
 
 		reg = (reg >> 1) | bit<<4;
 
-		reg ^= bit;
+		reg ^= bit | (bit<<2);
 
-		reg ^= bit<<2;
+		reg &= 0x1f;
 	}
 
 	for(counter=0;counter<5;counter++) {
