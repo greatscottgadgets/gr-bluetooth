@@ -261,6 +261,35 @@ void bluetooth_block::unfec23(char *stream, char *output, int length)
 	}
 }
 
+/* When passed 10 bits of data this returns a pointer to a 5 bit hamming code */
+char *bluetooth_block::fec23gen(char *data)
+{
+	char* codeword;
+	uint8_t reg, counter;
+	char bit;
+
+	codeword = malloc(5);
+	if(NULL==codeword)
+		return codeword;
+
+	for(counter=0;counter<10;counter++) {
+		bit = (reg ^ data[counter]) & 1;
+
+		reg = (reg >> 1) | bit<<4;
+
+		reg ^= bit;
+
+		reg ^= bit<<2;
+	}
+
+	for(counter=0;counter<5;counter++) {
+		codeword[counter] = reg & 1;
+		reg >>= 1;
+	}
+
+	return codeword;
+}
+
 /* Create an Access Code from LAP and check it against stream */
 bool bluetooth_block::check_ac(char *stream, int LAP)
 {
