@@ -76,7 +76,7 @@ protected:
 	void unfec23(char *stream, char *output, int length);
 
 	/* When passed 10 bits of data this returns a pointer to a 5 bit hamming code */
-	char *bluetooth_block::fec23gen(char *data);
+	char *fec23gen(char *data);
 
 	/* Create an Access Code from LAP and check it against stream */
 	bool check_ac(char *stream, int LAP);
@@ -97,7 +97,7 @@ protected:
 	void unwhiten(char* input, char* output, int clock, int length, int skip);
 
 	/* Create the 16bit CRC for packet payloads */
-	uint16_t bluetooth_block::crcgen(char *packet, int length, int UAP);
+	uint16_t crcgen(char *packet, int length, int UAP);
 
 //FIXME more stuff to consider moving here:
 //void header();

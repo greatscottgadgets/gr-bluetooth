@@ -268,7 +268,7 @@ char *bluetooth_block::fec23gen(char *data)
 	uint8_t reg, counter;
 	char bit;
 
-	codeword = malloc(5);
+	codeword = (char *) malloc(5);
 	if(NULL==codeword)
 		return codeword;
 
