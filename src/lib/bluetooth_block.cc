@@ -177,6 +177,7 @@ char *bluetooth_block::unfec23(char *input, int length)
 	char *codeword, *output;
 	int iptr, optr, blocks;
 	uint8_t difference, count;
+	uint8_t fecgen[] = {1,1,0,1,0,1};
 
 	iptr = -15;
 	optr = -10;
@@ -198,7 +199,8 @@ char *bluetooth_block::unfec23(char *input, int length)
 			output[optr+count] = input[iptr+count];
 
 		// call fec23gen on data to generate the codeword
-		codeword = fec23gen(input+iptr);
+		//codeword = fec23gen(input+iptr);
+		cw = codeword(input+iptr, 15, 10, fecgen);
 
 		// compare codeword to the 5 received bits
 		difference = 0;
@@ -212,7 +214,6 @@ char *bluetooth_block::unfec23(char *input, int length)
 		    free(codeword);
 		    continue;
 		}
-
 
 		// multiple different bits in the codeword
 		for(count=0;count<5;count++) {
