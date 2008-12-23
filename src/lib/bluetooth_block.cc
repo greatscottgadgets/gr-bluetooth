@@ -200,7 +200,7 @@ char *bluetooth_block::unfec23(char *input, int length)
 
 		// call fec23gen on data to generate the codeword
 		//codeword = fec23gen(input+iptr);
-		cw = codeword(input+iptr, 15, 10, fecgen);
+		cw = lfsr(input+iptr, 15, 10, fecgen);
 
 		// compare codeword to the 5 received bits
 		difference = 0;
