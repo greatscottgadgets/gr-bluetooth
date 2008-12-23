@@ -48,7 +48,7 @@ bluetooth_block::bluetooth_block ()
 //It has been converted to C++
 
 /* Error correction coding for Access Code */
-uint8_t *bluetooth_block::codeword(uint8_t *data, int length, int k)
+uint8_t *bluetooth_block::lfsr(uint8_t *data, int length, int k, uint8_t *g)
 /*
  * Compute redundacy cw[], the coefficients of b(x). The redundancy
  * polynomial b(x) is the remainder after dividing x^(length-k)*data(x)
@@ -57,11 +57,6 @@ uint8_t *bluetooth_block::codeword(uint8_t *data, int length, int k)
 {
 	int    i, j;
 	uint8_t *cw, feedback;
-	// generator polynomial for the access code
-	uint8_t g[] = {1,0,0,1,0,1,0,1,1,0,1,1,1,1,0,0,1,0,0,0,1,1,1,0,1,0,1,0,0,0,0,1,1,0,1};
-
-	// This is an implementation of an LFSR, at some point I should make it generic
-	// so that it can be used for AC/HEC/CRC/FEC23
 	cw = (uint8_t *) calloc(length - k, 1);
 
 	for (i = k - 1; i >= 0; i--) {
@@ -95,7 +90,10 @@ uint8_t *bluetooth_block::acgen(int LAP)
 	uint8_t *retval, count, *cw, *data;
 	retval = (uint8_t *) calloc(9,1);
 	data = (uint8_t *) malloc(30);
+	// pseudo-random sequence to XOR with LAP and syncword
 	uint8_t pn[] = {0x03,0xF2,0xA3,0x3D,0xD6,0x9B,0x12,0x1C,0x10};
+	// generator polynomial for the access code
+	uint8_t g[] = {1,0,0,1,0,1,0,1,1,0,1,1,1,1,0,0,1,0,0,0,1,1,1,0,1,0,1,0,0,0,0,1,1,0,1};
 
 	LAP = reverse((LAP & 0xff0000)>>16) | (reverse((LAP & 0x00ff00)>>8)<<8) | (reverse(LAP & 0x0000ff)<<16);
 
@@ -121,7 +119,7 @@ uint8_t *bluetooth_block::acgen(int LAP)
 	host_to_air(reverse(retval[7]), data+18, 8);
 	host_to_air(reverse(retval[8]), data+26, 4);
 
-	cw = codeword(data, 64, 30);
+	cw = lfsr(data, 64, 30, g);
 	free(data);
 
 	retval[0] = cw[0] << 3 | cw[1] << 2 | cw[2] << 1 | cw[3];
@@ -190,7 +188,7 @@ char *bluetooth_block::unfec23(char *input, int length)
 	blocks = length/10;
 	output = malloc(length);
 
-	while(blocks>0) {
+	while(blocks) {
 		iptr += 15;
 		optr += 10;
 		blocks--;
