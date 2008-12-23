@@ -56,49 +56,14 @@ uint8_t *bluetooth_block::codeword(uint8_t *data, int length, int k)
  */
 {
 	int    i, j;
-	uint8_t *g, *cw, feedback;
+	uint8_t *cw, feedback;
+	// generator polynomial for the access code
+	uint8_t g[] = {1,0,0,1,0,1,0,1,1,0,1,1,1,1,0,0,1,0,0,0,1,1,1,0,1,0,1,0,0,0,0,1,1,0,1};
 
-	g = (uint8_t *) malloc(35);
-	g[0] = 1;
-	g[1] = 0;
-	g[2] = 0;
-	g[3] = 1;
-	g[4] = 0;
-	g[5] = 1;
-	g[6] = 0;
-	g[7] = 1;
-	g[8] = 1;
-	g[9] = 0;
-	g[10] = 1;
-	g[11] = 1;
-	g[12] = 1;
-	g[13] = 1;
-	g[14] = 0;
-	g[15] = 0;
-	g[16] = 1;
-	g[17] = 0;
-	g[18] = 0;
-	g[19] = 0;
-	g[20] = 1;
-	g[21] = 1;
-	g[22] = 1;
-	g[23] = 0;
-	g[24] = 1;
-	g[25] = 0;
-	g[26] = 1;
-	g[27] = 0;
-	g[28] = 0;
-	g[29] = 0;
-	g[30] = 0;
-	g[31] = 1;
-	g[32] = 1;
-	g[33] = 0;
-	g[34] = 1;
+	// This is an implementation of an LFSR, at some point I should make it generic
+	// so that it can be used for AC/HEC/CRC/FEC23
+	cw = (uint8_t *) calloc(length - k, 1);
 
-	cw = (uint8_t *) malloc(34);
-
-	for (i = 0; i < length - k; i++)
-		cw[i] = 0;
 	for (i = k - 1; i >= 0; i--) {
 		feedback = data[i] ^ cw[length - k - 1];
 		if (feedback != 0) {
@@ -114,7 +79,6 @@ uint8_t *bluetooth_block::codeword(uint8_t *data, int length, int k)
 			cw[0] = 0;
 		}
 	}
-	free(g);
 	return cw;
 }
 
@@ -128,10 +92,10 @@ uint8_t bluetooth_block::reverse(char byte)
 uint8_t *bluetooth_block::acgen(int LAP)
 {
 	/* Endianness - Assume LAP is MSB first, rest done LSB first */
-	uint8_t *retval, *pn, count, *cw, *data;
-	retval = (uint8_t *) malloc(9);
-	pn = (uint8_t *) malloc(9);
+	uint8_t *retval, count, *cw, *data;
+	retval = (uint8_t *) calloc(9,1);
 	data = (uint8_t *) malloc(30);
+	uint8_t pn[] = {0x03,0xF2,0xA3,0x3D,0xD6,0x9B,0x12,0x1C,0x10};
 
 	LAP = reverse((LAP & 0xff0000)>>16) | (reverse((LAP & 0x00ff00)>>8)<<8) | (reverse(LAP & 0x0000ff)<<16);
 
@@ -147,51 +111,15 @@ uint8_t *bluetooth_block::acgen(int LAP)
 	} else
 		retval[8] = 0xd5;
 
-	pn[0] = 0x03;
-	pn[1] = 0xF2;
-	pn[2] = 0xA3;
-	pn[3] = 0x3D;
-	pn[4] = 0xD6;
-	pn[5] = 0x9B;
-	pn[6] = 0x12;
-	pn[7] = 0x1C;
-	pn[8] = 0x10;
-
 	for(count = 4; count < 9; count++)
 		retval[count] ^= pn[count];
 
-	/* Codeword */
-	//g(d) = 0x585713DA9
 	data[0] = (retval[4] & 0x02) >> 1;
 	data[1] = (retval[4] & 0x01);
-	data[2] = (retval[5] & 0x80) >> 7;
-	data[3] = (retval[5] & 0x40) >> 6;
-	data[4] = (retval[5] & 0x20) >> 5;
-	data[5] = (retval[5] & 0x10) >> 4;
-	data[6] = (retval[5] & 0x08) >> 3;
-	data[7] = (retval[5] & 0x04) >> 2;
-	data[8] = (retval[5] & 0x02) >> 1;
-	data[9] = (retval[5] & 0x01);
-	data[10] = (retval[6] & 0x80) >> 7;
-	data[11] = (retval[6] & 0x40) >> 6;
-	data[12] = (retval[6] & 0x20) >> 5;
-	data[13] = (retval[6] & 0x10) >> 4;
-	data[14] = (retval[6] & 0x08) >> 3;
-	data[15] = (retval[6] & 0x04) >> 2;
-	data[16] = (retval[6] & 0x02) >> 1;
-	data[17] = (retval[6] & 0x01);
-	data[18] = (retval[7] & 0x80) >> 7;
-	data[19] = (retval[7] & 0x40) >> 6;
-	data[20] = (retval[7] & 0x20) >> 5;
-	data[21] = (retval[7] & 0x10) >> 4;
-	data[22] = (retval[7] & 0x08) >> 3;
-	data[23] = (retval[7] & 0x04) >> 2;
-	data[24] = (retval[7] & 0x02) >> 1;
-	data[25] = (retval[7] & 0x01);
-	data[26] = (retval[8] & 0x80) >> 7;
-	data[27] = (retval[8] & 0x40) >> 6;
-	data[28] = (retval[8] & 0x20) >> 5;
-	data[29] = (retval[8] & 0x10) >> 4;
+	host_to_air(reverse(retval[5]), data+2, 8);
+	host_to_air(reverse(retval[6]), data+10, 8);
+	host_to_air(reverse(retval[7]), data+18, 8);
+	host_to_air(reverse(retval[8]), data+26, 4);
 
 	cw = codeword(data, 64, 30);
 	free(data);
@@ -200,7 +128,7 @@ uint8_t *bluetooth_block::acgen(int LAP)
 	retval[1] = cw[4] << 7 | cw[5] << 6 | cw[6] << 5 | cw[7] << 4 | cw[8] << 3 | cw[9] << 2 | cw[10] << 1 | cw[11];
 	retval[2] = cw[12] << 7 | cw[13] << 6 | cw[14] << 5 | cw[15] << 4 | cw[16] << 3 | cw[17] << 2 | cw[18] << 1 | cw[19];
 	retval[3] = cw[20] << 7 | cw[21] << 6 | cw[22] << 5 | cw[23] << 4 | cw[24] << 3 | cw[25] << 2 | cw[26] << 1 | cw[27];
-	retval[4] = cw[28] << 7 | cw[29] << 6 | cw[30] << 5 | cw[31] << 4 | cw[32] << 3 | cw[33] << 2 | (retval[4] & 0x3);;
+	retval[4] = cw[28] << 7 | cw[29] << 6 | cw[30] << 5 | cw[31] << 4 | cw[32] << 3 | cw[33] << 2 | (retval[4] & 0x3);
 	free(cw);
 
 	for(count = 0; count < 9; count++)
