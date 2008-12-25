@@ -10,7 +10,7 @@ Alternatively, dump mode can be specified.
 """
 
 from gnuradio import gr, eng_notation, blks2
-from gnuradio import usrp
+
 from gnuradio import bluetooth
 from gnuradio.eng_option import eng_option
 from optparse import OptionParser
@@ -85,6 +85,7 @@ class my_top_block(gr.top_block):
 		# select input source
 		if options.input_file is None:
 			# input from USRP or USRP2
+			from gnuradio import usrp
 			if options.usrp2:
 				# FIXME, but not right away
 				raise NotImplementedError
@@ -164,7 +165,9 @@ class my_top_block(gr.top_block):
 						dst = bluetooth.sniffer(int(options.lap, 16), int(options.uap, 16))
 		
 			# connect the blocks
-			self.connect(stage2, ddc, demod, dst)
+			self.connect(stage2, ddc)
+			self.connect(ddc, demod)
+			self.connect(demod, dst)
 
 if __name__ == '__main__':
 	try:

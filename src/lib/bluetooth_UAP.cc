@@ -329,12 +329,12 @@ int bluetooth_UAP::crc_check(char *stream, int type, int size, int clock, uint8_
 
 int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
 {
-	char corrected[144];
+	char *corrected;
 	char payload[144];
 	uint8_t fhsuap;
 	uint32_t fhslap;
 
-	unfec23(stream, corrected, 144);
+	corrected = unfec23(stream, 144);
 	unwhiten(corrected, payload, clock, 144, 18);
 
 	fhsuap = air_to_host8(&payload[64], 8);
@@ -355,9 +355,9 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 
 	if(pkthdr)
 	{
-		char corrected[16];
+		char *corrected;
 		char hdr[16];
-		unfec23(stream, corrected, 16);
+		corrected = unfec23(stream, 16);
 		unwhiten(corrected, hdr, clock, 16, 18);
 		length = air_to_host16(&hdr[3], 10) + 4;
 	} else {
@@ -370,9 +370,9 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 	if(bitlength > size)
 		return 1;
 
-	char corrected[bitlength];
+	char *corrected;
 	char payload[bitlength];
-	unfec23(stream, corrected, bitlength);
+	corrected = unfec23(stream, bitlength);
 	unwhiten(corrected, payload, clock, bitlength, 18);
 
 	//Pack the bits into bytes
@@ -449,10 +449,10 @@ int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 		default: return 0;
 	}
 
-	char corrected[(maxlength+2)*8];
+	char *corrected;
 	char payload[(maxlength+2)*8];
 
-	unfec23(stream, corrected, maxlength * 8);
+	corrected = unfec23(stream, maxlength * 8);
 	unwhiten(corrected, payload, clock, maxlength * 8, 18);
 
 	/* Check crc for any integer byte length up to maxlength */

@@ -47,12 +47,13 @@ bluetooth_block::bluetooth_block ()
 //This is all imported from packet_LAP.c
 //It has been converted to C++
 
-/* Error correction coding for Access Code */
+/* A linear feedback shift register */
 uint8_t *bluetooth_block::lfsr(uint8_t *data, int length, int k, uint8_t *g)
 /*
- * Compute redundacy cw[], the coefficients of b(x). The redundancy
- * polynomial b(x) is the remainder after dividing x^(length-k)*data(x)
- * by the generator polynomial g(x).
+ * A linear feedback shift register
+ * used for the syncword in the access code
+ * and the fec2/3 encoding (could also be used for the HEC/CRC)
+ * Although I'm not sure how to run it backwards for HEC->UAP
  */
 {
 	int    i, j;
@@ -114,10 +115,10 @@ uint8_t *bluetooth_block::acgen(int LAP)
 
 	data[0] = (retval[4] & 0x02) >> 1;
 	data[1] = (retval[4] & 0x01);
-	host_to_air(reverse(retval[5]), data+2, 8);
-	host_to_air(reverse(retval[6]), data+10, 8);
-	host_to_air(reverse(retval[7]), data+18, 8);
-	host_to_air(reverse(retval[8]), data+26, 4);
+	host_to_air(reverse(retval[5]), (char *) data+2, 8);
+	host_to_air(reverse(retval[6]), (char *) data+10, 8);
+	host_to_air(reverse(retval[7]), (char *) data+18, 8);
+	host_to_air(reverse(retval[8]), (char *) data+26, 4);
 
 	cw = lfsr(data, 64, 30, g);
 	free(data);
@@ -174,9 +175,9 @@ char *bluetooth_block::unfec23(char *input, int length)
 	/* input points to the input data
 	 * length is length in bits of the data
 	 * before it was encoded with fec2/3 */
-	char *codeword, *output;
+	char *output;
 	int iptr, optr, blocks;
-	uint8_t difference, count;
+	uint8_t difference, count, *codeword;
 	uint8_t fecgen[] = {1,1,0,1,0,1};
 
 	iptr = -15;
@@ -187,7 +188,7 @@ char *bluetooth_block::unfec23(char *input, int length)
 		length += (10 - difference);
 
 	blocks = length/10;
-	output = malloc(length);
+	output = (char *) malloc(length);
 
 	while(blocks) {
 		iptr += 15;
@@ -200,7 +201,7 @@ char *bluetooth_block::unfec23(char *input, int length)
 
 		// call fec23gen on data to generate the codeword
 		//codeword = fec23gen(input+iptr);
-		cw = lfsr(input+iptr, 15, 10, fecgen);
+		codeword = lfsr((uint8_t *) input+iptr, 15, 10, fecgen);
 
 		// compare codeword to the 5 received bits
 		difference = 0;
@@ -217,7 +218,7 @@ char *bluetooth_block::unfec23(char *input, int length)
 
 		// multiple different bits in the codeword
 		for(count=0;count<5;count++) {
-			difference |= codeword[count] ^ input[ptr+10+count];
+			difference |= codeword[count] ^ input[iptr+10+count];
 			difference <<= 1;
 		}
 		free(codeword);
@@ -247,48 +248,20 @@ char *bluetooth_block::unfec23(char *input, int length)
 			case 21: output[optr+9] ^= 1; break;
 			/* not one of these errors, probably multiple bit errors
 			 * or maybe not a real packet, safe to drop it? */
-			case default: free(output); return NULL;
+			default: free(output); return NULL;
 		}
 	}
 	return output;
 }
 
-/* When passed 10 bits of data this returns a pointer to a 5 bit hamming code */
-char *bluetooth_block::fec23gen(char *data)
-{
-	char* codeword;
-	uint8_t reg, counter;
-	char bit;
-
-	codeword = (char *) malloc(5);
-	if(NULL==codeword)
-		return codeword;
-
-	for(counter=0;counter<10;counter++) {
-		bit = (reg ^ data[counter]) & 1;
-
-		reg = (reg >> 1) | bit<<4;
-
-		reg ^= bit | (bit<<2);
-
-		reg &= 0x1f;
-	}
-
-	for(counter=0;counter<5;counter++) {
-		codeword[counter] = reg & 1;
-		reg >>= 1;
-	}
-
-	return codeword;
-}
 
 /* Create an Access Code from LAP and check it against stream */
 bool bluetooth_block::check_ac(char *stream, int LAP)
 {
-	int count, aclength;
+	int count, aclength, biterrors;
 	uint8_t *ac, *grdata;
 	aclength = 72;
-
+	
 	/* Generate AC */
 	ac = acgen(LAP);
 
@@ -303,11 +276,19 @@ bool bluetooth_block::check_ac(char *stream, int LAP)
 	for(count = 0; count < aclength; count++)
 	{
 		if(grdata[count] != stream[count])
+			biterrors++;
+			//FIXME do error correction instead of detection
+		if(biterrors>=15)
 		{
-			//FIXME do error correction instead of giving up on the first wrong bit
 			free(grdata);
 			return false;
 		}
+	}
+	if(biterrors)
+	{
+		printf("POSSIBLE PACKET, LAP = %06x with %d errors\n", LAP, biterrors);
+		free(grdata);
+		return false;
 	}
 
 	free(grdata);

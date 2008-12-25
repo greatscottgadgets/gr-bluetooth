@@ -58,7 +58,7 @@ protected:
 	int d_packet_type;
 
 	/* Error correction coding for Access Code */
-	uint8_t *codeword(uint8_t *data, int length, int k);
+	uint8_t *lfsr(uint8_t *data, int length, int k, uint8_t *g);
 
 	/* Reverse the bits in a byte */
 	uint8_t reverse(char byte);

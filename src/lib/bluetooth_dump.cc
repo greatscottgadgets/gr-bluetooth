@@ -164,8 +164,8 @@ int bluetooth_dump::DV(char *stream, int UAP, int size)
 	bitlength = (length+3)*8;
 
 	/*Un-FEC 2/3 it */
-	char corrected[bitlength];
-	unfec23(stream+80, corrected, bitlength);
+	char *corrected;
+	corrected = unfec23(stream+80, bitlength);
 
 	length++;
 	size -= 80;
@@ -222,8 +222,8 @@ int bluetooth_dump::DM1(char *stream, int UAP, int size)
 	bitlength = (length+3)*8;
 
 	/*Un-FEC 2/3 it */
-	char corrected[bitlength];
-	unfec23(stream, corrected, bitlength);
+	char *corrected;
+	corrected = unfec23(stream, bitlength);
 
 	length++;
 	size -= bitlength;
@@ -286,19 +286,19 @@ int bluetooth_dump::DM3(char *stream, int UAP, int size)
 {
 	int length, bitlength, count;
 	uint16_t crc, check;	
-	char corrected_payload_header[16];
+	char *corrected_payload_header;
 	length = 0;
 
 	if(8 >= size)
 		return 1;
 
-	unfec23(stream, corrected_payload_header, 16);
+	corrected_payload_header = unfec23(stream, 16);
 	length = air_to_host16(&corrected_payload_header[3], 10);
 	bitlength = (length+4)*8;
 
 	/*Un-FEC 2/3 it */
-	char corrected[bitlength];
-	unfec23(stream, corrected, bitlength);
+	char *corrected;
+	corrected = unfec23(stream, bitlength);
 
 	length += 2;
 	size -= bitlength;
@@ -384,8 +384,8 @@ int bluetooth_dump::FHS(char *stream, int UAP)
 	uint8_t payload_UAP;
 	uint16_t NAP;
 	length = 10;
-	char corrected[length*8];
-	unfec23(stream, corrected, length*8);
+	char *corrected;
+	unfec23(stream, length*8);
 
 	payload_UAP = air_to_host8(&corrected[64], 8);
 

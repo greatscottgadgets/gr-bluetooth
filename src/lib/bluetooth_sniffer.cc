@@ -301,9 +301,9 @@ int bluetooth_sniffer::DM1(int size, int clock)
 	if((length+3)*12 >= size)
 		return 1;
 
-	char corrected[bitlength];
+	char *corrected;
 	char payload[bitlength];
-	unfec23(stream, corrected, bitlength);
+	corrected = unfec23(stream, bitlength);
 	unwhiten(corrected, payload, clock, bitlength, 18);
 	int x = 0;
 	for(count = 0; count < bitlength; count++)
@@ -329,12 +329,12 @@ int bluetooth_sniffer::DM5(int size, int clock)
 	char *stream = d_stream + d_consumed + 126;
 	int count, length, bitlength;
 	uint16_t crc, check;
-	char corrected_header[16];
+	char *corrected_header;
 	char unwhitened_header[16];
 
 	if(16 >= size)
 		return 1;
-	unfec23(stream, corrected_header, 16);
+	corrected_header = unfec23(stream, 16);
 	printf("\nwhitened payload header: ");
 	for(count = 0; count < 16; count++)
 	{
@@ -359,7 +359,7 @@ int bluetooth_sniffer::DM5(int size, int clock)
 	if((length+4)*8 >= size)
 		return 1;
 
-	char corrected_payload[length*8];
-	unfec23(stream, corrected_payload, length*8);
+	char *corrected_payload;
+	corrected_payload = unfec23(stream, length*8);
 	//FIXME what are we doing here?
 }
