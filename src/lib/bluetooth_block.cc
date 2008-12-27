@@ -132,7 +132,6 @@ uint8_t *bluetooth_block::acgen(int LAP)
 
 	for(count = 0; count < 9; count++)
 		retval[count] ^= pn[count];
-	free(pn);
 
 	/* Preamble */
 	if(retval[0] & 0x08)
