@@ -260,7 +260,8 @@ bool bluetooth_block::check_ac(char *stream, int LAP)
 	int count, aclength, biterrors;
 	uint8_t *ac, *grdata;
 	aclength = 72;
-	
+	biterrors = 0;
+
 	/* Generate AC */
 	ac = acgen(LAP);
 
@@ -277,7 +278,7 @@ bool bluetooth_block::check_ac(char *stream, int LAP)
 		if(grdata[count] != stream[count])
 			biterrors++;
 			//FIXME do error correction instead of detection
-		if(biterrors>=15)
+		if(biterrors>=10)
 		{
 			free(grdata);
 			return false;
