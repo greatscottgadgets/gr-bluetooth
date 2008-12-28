@@ -142,7 +142,7 @@ class my_top_block(gr.top_block):
 			# 1. converts frequency so channel of interest is centered at 0 Hz
 			# 2. filters out everything outside the channel
 			# 3. downsamples to 2 Msps (2 samples per symbol) or so
-			ddc = gr.freq_xlating_fir_filter_ccf(decimation_rate, channel_filter, ddc_freq, options.sample_rate)
+			ddc = gr.freq_xlating_fir_filter_ccf(decimation_rate, channel_filter, -ddc_freq, options.sample_rate)
 
 			# GMSK demodulate baseband to bits
 			demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=samples_per_symbol)
