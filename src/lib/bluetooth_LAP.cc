@@ -82,35 +82,28 @@ bluetooth_LAP::work (int noutput_items,
 int bluetooth_LAP::sniff_ac()
 {
 	int jump, count;
-	uint16_t trailer; // barker code plus trailer
+	uint8_t preamble; // start of sync word (includes LSB of LAP)
+	uint16_t trailer; // end of sync word: barker sequence and trailer (includes MSB of LAP)
+	int max_distance = 2; // maximum number of bit errors to tolerate in preamble + trailer
 	uint32_t LAP;
 	char *stream;
-	int jumps[16] = {3,2,1,3,3,0,2,3,3,2,0,3,3,1,2,3};
 
-	for(count = 0; count < d_stream_length; count += jump)
+	for(count = 0; count < d_stream_length; count ++)
 	{
 		stream = &d_stream[count];
-		jump = jumps[stream[0] << 3 | stream[1] << 2 | stream[2] << 1 | stream[3]];
-		if(0 == jump)
+		preamble = air_to_host8(&stream[0], 5);
+		trailer = air_to_host16(&stream[61], 11);
+		if((preamble_distance[preamble] + trailer_distance[trailer]) <= max_distance)
 		{
-			/* Found the start, now check the end... */
-			trailer = air_to_host16(&stream[61], 11);
-			/* stream[4] should probably be used in the jump trick instead of here.
-			 * Then again, an even better solution would have some error tolerance,
-			 * but we would probably have to abandon the jump trick. */
-			if((stream[4] == stream[0]) && ((0x558 == trailer) || (0x2a7 == trailer)))
+			LAP = air_to_host32(&stream[38], 24);
+			if(check_ac(stream, LAP))
 			{
-				LAP = air_to_host32(&stream[38], 24);
-				if(check_ac(stream, LAP))
-				{
-					timeval tim;
-					gettimeofday(&tim, NULL);
-					//double timenow = tim.tv_usec;
-					printf("GOT PACKET on %d , LAP = %06x at sample %d, wall time: %d.%06d\n", d_x, LAP, d_cumulative_count + count, tim.tv_sec, tim.tv_usec);
-					return count;
-				}
+				timeval tim;
+				gettimeofday(&tim, NULL);
+				//double timenow = tim.tv_usec;
+				printf("GOT PACKET on %d , LAP = %06x at sample %d, wall time: %d.%06d\n", d_x, LAP, d_cumulative_count + count, tim.tv_sec, tim.tv_usec);
+				return count;
 			}
-			jump = 1;
 		}
 	}
 	return -1;
