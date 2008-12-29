@@ -130,7 +130,7 @@ class my_top_block(gr.top_block):
 		if options.squelch is None:
 			stage3 = stage2
 		else:
-			squelch = gr.pwr_squelch_cc(options.squelch, 1e-3, 0, True)
+			squelch = gr.pwr_squelch_cc(options.squelch, 0.01, 0, True)
 			self.connect(stage2, squelch)
 			stage3 = squelch
 
