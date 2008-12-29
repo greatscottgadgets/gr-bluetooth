@@ -46,6 +46,8 @@ class my_top_block(gr.top_block):
 						help="input interleaved shorts instead of complex floats")
 		parser.add_option("-p", "--packets", type="int", default=100,
 						help="Number of packets to sniff (default=100)")
+		parser.add_option("-t", "--squelch", type="eng_float", default=None,
+						help="power squelch threshold in dB (default=None)")
 		parser.add_option("-u", "--uap", type="string", default=None,
 						help="UAP of the master device")
 		parser.add_option("-2","--usrp2", action="store_true", default=False,
@@ -124,6 +126,14 @@ class my_top_block(gr.top_block):
 		else:
 			stage2 = stage1
 
+		# stage 3: power squelch
+		if options.squelch is None:
+			stage3 = stage2
+		else:
+			squelch = gr.pwr_squelch_cc(options.squelch, 1e-3, 0, True)
+			self.connect(stage2, squelch)
+			stage3 = squelch
+
 		# coefficients for filter to select single channel
 		channel_filter = gr.firdes.low_pass(1.0, options.sample_rate, 500e3, 500e3, gr.firdes.WIN_HANN)
 
@@ -165,7 +175,7 @@ class my_top_block(gr.top_block):
 						dst = bluetooth.sniffer(int(options.lap, 16), int(options.uap, 16))
 		
 			# connect the blocks
-			self.connect(stage2, ddc)
+			self.connect(stage3, ddc)
 			self.connect(ddc, demod)
 			self.connect(demod, dst)
 
