@@ -91,6 +91,7 @@ bluetooth_UAP2::work (int noutput_items,
 		if(d_first_packet_time == 0)
 		{
 			d_first_packet_time = d_cumulative_count + d_consumed;
+			d_previous_packet_time = d_first_packet_time;
 			printf("first packet at %d\n", d_first_packet_time);
 		}
 		header();
