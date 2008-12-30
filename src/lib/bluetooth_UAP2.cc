@@ -264,8 +264,8 @@ void bluetooth_UAP2::header()
 			}
 			starting++;
 		}
-		d_previous_clock_offset += quotient;
 	}
+	d_previous_clock_offset += quotient;
 	ending = starting - eliminated;
 	printf("reduced from %d to %d\n", starting, ending);
 	d_limit--;
