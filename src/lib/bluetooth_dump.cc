@@ -166,13 +166,18 @@ int bluetooth_dump::DV(char *stream, int UAP, int size)
 	/*Un-FEC 2/3 it */
 	char *corrected;
 	corrected = unfec23(stream+80, bitlength);
+	if(NULL == corrected)
+		return 0;
 
 	length++;
 	size -= 80;
 	size -= bitlength;
 
 	if(0 > size)
+	{
+		free(corrected);
 		return 1;
+	}
 
 	for(count = 0; count < length+2; count++)
 		corrected[count] = gr_to_normal(corrected+(8*count));
@@ -181,6 +186,7 @@ int bluetooth_dump::DV(char *stream, int UAP, int size)
 	crc = crcgen(corrected, length, UAP);
 
 	check = corrected[length+1] | corrected[length] << 8;
+	free(corrected);
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -224,12 +230,17 @@ int bluetooth_dump::DM1(char *stream, int UAP, int size)
 	/*Un-FEC 2/3 it */
 	char *corrected;
 	corrected = unfec23(stream, bitlength);
+	if(NULL == corrected)
+		return 0;
 
 	length++;
 	size -= bitlength;
 
 	if(0 > size)
+	{
+		free(corrected);
 		return 1;
+	}
 
 	for(count = 0; count < length+2; count++)
 		corrected[count] = gr_to_normal(corrected+(8*count));
@@ -238,6 +249,7 @@ int bluetooth_dump::DM1(char *stream, int UAP, int size)
 	crc = crcgen(corrected, length, UAP);
 
 	check = corrected[length+1] | corrected[length] << 8;
+	free(corrected);
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -293,18 +305,26 @@ int bluetooth_dump::DM3(char *stream, int UAP, int size)
 		return 1;
 
 	corrected_payload_header = unfec23(stream, 16);
+	if(NULL == corrected_payload_header)
+		return 0;
 	length = air_to_host16(&corrected_payload_header[3], 10);
+	free(corrected_payload_header);
 	bitlength = (length+4)*8;
 
 	/*Un-FEC 2/3 it */
 	char *corrected;
 	corrected = unfec23(stream, bitlength);
+	if(NULL == corrected)
+		return 0;
 
 	length += 2;
 	size -= bitlength;
 
 	if(0 > size)
+	{
+		free(corrected);
 		return 1;
+	}
 
 	for(count = 0; count < length+2; count++)
 		corrected[count] = gr_to_normal(corrected+(8*count));
@@ -313,6 +333,7 @@ int bluetooth_dump::DM3(char *stream, int UAP, int size)
 	crc = crcgen(corrected, length, UAP);
 
 	check = corrected[length+1] | corrected[length] << 8;
+	free(corrected);
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -385,11 +406,14 @@ int bluetooth_dump::FHS(char *stream, int UAP)
 	uint16_t NAP;
 	length = 10;
 	char *corrected;
-	unfec23(stream, length*8);
+	corrected = unfec23(stream, length*8);
+	if(NULL == corrected)
+		return 0;
 
 	payload_UAP = air_to_host8(&corrected[64], 8);
 
 	NAP = air_to_host16(&corrected[72], 16);
+	free(corrected);
 
 	if(UAP == payload_UAP)
 	{
