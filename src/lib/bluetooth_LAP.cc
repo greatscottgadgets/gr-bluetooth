@@ -81,7 +81,7 @@ bluetooth_LAP::work (int noutput_items,
 /* Looks for an AC in the stream */
 int bluetooth_LAP::sniff_ac()
 {
-	int jump, count;
+	int count;
 	uint8_t preamble; // start of sync word (includes LSB of LAP)
 	uint16_t trailer; // end of sync word: barker sequence and trailer (includes MSB of LAP)
 	int max_distance = 2; // maximum number of bit errors to tolerate in preamble + trailer
