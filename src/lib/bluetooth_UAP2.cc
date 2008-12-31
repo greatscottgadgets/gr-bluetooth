@@ -92,7 +92,7 @@ bluetooth_UAP2::work (int noutput_items,
 			d_previous_packet_time = d_cumulative_count + d_consumed;
 			header();
 			d_first_packet_time = d_previous_packet_time;
-			printf("first packet at %d\n", d_first_packet_time);
+			printf("first packet was at sample %d\n", d_first_packet_time);
 		} else {
 			header();
 			d_previous_packet_time = d_cumulative_count + d_consumed;
@@ -212,7 +212,7 @@ void bluetooth_UAP2::header()
 	char unwhitened[18];
 	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
 	uint8_t UAP, ltadr, type;
-	int count, group, retval;
+	int count, group, retval, first_clock;
 	int starting = 0;
 	int eliminated = 0;
 	int ending = 0;
@@ -224,6 +224,7 @@ void bluetooth_UAP2::header()
 
 	/* number of time slots elapsed since previous packet */
 	int interval = (difference + 312) / 625;
+	printf("Packet received after %d time slots.\n", interval + d_previous_clock_offset);
 
 	/* the remainder is an indicator of how far off we have drifted */
 	int remainder = difference % 625;
@@ -277,9 +278,11 @@ void bluetooth_UAP2::header()
 					//printf("CRC check failed, eliminating %d\n", count);
 					d_clock_candidates[count] = -1;
 					eliminated++;
-				}
+				} else
+					/* remember this count because it may be the correct clock of the first packet */
+					first_clock = count;
 			}
-			printf("tried clock = %d, UAP = 0x%x, ltadr = %d, type = %d, retval = %d\n", clock, UAP, ltadr, type, retval);
+			//printf("tried clock = %d, UAP = 0x%x, ltadr = %d, type = %d, retval = %d\n", clock, UAP, ltadr, type, retval);
 			starting++;
 		}
 	}
@@ -302,7 +305,8 @@ void bluetooth_UAP2::header()
 				//if(d_clock_candidates[count] > -1)
 					//UAP = d_clock_candidates[count];
 			printf("We have a winner! UAP = 0x%x found after %d packets.\n", UAP, d_packets_observed);
-			exit(0);
+			printf("CLK1-6 at first packet was 0x%x.\n", first_clock);
+			//exit(0);
 		} else
 		{
 			printf("awaiting confirmation . . .\n");
@@ -315,14 +319,12 @@ int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8
 	switch(type)
 	{
 		case 4:/* FHS packets are sent with a UAP of 0x00 in the HEC */
-			printf("FHS\n");
 			if((size >= 240) && (UAP == 0x00))
 				return fhs(stream, clock, UAP);
 			else
 				return 0;
 
 		case 12:/* DM1 */
-			printf("DM1\n");
 			if(size >= 8)
 				return DM(stream, clock, UAP, 0, size);
 			else
