@@ -383,6 +383,7 @@ void keyboard_test(char *sequence)
 /* testing a specific data set */
 void headset_test(char *sequence)
 {
+	int i;
 	int address = 0xf24d952;
 	address_precalc(address);
 	gen_hops(sequence);
@@ -399,8 +400,13 @@ void headset_test(char *sequence)
 	printf("count: %d\n", count);
 	count = winnow(sequence, candidates, count, 1435, 74);
 	printf("count: %d\n", count);
-	if (count == 1)
+	if (count == 1) {
 		printf("clock: 0x%x\n", candidates[0]);
+		/* print a few hops for verification */
+		for (i = 0; i < 1500; i++)
+			if(sequence[candidates[0]+i] > 72 && sequence[candidates[0]+i] < 76)
+				printf("%d ms: channel %d\n", 32+i*625/1000, sequence[candidates[0]+i]);
+	}
 }
 
 /* test winnowing method with simulated hop observations */
