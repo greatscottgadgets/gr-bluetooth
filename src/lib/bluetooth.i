@@ -66,7 +66,7 @@ private:
  */
 GR_SWIG_BLOCK_MAGIC(bluetooth,UAP2);
 
-bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP, int pkts);
+bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP);
 
 class bluetooth_UAP2 : public gr_sync_block
 {

@@ -31,13 +31,13 @@
  * a boost shared_ptr.  This is effectively the public constructor.
  */
 bluetooth_UAP2_sptr 
-bluetooth_make_UAP2 (int LAP, int pkts)
+bluetooth_make_UAP2 (int LAP)
 {
-  return bluetooth_UAP2_sptr (new bluetooth_UAP2 (LAP, pkts));
+  return bluetooth_UAP2_sptr (new bluetooth_UAP2 (LAP));
 }
 
 //private constructor
-bluetooth_UAP2::bluetooth_UAP2 (int LAP, int pkts)
+bluetooth_UAP2::bluetooth_UAP2 (int LAP)
   : bluetooth_block ()
 {
 	d_LAP = LAP;
@@ -45,17 +45,8 @@ bluetooth_UAP2::bluetooth_UAP2 (int LAP, int pkts)
 	d_consumed = 0;
 
 	int count, counter;
-	for(count = 0; count < 256; count++)
-	{
-		for(counter = 0; counter < 8; counter++)
-		{
-			d_UAPs[count][counter][0] = 0;
-			d_UAPs[count][counter][1] = 0;
-			d_UAPs[count][counter][2] = 0;
-			d_UAPs[count][counter][3] = 0;
-		}
-	}
-	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x and %d packets\n\n", LAP, pkts);
+
+	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x\n\n", LAP);
 
 	/* ensure that we are always given at least 3125 symbols (5 time slots) */
 	set_history(3125);
@@ -103,53 +94,6 @@ bluetooth_UAP2::work (int noutput_items,
 
 	// Tell runtime system how many output items we produced.
 	return d_consumed;
-}
-
-void bluetooth_UAP2::print_out()
-{
-	int count, counter, max, localmax;
-	int nibbles[16];
-	max = 0;
-	printf("Possible UAPs within 20%% of max value\n");
-	for(count = 0; count < 16; count++)
-		nibbles[count] = 0;
-
-	for(count = 0; count < 256; count++)
-	{
-		for(counter = 1; counter < 8; counter++)
-		{
-			localmax = 0;
-
-			if(d_UAPs[count][counter][1] > localmax)
-				localmax = d_UAPs[count][counter][1];
-			if(d_UAPs[count][counter][2] > localmax)
-				localmax = d_UAPs[count][counter][2];
-			if(d_UAPs[count][counter][3] > localmax)
-				localmax = d_UAPs[count][counter][3];
-
-			d_UAPs[count][counter][0] += localmax;
-		}
-
-		for(counter = 1; counter < 8; counter++)
-		{
-			if(d_UAPs[count][counter][0] > d_UAPs[count][0][0])
-				{d_UAPs[count][0][0] = d_UAPs[count][counter][0]; d_UAPs[count][0][1] = counter;}
-		}
-
-		if(d_UAPs[count][0][0] > max)
-			max = d_UAPs[count][0][0];
-	}
-	printf("max value=%d\n\n", max);
-	counter = 4;
-	for(count = 0; count < 256; count++)
-	{
-		if(max - d_UAPs[count][0][0] <= max/5)
-		{
-			d_UAPs[count][0][1] = (d_UAPs[count][0][1] & 4) >> 2 | (d_UAPs[count][0][1] & 2) | (d_UAPs[count][0][1] & 1) << 2;
-			printf("%02x -> %d votes -> LT_ADDR %d\n", count, d_UAPs[count][0][0], d_UAPs[count][0][1]);
-		}
-	}
-	exit(0);
 }
 
 /* Pointer to start of header, UAP */

@@ -33,7 +33,7 @@ typedef boost::shared_ptr<bluetooth_UAP2> bluetooth_UAP2_sptr;
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_UAP2.
  */
-bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP, int pkts);
+bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP);
 
 /*!
  * \brief Sniff Bluetooth packets.
@@ -45,11 +45,10 @@ private:
   // The friend declaration allows bluetooth_make_UAP to
   // access the private constructor.
 
-  friend bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP, int pkts);
+  friend bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP);
 
-  bluetooth_UAP2 (int LAP, int pkts);	// private constructor
+  bluetooth_UAP2 (int LAP);	// private constructor
 
-  int d_UAPs[256][8][4];
   int d_limit;
   uint64_t d_first_packet_time;
   int d_clock_candidates[64];
