@@ -55,7 +55,8 @@ private:
   int d_clock_candidates[64];
   int d_previous_packet_time;
   int d_previous_clock_offset;
-
+  int d_packets_observed;
+  bool d_UAP_confirmation;
 
 /* Converts 8 bytes of grformat to a single byte */
 char gr_to_normal(char *stream);
