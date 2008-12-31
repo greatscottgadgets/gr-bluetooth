@@ -44,8 +44,6 @@ bluetooth_UAP2::bluetooth_UAP2 (int LAP)
 	d_stream_length = 0;
 	d_consumed = 0;
 
-	int count, counter;
-
 	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x\n\n", LAP);
 
 	/* ensure that we are always given at least 3125 symbols (5 time slots) */
@@ -56,7 +54,6 @@ bluetooth_UAP2::bluetooth_UAP2 (int LAP)
 	d_previous_packet_time = 0;
 	d_previous_clock_offset = 0;
 	d_packets_observed = 0;
-	d_UAP_confirmation = false;
 }
 
 //virtual destructor.
@@ -81,11 +78,10 @@ bluetooth_UAP2::work (int noutput_items,
 		if(d_first_packet_time == 0)
 		{
 			d_previous_packet_time = d_cumulative_count + d_consumed;
-			header();
+			UAP_from_header();
 			d_first_packet_time = d_previous_packet_time;
-			printf("first packet was at sample %d\n", d_first_packet_time);
 		} else {
-			header();
+			UAP_from_header();
 			d_previous_packet_time = d_cumulative_count + d_consumed;
 		}
 		d_consumed += 126;
@@ -149,17 +145,17 @@ int bluetooth_UAP2::sniff_ac()
 	return -1;
 }
 
-void bluetooth_UAP2::header()
+void bluetooth_UAP2::UAP_from_header()
 {
 	char *stream = d_stream + d_consumed + 72;
 	char header[18];
 	char unwhitened[18];
 	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
-	uint8_t UAP, ltadr, type;
-	int count, group, retval, first_clock;
+	uint8_t UAP, type;
+	int count, retval, first_clock;
 	int starting = 0;
 	int eliminated = 0;
-	int ending = 0;
+	int remaining = 0;
 
 	unfec13(stream, header, 18);
 
@@ -169,21 +165,14 @@ void bluetooth_UAP2::header()
 	/* number of time slots elapsed since previous packet */
 	int interval = (difference + 312) / 625;
 	printf("Packet received after %d time slots.\n", interval + d_previous_clock_offset);
+	d_packets_observed++;
 
-	/* the remainder is an indicator of how far off we have drifted */
-	int remainder = difference % 625;
-	printf("remainder = %d/625\n", remainder);
-	if((remainder > 156) && (remainder < 468))
-	{
-		printf("terrible wandering\n");
-		//exit(0);
-	}
-
+	/* try every possible first packet clock value */
 	for(count = 0; count < 64; count++)
 	{
+		/* skip eliminated candidates unless this is our first time through */
 		if(d_clock_candidates[count] > -1 || d_first_packet_time == 0)
 		{
-
 			/* clock value for the current packet assuming count was the clock of the first packet */
 			int clock = (count + d_previous_clock_offset + interval) % 64;
 
@@ -193,82 +182,68 @@ void bluetooth_UAP2::header()
 			unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
 
 			UAP = UAP_from_hec(unwhitened_air);
-
-			ltadr = (unwhitened_air[0] & 0xe0) >> 5;
-			type = (unwhitened_air[0] & 0x1e) >> 1;
+			type = air_to_host8(&unwhitened[3], 4);
 			retval = -1;
 
-			if(d_first_packet_time == 0)
-			{
-				/* this is the first packet: populate the candidate list */
+			/* if this is the first packet: populate the candidate list */
+			/* if not: check CRCs if UAPs match */
+			if(d_first_packet_time == 0 || UAP == d_clock_candidates[count])
 				retval = crc_check(stream+54, type, 3125+d_stream_length-(d_consumed + 126), clock, UAP);
-				if(0 == retval)
-				{
+			switch(retval)
+			{
+				case -1: /* UAP mismatch */
 					d_clock_candidates[count] = -1;
 					eliminated++;
-				} else
+					break;
+
+				case 0: /* CRC failure */
+					d_clock_candidates[count] = -1;
+					eliminated++;
+					break;
+
+				case 1: /* inconclusive result */
 					d_clock_candidates[count] = UAP;
-			} else if(UAP != d_clock_candidates[count])
-			{
-				/* UAP mismatch: eliminate this candidate */
-				//printf("new UAP %x doesn't match original UAP %x, eliminating %d\n", UAP, d_clock_candidates[count], count);
-				d_clock_candidates[count] = -1;
-				eliminated++;
-			} else
-			{
-				retval = crc_check(stream+54, type, 3125+d_stream_length-(d_consumed + 126), clock, UAP);
-				if(0 == retval)
-				{
-					//printf("CRC check failed, eliminating %d\n", count);
-					d_clock_candidates[count] = -1;
-					eliminated++;
-				} else
 					/* remember this count because it may be the correct clock of the first packet */
 					first_clock = count;
+					break;
+
+				default: /* CRC success */
+					printf("We have a winner by CRC! UAP = 0x%x found after %d packets.\n", UAP, d_packets_observed);
+					printf("CLK1-6 at first packet was 0x%x.\n", count);
+					exit(0);
 			}
-			//printf("tried clock = %d, UAP = 0x%x, ltadr = %d, type = %d, retval = %d\n", clock, UAP, ltadr, type, retval);
 			starting++;
 		}
 	}
 	d_previous_clock_offset += interval;
-	ending = starting - eliminated;
-	printf("reduced from %d to %d\n", starting, ending);
-	d_packets_observed++;
-	if(0 == ending)
+	remaining = starting - eliminated;
+	printf("reduced from %d to %d clock candidates\n", starting, remaining);
+	if(0 == remaining)
 	{
 		printf("no candidates remaining! starting over . . .\n");
 		d_first_packet_time = 0;
 		d_previous_packet_time = 0;
 		d_previous_clock_offset = 0;
-		d_UAP_confirmation = false;
-	} else if(1 == ending)
-		/* don't trust this result until an additional packet corroborates */
-		if(d_UAP_confirmation)
-		{
-			//for(count = 0; count < 64; count++)
-				//if(d_clock_candidates[count] > -1)
-					//UAP = d_clock_candidates[count];
-			printf("We have a winner! UAP = 0x%x found after %d packets.\n", UAP, d_packets_observed);
-			printf("CLK1-6 at first packet was 0x%x.\n", first_clock);
-			//exit(0);
-		} else
-		{
-			printf("awaiting confirmation . . .\n");
-			d_UAP_confirmation = true;
-		}
+	} else if(1 == starting && 1 == remaining)
+	{
+		/* we only trust this result if two packets in a row agree on the winner */
+		printf("We have a winner! UAP = 0x%x found after %d packets.\n", UAP, d_packets_observed);
+		printf("CLK1-6 at first packet was 0x%x.\n", first_clock);
+		exit(0);
+	}
 }
 
 int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8_t UAP)
 {
 	switch(type)
 	{
-		case 4:/* FHS packets are sent with a UAP of 0x00 in the HEC */
+		case 2:/* FHS packets are sent with a UAP of 0x00 in the HEC */
 			if((size >= 240) && (UAP == 0x00))
 				return fhs(stream, clock, UAP);
 			else
 				return 0;
 
-		case 12:/* DM1 */
+		case 3:/* DM1 */
 			if(size >= 8)
 				return DM(stream, clock, UAP, 0, size);
 			else

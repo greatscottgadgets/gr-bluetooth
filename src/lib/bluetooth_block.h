@@ -92,8 +92,8 @@ protected:
 	uint16_t d_consumed;
 	// could be 32 bits, but then it would roll over after about 70 minutes
 	uint64_t d_cumulative_count;
-	int d_LAP;
-	int d_UAP;
+	uint32_t d_LAP;
+	uint8_t d_UAP;
 	uint8_t d_payload_size;
 	int d_packet_type;
 
