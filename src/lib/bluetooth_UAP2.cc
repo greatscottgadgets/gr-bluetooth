@@ -154,7 +154,6 @@ void bluetooth_UAP2::UAP_from_header()
 	uint8_t UAP, type;
 	int count, retval, first_clock;
 	int starting = 0;
-	int eliminated = 0;
 	int remaining = 0;
 
 	unfec13(stream, header, 18);
@@ -192,19 +191,15 @@ void bluetooth_UAP2::UAP_from_header()
 			switch(retval)
 			{
 				case -1: /* UAP mismatch */
-					d_clock_candidates[count] = -1;
-					eliminated++;
-					break;
-
 				case 0: /* CRC failure */
 					d_clock_candidates[count] = -1;
-					eliminated++;
 					break;
 
 				case 1: /* inconclusive result */
 					d_clock_candidates[count] = UAP;
 					/* remember this count because it may be the correct clock of the first packet */
 					first_clock = count;
+					remaining++;
 					break;
 
 				default: /* CRC success */
@@ -216,7 +211,6 @@ void bluetooth_UAP2::UAP_from_header()
 		}
 	}
 	d_previous_clock_offset += interval;
-	remaining = starting - eliminated;
 	printf("reduced from %d to %d clock candidates\n", starting, remaining);
 	if(0 == remaining)
 	{
@@ -248,9 +242,17 @@ int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8
 				retval = 0;
 			break;
 
+		case 8:/* DV - skip 80bits for voice then treat like a DM1 */
+			stream += 80;
 		case 3:/* DM1 */
 			if(size >= 8)
 				retval = DM(stream, clock, UAP, 0, size);
+			break;
+
+		case 10:/* DM3 */
+		case 14:/* DM5 */
+			if(size >= 20)
+				retval = DM(stream, clock, UAP, 1, size);
 			break;
 
 		case 4:/* DH1 */
@@ -258,42 +260,17 @@ int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8
 				retval = DH(stream, clock, UAP, 0, size);
 			break;
 
-		case 7:/* EV3 Unknown length, need to cycle through it until CRC matches */
-			retval = EV(stream, clock, UAP, type, size);
-			break;
-
-		case 8:/* DV - skip 80bits for voice then treat like a DM1 */
-			stream += 80;
-			if(size >= 8)
-				retval = DM(stream, clock, UAP, 0, size);
-			break;
-
-		case 10:/* DM3 */
-			if(size >= 20)
-				retval = DM(stream, clock, UAP, 1, size);
-			break;
-
 		case 11:/* DH3 */
-			if(size >= 16)
-				retval = DH(stream, clock, UAP, 1, size);
-			break;
-
-		case 12:/* EV4 Unknown length, need to cycle through it until CRC matches */
-			retval = EV(stream, clock, UAP, type, size);
-			break;
-
-		case 13:/* EV5 Unknown length, need to cycle through it until CRC matches */
-			retval = EV(stream, clock, UAP, type, size);
-			break;
-
-		case 14:/* DM5 */
-			if(size >= 20)
-				retval = DM(stream, clock, UAP, 1, size);
-			break;
-
 		case 15:/* DH5 */
 			if(size >= 16)
 				retval = DH(stream, clock, UAP, 1, size);
+			break;
+
+		case 7:/* EV3 */
+		case 12:/* EV4 */
+		case 13:/* EV5 */
+			/* Unknown length, need to cycle through it until CRC matches */
+			retval = EV(stream, clock, UAP, type, size);
 			break;
 	}
 	/* never return a zero result unless this ia a FHS or DM1 */
