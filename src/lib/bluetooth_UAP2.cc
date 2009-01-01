@@ -231,39 +231,29 @@ int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8
 {
 	/* return value of 1 represents inconclusive result (default) */
 	int retval = 1;
+	/* number of bytes in the payload header */
+	int header_bytes = 2;
 
 	switch(type)
 	{
-		//FIXME size failures probably ought to throw exceptions
 		case 2:/* FHS packets are sent with a UAP of 0x00 in the HEC */
-			if((size >= 240) && (UAP == 0x00))
-				retval = fhs(stream, clock, UAP);
-			else
-				retval = 0;
+			retval = fhs(stream, clock, UAP, size);
 			break;
 
 		case 8:/* DV - skip 80bits for voice then treat like a DM1 */
 			stream += 80;
 		case 3:/* DM1 */
-			if(size >= 8)
-				retval = DM(stream, clock, UAP, 0, size);
-			break;
-
+			header_bytes = 1;
 		case 10:/* DM3 */
 		case 14:/* DM5 */
-			if(size >= 20)
-				retval = DM(stream, clock, UAP, 1, size);
+			retval = DM(stream, clock, UAP, header_bytes, size);
 			break;
 
 		case 4:/* DH1 */
-			if(size >= 8)
-				retval = DH(stream, clock, UAP, 0, size);
-			break;
-
+			header_bytes = 1;
 		case 11:/* DH3 */
 		case 15:/* DH5 */
-			if(size >= 16)
-				retval = DH(stream, clock, UAP, 1, size);
+			retval = DH(stream, clock, UAP, header_bytes, size);
 			break;
 
 		case 7:/* EV3 */
@@ -280,12 +270,19 @@ int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8
 	return retval;
 }
 
-int bluetooth_UAP2::fhs(char *stream, int clock, uint8_t UAP)
+int bluetooth_UAP2::fhs(char *stream, int clock, uint8_t UAP, int size)
 {
 	char *corrected;
 	char payload[144];
 	uint8_t fhsuap;
 	uint32_t fhslap;
+
+	/* FHS packets are sent with a UAP of 0x00 in the HEC */
+	if(UAP != 0)
+		return 0;
+
+	if(size < 225)
+		return 1; //FIXME should throw exception
 
 	corrected = unfec23(stream, 144);
 	if(NULL == corrected)
@@ -304,30 +301,42 @@ int bluetooth_UAP2::fhs(char *stream, int clock, uint8_t UAP)
 }
 
 /* DM 1/3/5 packet (and DV)*/
-int bluetooth_UAP2::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
+int bluetooth_UAP2::DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size)
 {
 	int count, index, bitlength, length;
 	uint16_t crc, check;
 
-	if(pkthdr)
+	if(header_bytes == 2)
 	{
 		char *corrected;
 		char hdr[16];
+		if(size < 30)
+			return 1; //FIXME should throw exception
 		corrected = unfec23(stream, 16);
 		if(NULL == corrected)
 			return 0;
 		unwhiten(corrected, hdr, clock, 16, 18);
 		free(corrected);
+		/* payload length is payload body length + 2 bytes payload header + 2 bytes CRC */
 		length = air_to_host16(&hdr[3], 10) + 4;
+		/* check that the length is within range allowed by specification */
+		if(length > 228) //FIXME should be 125 if DM3
+			return 0;
 	} else {
 		char hdr[8];
+		if(size < 8)
+			return 1; //FIXME should throw exception
 		//unfec23 not needed because we are only looking at the first 8 symbols
 		unwhiten(stream, hdr, clock, 8, 18);
+		/* payload length is payload body length + 1 byte payload header + 2 bytes CRC */
 		length = air_to_host8(&hdr[3], 5) + 3;
+		/* check that the length is within range allowed by specification */
+		if(length > 20)
+			return 0;
 	}
 	bitlength = length*8;
 	if(bitlength > size)
-		return 1;
+		return 1; //FIXME should throw exception
 
 	char *corrected;
 	char payload[bitlength];
@@ -357,24 +366,35 @@ int bluetooth_UAP2::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int si
 
 /* DH 1/3/5 packet */
 /* similar to DM 1/3/5 but without FEC */
-int bluetooth_UAP2::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
+int bluetooth_UAP2::DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size)
 {
 	int count, index, bitlength, length;
 	uint16_t crc, check;
 
-	if(pkthdr)
+	if(size < (header_bytes * 8))
+		return 1; //FIXME should throw exception
+
+	if(header_bytes == 2)
 	{
 		char hdr[16];
 		unwhiten(stream, hdr, clock, 16, 18);
+		/* payload length is payload body length + 2 bytes payload header + 2 bytes CRC */
 		length = air_to_host16(&hdr[3], 10) + 4;
+		/* check that the length is within range allowed by specification */
+		if(length > 343) //FIXME should be 187 if DH3
+			return 0;
 	} else {
 		char hdr[8];
 		unwhiten(stream, hdr, clock, 8, 18);
+		/* payload length is payload body length + 1 byte payload header + 2 bytes CRC */
 		length = air_to_host8(&hdr[3], 5) + 3;
+		/* check that the length is within range allowed by specification */
+		if(length > 30)
+			return 0;
 	}
 	bitlength = length*8;
 	if(bitlength > size)
-		return 1;
+		return 1; //FIXME should throw exception
 
 	char payload[bitlength];
 	unwhiten(stream, payload, clock, bitlength, 18);
@@ -405,6 +425,7 @@ int bluetooth_UAP2::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 
 	switch (type)
 	{
+		//FIXME these types are in reverse bit order
 		case 3: maxlength = 120; fec = 1; break;
 		case 11: maxlength = 180; fec = 0; break;
 		case 14: maxlength = 30; fec = 0; break;
@@ -414,6 +435,7 @@ int bluetooth_UAP2::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 	char *corrected;
 	char payload[(maxlength+2)*8];
 
+	//FIXME if(fec)?
 	corrected = unfec23(stream, maxlength * 8);
 	if(NULL == corrected)
 		return 0;

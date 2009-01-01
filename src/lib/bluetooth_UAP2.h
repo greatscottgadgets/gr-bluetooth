@@ -68,11 +68,11 @@ private:
 
 	int crc_check(char *stream, int type, int size, int clock, uint8_t UAP);
 
-	int fhs(char *stream, int clock, uint8_t UAP);
+	int fhs(char *stream, int clock, uint8_t UAP, int size);
 
-	int DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int size);
+	int DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
 
-	int DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int size);
+	int DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
 
 	int EV(char *stream, int clock, uint8_t UAP, int type, int size);
 
