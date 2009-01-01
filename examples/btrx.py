@@ -44,8 +44,6 @@ class my_top_block(gr.top_block):
 						help="sample rate of input (default: use DECIM)")
 		parser.add_option("-s", "--input-shorts", action="store_true", default=False,
 						help="input interleaved shorts instead of complex floats")
-		parser.add_option("-p", "--packets", type="int", default=100,
-						help="Number of packets to sniff (default=100)")
 		parser.add_option("-t", "--squelch", type="eng_float", default=None,
 						help="power squelch threshold in dB (default=None)")
 		parser.add_option("-u", "--uap", type="string", default=None,
@@ -169,7 +167,7 @@ class my_top_block(gr.top_block):
 					if options.uap is None:
 						# determine UAP from frames matching the user-specified LAP
 						# FIXME analyze multiple channels together, not separately
-						dst = bluetooth.UAP(int(options.lap, 16), options.packets)
+						dst = bluetooth.UAP(int(options.lap, 16))
 					else:
 						# sniffer mode
 						dst = bluetooth.sniffer(int(options.lap, 16), int(options.uap, 16))

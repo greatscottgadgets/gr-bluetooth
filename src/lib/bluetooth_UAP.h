@@ -33,7 +33,7 @@ typedef boost::shared_ptr<bluetooth_UAP> bluetooth_UAP_sptr;
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_UAP.
  */
-bluetooth_UAP_sptr bluetooth_make_UAP (int LAP, int pkts);
+bluetooth_UAP_sptr bluetooth_make_UAP (int LAP);
 
 /*!
  * \brief Sniff Bluetooth packets.
@@ -42,43 +42,43 @@ bluetooth_UAP_sptr bluetooth_make_UAP (int LAP, int pkts);
 class bluetooth_UAP : public bluetooth_block
 {
 private:
-  // The friend declaration allows bluetooth_make_UAP to
-  // access the private constructor.
+	// The friend declaration allows bluetooth_make_UAP to
+	// access the private constructor.
 
-  friend bluetooth_UAP_sptr bluetooth_make_UAP (int LAP, int pkts);
+	friend bluetooth_UAP_sptr bluetooth_make_UAP (int LAP);
 
-  bluetooth_UAP (int LAP, int pkts);	// private constructor
+	bluetooth_UAP (int LAP);	// private constructor
 
-  int d_UAPs[256][8][4];
-  int d_limit;
+	int d_limit;
+	uint64_t d_first_packet_time;
+	int d_clock_candidates[64];
+	int d_previous_packet_time;
+	int d_previous_clock_offset;
+	int d_packets_observed;
 
-/* Converts 8 bytes of grformat to a single byte */
-char gr_to_normal(char *stream);
+	/* Converts 8 bytes of grformat to a single byte */
+	char gr_to_normal(char *stream);
 
-/* Dump the information to the screen */
-void print_out();
+	int UAP_from_hec(uint8_t *packet);
 
-int UAP_from_hec(uint8_t *packet);
+	int sniff_ac();
 
-int sniff_ac();
+	/* Use packet headers to determine UAP */
+	void UAP_from_header();
 
-/* To deal with whitened data */
-void header();
+	int crc_check(char *stream, int type, int size, int clock, uint8_t UAP);
 
-int crc_check(char *stream, int type, int size, int clock, uint8_t UAP);
+	int fhs(char *stream, int clock, uint8_t UAP, int size);
 
-int fhs(char *stream, int clock, uint8_t UAP);
+	int DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
 
-int DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int size);
+	int DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
 
-int DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int size);
+	int EV(char *stream, int clock, uint8_t UAP, int type, int size);
 
-int EV(char *stream, int clock, uint8_t UAP, int type, int size);
+	uint16_t crcgen(char *packet, int length, int UAP);
 
-uint16_t crcgen(char *packet, int length, int UAP);
-
-
- public:
+public:
   ~bluetooth_UAP ();	// public destructor
 
   // Where all the action really happens

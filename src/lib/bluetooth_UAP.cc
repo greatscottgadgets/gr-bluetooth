@@ -31,35 +31,29 @@
  * a boost shared_ptr.  This is effectively the public constructor.
  */
 bluetooth_UAP_sptr 
-bluetooth_make_UAP (int LAP, int pkts)
+bluetooth_make_UAP (int LAP)
 {
-  return bluetooth_UAP_sptr (new bluetooth_UAP (LAP, pkts));
+  return bluetooth_UAP_sptr (new bluetooth_UAP (LAP));
 }
 
 //private constructor
-bluetooth_UAP::bluetooth_UAP (int LAP, int pkts)
+bluetooth_UAP::bluetooth_UAP (int LAP)
   : bluetooth_block ()
 {
 	d_LAP = LAP;
 	d_stream_length = 0;
 	d_consumed = 0;
-	d_limit = pkts;
 
-	int count, counter;
-	for(count = 0; count < 256; count++)
-	{
-		for(counter = 0; counter < 8; counter++)
-		{
-			d_UAPs[count][counter][0] = 0;
-			d_UAPs[count][counter][1] = 0;
-			d_UAPs[count][counter][2] = 0;
-			d_UAPs[count][counter][3] = 0;
-		}
-	}
-	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x and %d packets\n\n", LAP, pkts);
+	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x\n\n", LAP);
 
 	/* ensure that we are always given at least 3125 symbols (5 time slots) */
 	set_history(3125);
+
+	d_cumulative_count = 0;
+	d_first_packet_time = 0;
+	d_previous_packet_time = 0;
+	d_previous_clock_offset = 0;
+	d_packets_observed = 0;
 }
 
 //virtual destructor.
@@ -81,61 +75,21 @@ bluetooth_UAP::work (int noutput_items,
 		d_consumed = noutput_items;
 	} else {
 		d_consumed = retval;
-		header();
-		if(d_limit == 0)
-			print_out();
+		if(d_first_packet_time == 0)
+		{
+			d_previous_packet_time = d_cumulative_count + d_consumed;
+			UAP_from_header();
+			d_first_packet_time = d_previous_packet_time;
+		} else {
+			UAP_from_header();
+			d_previous_packet_time = d_cumulative_count + d_consumed;
+		}
 		d_consumed += 126;
 	}
+	d_cumulative_count += d_consumed;
 
 	// Tell runtime system how many output items we produced.
 	return d_consumed;
-}
-
-void bluetooth_UAP::print_out()
-{
-	int count, counter, max, localmax;
-	int nibbles[16];
-	max = 0;
-	printf("Possible UAPs within 20%% of max value\n");
-	for(count = 0; count < 16; count++)
-		nibbles[count] = 0;
-
-	for(count = 0; count < 256; count++)
-	{
-		for(counter = 1; counter < 8; counter++)
-		{
-			localmax = 0;
-
-			if(d_UAPs[count][counter][1] > localmax)
-				localmax = d_UAPs[count][counter][1];
-			if(d_UAPs[count][counter][2] > localmax)
-				localmax = d_UAPs[count][counter][2];
-			if(d_UAPs[count][counter][3] > localmax)
-				localmax = d_UAPs[count][counter][3];
-
-			d_UAPs[count][counter][0] += localmax;
-		}
-
-		for(counter = 1; counter < 8; counter++)
-		{
-			if(d_UAPs[count][counter][0] > d_UAPs[count][0][0])
-				{d_UAPs[count][0][0] = d_UAPs[count][counter][0]; d_UAPs[count][0][1] = counter;}
-		}
-
-		if(d_UAPs[count][0][0] > max)
-			max = d_UAPs[count][0][0];
-	}
-	printf("max value=%d\n\n", max);
-	counter = 4;
-	for(count = 0; count < 256; count++)
-	{
-		if(max - d_UAPs[count][0][0] <= max/5)
-		{
-			d_UAPs[count][0][1] = (d_UAPs[count][0][1] & 4) >> 2 | (d_UAPs[count][0][1] & 2) | (d_UAPs[count][0][1] & 1) << 2;
-			printf("%02x -> %d votes -> LT_ADDR %d\n", count, d_UAPs[count][0][0], d_UAPs[count][0][1]);
-		}
-	}
-	exit(0);
 }
 
 /* Pointer to start of header, UAP */
@@ -171,168 +125,164 @@ int bluetooth_UAP::UAP_from_hec(uint8_t *packet)
 /* Looks for an AC in the stream */
 int bluetooth_UAP::sniff_ac()
 {
-	int jump, count;
-	uint16_t trailer; // barker code plus trailer
+	int count;
+	uint8_t preamble; // start of sync word (includes LSB of LAP)
+	uint16_t trailer; // end of sync word: barker sequence and trailer (includes MSB of LAP)
+	int max_distance = 2; // maximum number of bit errors to tolerate in preamble + trailer
 	char *stream;
-	int jumps[16] = {3,2,1,3,3,0,2,3,3,2,0,3,3,1,2,3};
 
-	for(count = 0; count < d_stream_length; count += jump)
+	for(count = 0; count < d_stream_length; count ++)
 	{
 		stream = &d_stream[count];
-		jump = jumps[stream[0] << 3 | stream[1] << 2 | stream[2] << 1 | stream[3]];
-		if(0 == jump)
+		preamble = air_to_host8(&stream[0], 5);
+		trailer = air_to_host16(&stream[61], 11);
+		if((preamble_distance[preamble] + trailer_distance[trailer]) <= max_distance)
 		{
-			/* Found the start, now check the end... */
-			trailer = air_to_host16(&stream[61], 11);
-			/* stream[4] should probably be used in the jump trick instead of here.
-			 * Then again, an even better solution would have some error tolerance,
-			 * but we would probably have to abandon the jump trick. */
-			if((stream[4] == stream[0]) && ((0x558 == trailer) || (0x2a7 == trailer)))
-			{
-				if(check_ac(stream, d_LAP) || check_ac(stream, general_inquiry_LAP))
-					return count;
-			}
-			jump = 1;
+			if(check_ac(stream, d_LAP) || check_ac(stream, general_inquiry_LAP))
+				return count;
 		}
 	}
 	return -1;
 }
 
-void bluetooth_UAP::header()
+void bluetooth_UAP::UAP_from_header()
 {
 	char *stream = d_stream + d_consumed + 72;
 	char header[18];
 	char unwhitened[18];
 	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
-	uint8_t UAP, ltadr, type;
-	int count, group, retval;
+	uint8_t UAP, type;
+	int count, retval, first_clock;
+	int starting = 0;
+	int remaining = 0;
 
 	unfec13(stream, header, 18);
 
+	/* number of samples elapsed since previous packet */
+	int difference = (d_cumulative_count + d_consumed) - d_previous_packet_time;
+
+	/* number of time slots elapsed since previous packet */
+	int interval = (difference + 312) / 625;
+	printf("Packet received after %d time slots.\n", interval + d_previous_clock_offset);
+	d_packets_observed++;
+
+	/* try every possible first packet clock value */
 	for(count = 0; count < 64; count++)
 	{
-		unwhiten(header, unwhitened, count, 18, 0);
-
-		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
-		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
-		unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
-
-		UAP = UAP_from_hec(unwhitened_air);
-
-		/* Make sure we only count it once per packet */
-		ltadr = (unwhitened_air[0] & 0xe0) >> 5;
-		type = (unwhitened_air[0] & 0x1e) >> 1;
-		//printf("trying clock = %d, UAP = %d, ltadr = %d, type = %d\n", count, UAP, ltadr, type);
-
-		retval = crc_check(stream+54, type, d_stream_length-(d_consumed + 126), count, UAP);
-
-	/* Group is one of control packets, sco connection
-	 * esco connection or acl connection.
-	 * If a link is being used it is likely to be of
-	 * one conenction type, therefore the packets will
-	 * more often be in the same group.  The control
-	 * packets are added to the highest group */
-		switch(type)
+		/* skip eliminated candidates unless this is our first time through */
+		if(d_clock_candidates[count] > -1 || d_first_packet_time == 0)
 		{
-			case 0:group = 0; break;
-			case 1:group = 1; break;
-			case 2:group = 3; break;
-			case 3:group = 2; break;
-			case 4:group = 0; break;
-			case 5:group = 3; break;
-			case 6:group = 1; break;
-			case 7:group = 3; break;
-			case 8:group = 0; break;
-			case 9:group = 3; break;
-			case 10:group = 1; break;
-			case 11:group = 2; break;
-			case 12:group = 3; break;
-			case 13:group = 3; break;
-			/* Can represent two different types */
-			case 14:d_UAPs[UAP][ltadr][1] += retval; group = 2; break;
-			case 15:group = 3; break;
-			default:group = 0;
+			/* clock value for the current packet assuming count was the clock of the first packet */
+			int clock = (count + d_previous_clock_offset + interval) % 64;
+
+			unwhiten(header, unwhitened, clock, 18, 0);
+			unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
+			unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
+			unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
+
+			UAP = UAP_from_hec(unwhitened_air);
+			type = air_to_host8(&unwhitened[3], 4);
+			retval = -1;
+
+			/* if this is the first packet: populate the candidate list */
+			/* if not: check CRCs if UAPs match */
+			if(d_first_packet_time == 0 || UAP == d_clock_candidates[count])
+				retval = crc_check(stream+54, type, 3125+d_stream_length-(d_consumed + 126), clock, UAP);
+			switch(retval)
+			{
+				case -1: /* UAP mismatch */
+				case 0: /* CRC failure */
+					d_clock_candidates[count] = -1;
+					break;
+
+				case 1: /* inconclusive result */
+					d_clock_candidates[count] = UAP;
+					/* remember this count because it may be the correct clock of the first packet */
+					first_clock = count;
+					remaining++;
+					break;
+
+				default: /* CRC success */
+					printf("We have a winner by CRC! UAP = 0x%x found after %d packets.\n", UAP, d_packets_observed);
+					printf("CLK1-6 at first packet was 0x%x.\n", count);
+					exit(0);
+			}
+			starting++;
 		}
-		d_UAPs[UAP][ltadr][group] += retval;
 	}
-	d_limit--;
+	d_previous_clock_offset += interval;
+	printf("reduced from %d to %d clock candidates\n", starting, remaining);
+	if(0 == remaining)
+	{
+		printf("no candidates remaining! starting over . . .\n");
+		d_first_packet_time = 0;
+		d_previous_packet_time = 0;
+		d_previous_clock_offset = 0;
+	} else if(1 == starting && 1 == remaining)
+	{
+		/* we only trust this result if two packets in a row agree on the winner */
+		printf("We have a winner! UAP = 0x%x found after %d packets.\n", UAP, d_packets_observed);
+		printf("CLK1-6 at first packet was 0x%x.\n", first_clock);
+		exit(0);
+	}
 }
 
 int bluetooth_UAP::crc_check(char *stream, int type, int size, int clock, uint8_t UAP)
 {
+	/* return value of 1 represents inconclusive result (default) */
+	int retval = 1;
+	/* number of bytes in the payload header */
+	int header_bytes = 2;
+
 	switch(type)
 	{
-		case 1:/* DV - skip 80bits for voice then treat like a DM1 */
+		case 2:/* FHS packets are sent with a UAP of 0x00 in the HEC */
+			retval = fhs(stream, clock, UAP, size);
+			break;
+
+		case 8:/* DV - skip 80bits for voice then treat like a DM1 */
 			stream += 80;
-			if(size >= 8)
-				return DM(stream, clock, UAP, 0, size);
-			else
-				return 1;
+		case 3:/* DM1 */
+			header_bytes = 1;
+		case 10:/* DM3 */
+		case 14:/* DM5 */
+			retval = DM(stream, clock, UAP, header_bytes, size);
+			break;
 
-		case 2:/* DH1 */
-			if(size >= 8)
-				return DH(stream, clock, UAP, 0, size);
-			else
-				return 1;
-
-		case 3:/* EV4 Unknown length, need to cycle through it until CRC matches */
-			return EV(stream, clock, UAP, type, size);
-
-		case 4:/* FHS packets are sent with a UAP of 0x00 in the HEC */
-			if((size >= 240) && (UAP == 0x00))
-				return fhs(stream, clock, UAP);
-			else
-				return 0;
-
-		case 5:/* DM3 */
-			if(size >= 20)
-				return DM(stream, clock, UAP, 1, size);
-			else
-				return 1;
-
-
-		case 7:/* DM5 */
-			if(size >= 20)
-				return DM(stream, clock, UAP, 1, size);
-			else
-				return 1;
-
-		case 11:/* EV5 Unknown length, need to cycle through it until CRC matches */
-			return EV(stream, clock, UAP, type, size);
-
-		case 12:/* DM1 */
-			if(size >= 8)
-				return DM(stream, clock, UAP, 0, size);
-			else
-				return 1;
-
-		case 13:/* DH3 */
-			if(size >= 16)
-				return DH(stream, clock, UAP, 1, size);
-			else
-				return 1;
-
-		case 14:/* EV3 Unknown length, need to cycle through it until CRC matches */
-			return EV(stream, clock, UAP, type, size);
-
+		case 4:/* DH1 */
+			header_bytes = 1;
+		case 11:/* DH3 */
 		case 15:/* DH5 */
-			if(size >= 16)
-				return DH(stream, clock, UAP, 1, size);
-			else
-				return 1;
+			retval = DH(stream, clock, UAP, header_bytes, size);
+			break;
 
-		default :/* All without CRCs */
-			return 1;
+		case 7:/* EV3 */
+		case 12:/* EV4 */
+		case 13:/* EV5 */
+			/* Unknown length, need to cycle through it until CRC matches */
+			retval = EV(stream, clock, UAP, type, size);
+			break;
 	}
-	return 1;
+	/* never return a zero result unless this ia a FHS or DM1 */
+	/* any other type could have actually been something else */
+	if(retval == 0 && (type < 2 || type > 3))
+		return 1;
+	return retval;
 }
 
-int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
+int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP, int size)
 {
 	char *corrected;
 	char payload[144];
 	uint8_t fhsuap;
 	uint32_t fhslap;
+
+	/* FHS packets are sent with a UAP of 0x00 in the HEC */
+	if(UAP != 0)
+		return 0;
+
+	if(size < 225)
+		return 1; //FIXME should throw exception
 
 	corrected = unfec23(stream, 144);
 	if(NULL == corrected)
@@ -351,30 +301,42 @@ int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP)
 }
 
 /* DM 1/3/5 packet (and DV)*/
-int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
+int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size)
 {
 	int count, index, bitlength, length;
 	uint16_t crc, check;
 
-	if(pkthdr)
+	if(header_bytes == 2)
 	{
 		char *corrected;
 		char hdr[16];
+		if(size < 30)
+			return 1; //FIXME should throw exception
 		corrected = unfec23(stream, 16);
 		if(NULL == corrected)
 			return 0;
 		unwhiten(corrected, hdr, clock, 16, 18);
 		free(corrected);
+		/* payload length is payload body length + 2 bytes payload header + 2 bytes CRC */
 		length = air_to_host16(&hdr[3], 10) + 4;
+		/* check that the length is within range allowed by specification */
+		if(length > 228) //FIXME should be 125 if DM3
+			return 0;
 	} else {
 		char hdr[8];
+		if(size < 8)
+			return 1; //FIXME should throw exception
 		//unfec23 not needed because we are only looking at the first 8 symbols
 		unwhiten(stream, hdr, clock, 8, 18);
+		/* payload length is payload body length + 1 byte payload header + 2 bytes CRC */
 		length = air_to_host8(&hdr[3], 5) + 3;
+		/* check that the length is within range allowed by specification */
+		if(length > 20)
+			return 0;
 	}
 	bitlength = length*8;
 	if(bitlength > size)
-		return 1;
+		return 1; //FIXME should throw exception
 
 	char *corrected;
 	char payload[bitlength];
@@ -404,24 +366,35 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 
 /* DH 1/3/5 packet */
 /* similar to DM 1/3/5 but without FEC */
-int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int size)
+int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size)
 {
 	int count, index, bitlength, length;
 	uint16_t crc, check;
 
-	if(pkthdr)
+	if(size < (header_bytes * 8))
+		return 1; //FIXME should throw exception
+
+	if(header_bytes == 2)
 	{
 		char hdr[16];
 		unwhiten(stream, hdr, clock, 16, 18);
+		/* payload length is payload body length + 2 bytes payload header + 2 bytes CRC */
 		length = air_to_host16(&hdr[3], 10) + 4;
+		/* check that the length is within range allowed by specification */
+		if(length > 343) //FIXME should be 187 if DH3
+			return 0;
 	} else {
 		char hdr[8];
 		unwhiten(stream, hdr, clock, 8, 18);
+		/* payload length is payload body length + 1 byte payload header + 2 bytes CRC */
 		length = air_to_host8(&hdr[3], 5) + 3;
+		/* check that the length is within range allowed by specification */
+		if(length > 30)
+			return 0;
 	}
 	bitlength = length*8;
 	if(bitlength > size)
-		return 1;
+		return 1; //FIXME should throw exception
 
 	char payload[bitlength];
 	unwhiten(stream, payload, clock, bitlength, 18);
@@ -446,29 +419,42 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, bool pkthdr, int siz
 
 int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 {
-	int index, maxlength, count;
+	int index, count;
 	uint16_t crc, check;
-	bool fec;
+	char *corrected;
+	/* EV5 has a maximum of 180 bytes + 2 bytes CRC */
+	int maxlength = 182;
+	char payload[maxlength*8];
 
 	switch (type)
 	{
-		case 3: maxlength = 120; fec = 1; break;
-		case 11: maxlength = 180; fec = 0; break;
-		case 14: maxlength = 30; fec = 0; break;
-		default: return 0;
+		case 12:/* EV4 */
+			if(size < 1470)
+				return 1; //FIXME should throw exception
+			/* 120 bytes + 2 bytes CRC */
+			maxlength = 122;
+			corrected = unfec23(stream, maxlength * 8);
+			if(NULL == corrected)
+				return 0;
+			unwhiten(corrected, payload, clock, maxlength * 8, 18);
+			free(corrected);
+			break;
+
+		case 7:/* EV3 */
+			/* 30 bytes + 2 bytes CRC */
+			maxlength = 32;
+		case 13:/* EV5 */
+			if(size < (maxlength * 8))
+				return 1; //FIXME should throw exception
+			unwhiten(stream, payload, clock, maxlength * 8, 18);
+			break;
+
+		default:
+			return 0;
 	}
 
-	char *corrected;
-	char payload[(maxlength+2)*8];
-
-	corrected = unfec23(stream, maxlength * 8);
-	if(NULL == corrected)
-		return 0;
-	unwhiten(corrected, payload, clock, maxlength * 8, 18);
-	free(corrected);
-
 	/* Check crc for any integer byte length up to maxlength */
-	for(count = 0; count < maxlength+2; count++)
+	for(count = 0; count < maxlength; count++)
 	{
 		index = 8 * count;
 		payload[count] = payload[index] << 7 | payload[index+1] << 6 | payload[index+2] << 5 | payload[index+3] << 4 | payload[index+4] << 3 | payload[index+5] << 2 | payload[index+6] << 1 | payload[index+7];

@@ -10,7 +10,6 @@
 #include "bluetooth_sniffer.h"
 #include "bluetooth_LAP.h"
 #include "bluetooth_UAP.h"
-#include "bluetooth_UAP2.h"
 #include "bluetooth_block.h"
 #include "bluetooth_dump.h"
 #include <stdexcept>
@@ -52,26 +51,12 @@ private:
  */
 GR_SWIG_BLOCK_MAGIC(bluetooth,UAP);
 
-bluetooth_UAP_sptr bluetooth_make_UAP (int LAP, int pkts);
+bluetooth_UAP_sptr bluetooth_make_UAP (int LAP);
 
 class bluetooth_UAP : public gr_sync_block
 {
 private:
-  bluetooth_UAP (int LAP, int pkts);
-};
-
-/*
- * First arg is the package prefix.
- * Second arg is the name of the class minus the prefix.
- */
-GR_SWIG_BLOCK_MAGIC(bluetooth,UAP2);
-
-bluetooth_UAP2_sptr bluetooth_make_UAP2 (int LAP);
-
-class bluetooth_UAP2 : public gr_sync_block
-{
-private:
-  bluetooth_UAP2 (int LAP, int pkts);
+  bluetooth_UAP (int LAP);
 };
 
 /*
