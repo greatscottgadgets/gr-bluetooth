@@ -235,24 +235,72 @@ void bluetooth_UAP2::UAP_from_header()
 
 int bluetooth_UAP2::crc_check(char *stream, int type, int size, int clock, uint8_t UAP)
 {
+	/* return value of 1 represents inconclusive result (default) */
+	int retval = 1;
+
 	switch(type)
 	{
+		//FIXME size failures probably ought to throw exceptions
 		case 2:/* FHS packets are sent with a UAP of 0x00 in the HEC */
 			if((size >= 240) && (UAP == 0x00))
-				return fhs(stream, clock, UAP);
+				retval = fhs(stream, clock, UAP);
 			else
-				return 0;
+				retval = 0;
+			break;
 
 		case 3:/* DM1 */
 			if(size >= 8)
-				return DM(stream, clock, UAP, 0, size);
-			else
-				return 1;
+				retval = DM(stream, clock, UAP, 0, size);
+			break;
 
-		default :/* All without CRCs */
-			return 1;
+		case 4:/* DH1 */
+			if(size >= 8)
+				retval = DH(stream, clock, UAP, 0, size);
+			break;
+
+		case 7:/* EV3 Unknown length, need to cycle through it until CRC matches */
+			retval = EV(stream, clock, UAP, type, size);
+			break;
+
+		case 8:/* DV - skip 80bits for voice then treat like a DM1 */
+			stream += 80;
+			if(size >= 8)
+				retval = DM(stream, clock, UAP, 0, size);
+			break;
+
+		case 10:/* DM3 */
+			if(size >= 20)
+				retval = DM(stream, clock, UAP, 1, size);
+			break;
+
+		case 11:/* DH3 */
+			if(size >= 16)
+				retval = DH(stream, clock, UAP, 1, size);
+			break;
+
+		case 12:/* EV4 Unknown length, need to cycle through it until CRC matches */
+			retval = EV(stream, clock, UAP, type, size);
+			break;
+
+		case 13:/* EV5 Unknown length, need to cycle through it until CRC matches */
+			retval = EV(stream, clock, UAP, type, size);
+			break;
+
+		case 14:/* DM5 */
+			if(size >= 20)
+				retval = DM(stream, clock, UAP, 1, size);
+			break;
+
+		case 15:/* DH5 */
+			if(size >= 16)
+				retval = DH(stream, clock, UAP, 1, size);
+			break;
 	}
-	return 1;
+	/* never return a zero result unless this ia a FHS or DM1 */
+	/* any other type could have actually been something else */
+	if(retval == 0 && (type < 2 || type > 3))
+		return 1;
+	return retval;
 }
 
 int bluetooth_UAP2::fhs(char *stream, int clock, uint8_t UAP)
