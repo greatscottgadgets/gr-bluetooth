@@ -419,31 +419,42 @@ int bluetooth_UAP2::DH(char *stream, int clock, uint8_t UAP, int header_bytes, i
 
 int bluetooth_UAP2::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 {
-	int index, maxlength, count;
+	int index, count;
 	uint16_t crc, check;
-	bool fec;
+	char *corrected;
+	/* EV5 has a maximum of 180 bytes + 2 bytes CRC */
+	int maxlength = 182;
+	char payload[maxlength*8];
 
 	switch (type)
 	{
-		//FIXME these types are in reverse bit order
-		case 3: maxlength = 120; fec = 1; break;
-		case 11: maxlength = 180; fec = 0; break;
-		case 14: maxlength = 30; fec = 0; break;
-		default: return 0;
+		case 12:/* EV4 */
+			if(size < 1470)
+				return 1; //FIXME should throw exception
+			/* 120 bytes + 2 bytes CRC */
+			maxlength = 122;
+			corrected = unfec23(stream, maxlength * 8);
+			if(NULL == corrected)
+				return 0;
+			unwhiten(corrected, payload, clock, maxlength * 8, 18);
+			free(corrected);
+			break;
+
+		case 7:/* EV3 */
+			/* 30 bytes + 2 bytes CRC */
+			maxlength = 32;
+		case 13:/* EV5 */
+			if(size < (maxlength * 8))
+				return 1; //FIXME should throw exception
+			unwhiten(stream, payload, clock, maxlength * 8, 18);
+			break;
+
+		default:
+			return 0;
 	}
 
-	char *corrected;
-	char payload[(maxlength+2)*8];
-
-	//FIXME if(fec)?
-	corrected = unfec23(stream, maxlength * 8);
-	if(NULL == corrected)
-		return 0;
-	unwhiten(corrected, payload, clock, maxlength * 8, 18);
-	free(corrected);
-
 	/* Check crc for any integer byte length up to maxlength */
-	for(count = 0; count < maxlength+2; count++)
+	for(count = 0; count < maxlength; count++)
 	{
 		index = 8 * count;
 		payload[count] = payload[index] << 7 | payload[index+1] << 6 | payload[index+2] << 5 | payload[index+3] << 4 | payload[index+4] << 3 | payload[index+5] << 2 | payload[index+6] << 1 | payload[index+7];
