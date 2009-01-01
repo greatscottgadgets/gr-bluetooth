@@ -340,6 +340,7 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, in
 
 	char *corrected;
 	char payload[bitlength];
+	uint8_t packed_payload_air[length]; // more than one bit per byte but in air order
 	corrected = unfec23(stream, bitlength);
 	if(NULL == corrected)
 		return 0;
@@ -350,13 +351,11 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, in
 	for(count = 0; count < length; count++)
 	{
 		index = 8 * count;
-		payload[count] = payload[index] << 7 | payload[index+1] << 6 | payload[index+2] << 5 | payload[index+3] << 4 | payload[index+4] << 3 | payload[index+5] << 2 | payload[index+6] << 1 | payload[index+7];
-		//FIXME payload now breaks the host/air rules
+		packed_payload_air[count] = reverse(air_to_host8(&payload[index], 8));
 	}
 
-	crc = crcgen(payload, length-2, UAP);
-
-	check = payload[length-1] | payload[length-2] << 8;
+	crc = crcgen(packed_payload_air, length-2, UAP);
+	check = packed_payload_air[length-1] | (packed_payload_air[length-2] << 8);
 
 	if(crc == check)
 		return 10;
@@ -397,19 +396,18 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, int header_bytes, in
 		return 1; //FIXME should throw exception
 
 	char payload[bitlength];
+	uint8_t packed_payload_air[length]; // more than one bit per byte but in air order
 	unwhiten(stream, payload, clock, bitlength, 18);
 
 	//Pack the bits into bytes
 	for(count = 0; count < length; count++)
 	{
 		index = 8 * count;
-		payload[count] = payload[index] << 7 | payload[index+1] << 6 | payload[index+2] << 5 | payload[index+3] << 4 | payload[index+4] << 3 | payload[index+5] << 2 | payload[index+6] << 1 | payload[index+7];
-		//FIXME payload now breaks the host/air rules
+		packed_payload_air[count] = reverse(air_to_host8(&payload[index], 8));
 	}
 
-	crc = crcgen(payload, length-2, UAP);
-
-	check = payload[length-1] | payload[length-2] << 8;
+	crc = crcgen(packed_payload_air, length-2, UAP);
+	check = packed_payload_air[length-1] | (packed_payload_air[length-2] << 8);
 
 	if(crc == check)
 		return 10;
@@ -453,17 +451,17 @@ int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 			return 0;
 	}
 
+	uint8_t packed_payload_air[maxlength]; // more than one bit per byte but in air order
+
 	/* Check crc for any integer byte length up to maxlength */
 	for(count = 0; count < maxlength; count++)
 	{
 		index = 8 * count;
-		payload[count] = payload[index] << 7 | payload[index+1] << 6 | payload[index+2] << 5 | payload[index+3] << 4 | payload[index+4] << 3 | payload[index+5] << 2 | payload[index+6] << 1 | payload[index+7];
-		//FIXME payload now breaks the host/air rules
+		packed_payload_air[count] = reverse(air_to_host8(&payload[index], 8));
 		if(count > 1)
 		{
-			crc = crcgen(payload, count-1, UAP);
-	
-			check = payload[count] | payload[count-1] << 8;
+			crc = crcgen(packed_payload_air, count-1, UAP);
+			check = packed_payload_air[count] | (packed_payload_air[count-1] << 8);
 	
 			/* Check CRC */
 			if(crc == check)
@@ -474,7 +472,7 @@ int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 }
 
 /* Pointer to start of packet, length of packet in bytes, UAP */
-uint16_t bluetooth_UAP::crcgen(char *packet, int length, int UAP)
+uint16_t bluetooth_UAP::crcgen(uint8_t *packet, int length, int UAP)
 {
 	char byte;
 	uint16_t reg, count, counter;

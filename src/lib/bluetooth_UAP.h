@@ -76,7 +76,7 @@ private:
 
 	int EV(char *stream, int clock, uint8_t UAP, int type, int size);
 
-	uint16_t crcgen(char *packet, int length, int UAP);
+	uint16_t crcgen(uint8_t *packet, int length, int UAP);
 
 public:
   ~bluetooth_UAP ();	// public destructor
