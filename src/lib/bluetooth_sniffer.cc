@@ -289,18 +289,16 @@ int bluetooth_sniffer::DM1(int size, int clock)
 		return 0;
 	unwhiten(corrected, payload, clock, bitlength, 18);
 	free(corrected);
-	int x = 0;
+	uint16_t x = 0;
 	for(count = 0; count < bitlength; count++)
 	{
-		if(count == bitlength-16) {
+		if(count == bitlength-16)
 			printf("\nPacket CRC:");
-			x = 0;}
-		x <<= 1;
-		x |= payload[count];
 		printf("%d", payload[count]);
 	}
 	printf("\n");
 	crc = crcgen(payload, (length+1)*8, d_UAP);
+	x = air_to_host16(&payload[(length+1)*8], 16);
 	if(crc == x)
 		printf("CRC verified\n");
 	else

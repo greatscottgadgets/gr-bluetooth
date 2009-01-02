@@ -376,18 +376,18 @@ uint16_t bluetooth_block::crcgen(char *packet, int length, int UAP)
 	char byte;
 	uint16_t reg, count;
 
-	reg = UAP & 0xff;
+	reg = (reverse(UAP) << 8) & 0xff00;
 	for(count = 0; count < length; count++)
 	{
 		byte = packet[count];
 
-		reg = (reg << 1) | (((reg & 0x8000)>>15) ^ (byte & 0x01));
+		reg = (reg >> 1) | (((reg & 0x0001) ^ (byte & 0x01))<<15);
 
 		/*Bit 5*/
-		reg ^= ((reg & 0x0001)<<5);
+		reg ^= ((reg & 0x8000)>>5);
 
 		/*Bit 12*/
-		reg ^= ((reg & 0x0001)<<12);
+		reg ^= ((reg & 0x8000)>>12);
 	}
 	return reg;
 }

@@ -183,6 +183,7 @@ int bluetooth_dump::DV(char *stream, int UAP, int size)
 		corrected[count] = gr_to_normal(corrected+(8*count));
 		//FIXME corrected now breaks air/host rules
 
+	//FIXME using packed data with wrong crcgen
 	crc = crcgen(corrected, length, UAP);
 
 	check = corrected[length+1] | corrected[length] << 8;
@@ -246,6 +247,7 @@ int bluetooth_dump::DM1(char *stream, int UAP, int size)
 		corrected[count] = gr_to_normal(corrected+(8*count));
 		//FIXME corrected now breaks air/host rules
 
+	//FIXME using packed data with wrong crcgen
 	crc = crcgen(corrected, length, UAP);
 
 	check = corrected[length+1] | corrected[length] << 8;
@@ -279,6 +281,7 @@ int bluetooth_dump::DH1(char *stream, int UAP, int size)
 	for(count = 0; count < length+2; count++)
 		stream[count] = gr_to_normal(stream+(8*count));
 
+	//FIXME using packed data with wrong crcgen
 	crc = crcgen(stream, length, UAP);
 	check = stream[length];
 	check <<= 8;
@@ -330,6 +333,7 @@ int bluetooth_dump::DM3(char *stream, int UAP, int size)
 		corrected[count] = gr_to_normal(corrected+(8*count));
 		//FIXME corrected now breaks air/host rules
 
+	//FIXME using packed data with wrong crcgen
 	crc = crcgen(corrected, length, UAP);
 
 	check = corrected[length+1] | corrected[length] << 8;
@@ -363,6 +367,7 @@ int bluetooth_dump::DH3(char *stream, int UAP, int size)
 	for(count = 0; count < length+2; count++)
 		stream[count] = gr_to_normal(stream+(8*count));
 
+	//FIXME using packed data with wrong crcgen
 	crc = crcgen(stream, length, UAP);
 	check = stream[length+1] | stream[length] << 8;
 
