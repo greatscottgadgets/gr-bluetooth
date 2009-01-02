@@ -137,10 +137,7 @@ protected:
 	void unwhiten(char* input, char* output, int clock, int length, int skip);
 
 	/* Create the 16bit CRC for packet payloads - input air order stream */
-	uint16_t crcgen(char *packet, int length, int UAP);
-
-	/* Create the 16bit CRC for packet payloads - input air order packed bytes */
-	uint16_t crcgen(uint8_t *packet, int length, int UAP);
+	uint16_t crcgen(char *payload, int length, int UAP);
 
 //FIXME more stuff to consider moving here:
 //void header();

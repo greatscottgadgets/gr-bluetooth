@@ -371,7 +371,7 @@ void bluetooth_block::unwhiten(char* input, char* output, int clock, int length,
 }
 
 /* Pointer to start of packet, length of packet in bits, UAP */
-uint16_t bluetooth_block::crcgen(char *packet, int length, int UAP)
+uint16_t bluetooth_block::crcgen(char *payload, int length, int UAP)
 {
 	char byte;
 	uint16_t reg, count;
@@ -379,7 +379,7 @@ uint16_t bluetooth_block::crcgen(char *packet, int length, int UAP)
 	reg = (reverse(UAP) << 8) & 0xff00;
 	for(count = 0; count < length; count++)
 	{
-		byte = packet[count];
+		byte = payload[count];
 
 		reg = (reg >> 1) | (((reg & 0x0001) ^ (byte & 0x01))<<15);
 
@@ -388,31 +388,6 @@ uint16_t bluetooth_block::crcgen(char *packet, int length, int UAP)
 
 		/*Bit 12*/
 		reg ^= ((reg & 0x8000)>>12);
-	}
-	return reg;
-}
-
-/* Pointer to start of packet, length of packet in bytes, UAP */
-uint16_t bluetooth_block::crcgen(uint8_t *packet, int length, int UAP)
-{
-	char byte;
-	uint16_t reg, count, counter;
-
-	reg = UAP & 0xff;
-	for(count = 0; count < length; count++)
-	{
-		byte = *packet++;
-		for(counter = 0; counter < 8; counter++)
-		{
-			reg = (reg << 1) | (((reg & 0x8000)>>15) ^ ((byte & 0x80) >> 7));
-			byte <<= 1;
-
-			/*Bit 5*/
-			reg ^= ((reg & 0x0001)<<5);
-
-			/*Bit 12*/
-			reg ^= ((reg & 0x0001)<<12);
-		}
 	}
 	return reg;
 }

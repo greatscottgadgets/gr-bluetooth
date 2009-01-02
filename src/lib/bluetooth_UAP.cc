@@ -316,7 +316,7 @@ int bluetooth_UAP::fhs(char *stream, int clock, uint8_t UAP, int size)
 /* DM 1/3/5 packet (and DV)*/
 int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size)
 {
-	int count, index, bitlength, length;
+	int bitlength, length;
 	uint16_t crc, check;
 	char *corrected;
 
@@ -373,7 +373,7 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, in
 /* similar to DM 1/3/5 but without FEC */
 int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size)
 {
-	int count, index, bitlength, length;
+	int bitlength, length;
 	uint16_t crc, check;
 
 	if(size < (header_bytes * 8))
@@ -414,7 +414,7 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, int header_bytes, in
 
 int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 {
-	int index, count;
+	int count;
 	uint16_t crc, check;
 	char *corrected;
 	/* EV5 has a maximum of 180 bytes + 2 bytes CRC */
