@@ -221,44 +221,44 @@ void bluetooth_sniffer::new_header()
 
 		switch(d_packet_type)
 		{
-			case 0:/*printf("\nNULL Packet"); */
+			case 0:printf("NULL Packet\n");
 			break;
-			case 1://printf("\nDV Slots:1");
+			case 1:printf("DV Slots:1\n");
 			break;
-			case 2://printf("\n\nDH1 Slots:1");
+			case 2:printf("DH1 Slots:1\n");
 				//printf("\n%02x %02x %02x\n", unwhitened_air[0], unwhitened_air[1], unwhitened_air[2]);
 				//DH1(size, count);
 				break;
-			case 3://printf("\nEV4 Slots:3");
+			case 3:printf("EV4 Slots:3\n");
 			 break;
-			case 4://printf("\nFHS Slots:1");
+			case 4:printf("FHS Slots:1\n");
 			 break;
-			case 5://printf("\nDM3 Slots:3");
+			case 5:printf("DM3 Slots:3\n");
 			 break;
-			case 6://printf("\nHV2 Slots:1");
+			case 6:printf("HV2 Slots:1\n");
 				//printf("\n%02x %02x %02x\n", unwhitened_air[0], unwhitened_air[1], unwhitened_air[2]);
 				//HV2(size, count);
 				break;
-			case 7://printf("\nDM5 Slots:5");
+			case 7:printf("DM5 Slots:5\n");
 				//printf("\n%02x %02x %02x\n", unwhitened_air[0], unwhitened_air[1], unwhitened_air[2]);
 				//DM5(size, count);
 				break;
-			case 8://printf("\nPOLL Slots:1");
+			case 8:printf("POLL Slots:1\n");
 			 break;
-			case 9://printf("\nAUX1 Slots:1");
+			case 9:printf("AUX1 Slots:1\n");
 			 break;
-			case 10://printf("\nHV1 Slots:1");
+			case 10:printf("HV1 Slots:1\n");
 			 break;
-			case 11://printf("\nEV5 Slots:3");
+			case 11:printf("EV5 Slots:3\n");
 			 break;
-			case 12:printf("\nDM1 Slots:1 clock: %d", count);
+			case 12:printf("DM1 Slots:1 clock: %d", count);
 				DM1(size, count);
 				break;
-			case 13://printf("\nDH3 Slots:3");
+			case 13:printf("DH3 Slots:3\n");
 			break;
-			case 14://printf("\nHV3/EV3 Slots:1"); 
+			case 14:printf("HV3/EV3 Slots:1\n"); 
 				break;
-			case 15://printf("\nDH5 Slots:5");
+			case 15:printf("DH5 Slots:5\n");
 				//DH5(size, count);
 				break;
 		}
