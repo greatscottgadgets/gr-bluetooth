@@ -355,22 +355,13 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, in
 		return 1; //FIXME should throw exception
 
 	char payload[bitlength];
-	uint8_t packed_payload_air[length]; // more than one bit per byte but in air order
 	corrected = unfec23(stream, bitlength);
 	if(NULL == corrected)
 		return 0;
 	unwhiten(corrected, payload, clock, bitlength, 18);
 	free(corrected);
-
-	//Pack the bits into bytes
-	for(count = 0; count < length; count++)
-	{
-		index = 8 * count;
-		packed_payload_air[count] = reverse(air_to_host8(&payload[index], 8));
-	}
-
-	crc = crcgen(packed_payload_air, length-2, UAP);
-	check = packed_payload_air[length-1] | (packed_payload_air[length-2] << 8);
+	crc = crcgen(payload, (length-2)*8, UAP);
+	check = air_to_host16(&payload[(length-2)*8], 16);
 
 	if(crc == check)
 		return 10;
@@ -411,18 +402,9 @@ int bluetooth_UAP::DH(char *stream, int clock, uint8_t UAP, int header_bytes, in
 		return 1; //FIXME should throw exception
 
 	char payload[bitlength];
-	uint8_t packed_payload_air[length]; // more than one bit per byte but in air order
 	unwhiten(stream, payload, clock, bitlength, 18);
-
-	//Pack the bits into bytes
-	for(count = 0; count < length; count++)
-	{
-		index = 8 * count;
-		packed_payload_air[count] = reverse(air_to_host8(&payload[index], 8));
-	}
-
-	crc = crcgen(packed_payload_air, length-2, UAP);
-	check = packed_payload_air[length-1] | (packed_payload_air[length-2] << 8);
+	crc = crcgen(payload, (length-2)*8, UAP);
+	check = air_to_host16(&payload[(length-2)*8], 16);
 
 	if(crc == check)
 		return 10;
@@ -466,22 +448,15 @@ int bluetooth_UAP::EV(char *stream, int clock, uint8_t UAP, int type, int size)
 			return 0;
 	}
 
-	uint8_t packed_payload_air[maxlength]; // more than one bit per byte but in air order
-
 	/* Check crc for any integer byte length up to maxlength */
-	for(count = 0; count < maxlength; count++)
+	for(count = 1; count < (maxlength-1); count++)
 	{
-		index = 8 * count;
-		packed_payload_air[count] = reverse(air_to_host8(&payload[index], 8));
-		if(count > 1)
-		{
-			crc = crcgen(packed_payload_air, count-1, UAP);
-			check = packed_payload_air[count] | (packed_payload_air[count-1] << 8);
-	
-			/* Check CRC */
-			if(crc == check)
-				return 10;
-		}
+		crc = crcgen(payload, count*8, UAP);
+		check = air_to_host16(&payload[count*8], 16);
+
+		/* Check CRC */
+		if(crc == check)
+			return 10;
 	}
 	return 0;
 }
