@@ -153,6 +153,7 @@ void bluetooth_UAP::UAP_from_header()
 	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
 	uint8_t UAP, type;
 	int count, retval, first_clock;
+	int crc_match = -1;
 	int starting = 0;
 	int remaining = 0;
 
@@ -183,6 +184,7 @@ void bluetooth_UAP::UAP_from_header()
 			UAP = UAP_from_hec(unwhitened_air);
 			type = air_to_host8(&unwhitened[3], 4);
 			retval = -1;
+			starting++;
 
 			/* if this is the first packet: populate the candidate list */
 			/* if not: check CRCs if UAPs match */
@@ -203,12 +205,23 @@ void bluetooth_UAP::UAP_from_header()
 					break;
 
 				default: /* CRC success */
-					printf("We have a winner by CRC! UAP = 0x%x found after %d packets.\n", UAP, d_packets_observed);
-					printf("CLK1-6 at first packet was 0x%x.\n", count);
-					exit(0);
+					/* It is very likely that this is the correct clock/UAP, but I have seen a false positive */
+					printf("Correct CRC! UAP = 0x%x Awaiting confirmation. . .\n", UAP, d_packets_observed);
+					d_clock_candidates[count] = UAP;
+					first_clock = count;
+					crc_match = count;
+					break;
 			}
-			starting++;
 		}
+	}
+	if(crc_match > -1)
+	{
+		/* set things up for one additional packet to confirm */
+		remaining = 1;
+		/* eliminate all other candidates */
+		for(count = 0; count < 64; count++)
+			if(count != crc_match)
+					d_clock_candidates[count] = -1;
 	}
 	d_previous_clock_offset += interval;
 	printf("reduced from %d to %d clock candidates\n", starting, remaining);
