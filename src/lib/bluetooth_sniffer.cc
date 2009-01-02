@@ -124,29 +124,6 @@ int bluetooth_sniffer::UAP_from_hec(uint8_t *packet)
 	return hec;
 }
 
-
-/* Pointer to start of packet, length of packet in bits, UAP */
-uint16_t bluetooth_sniffer::crcgen(char *packet, int length, int UAP)
-{
-	char byte;
-	uint16_t reg, count;
-
-	reg = UAP & 0xff;
-	for(count = 0; count < length; count++)
-	{
-		byte = packet[count];
-
-		reg = (reg << 1) | (((reg & 0x8000)>>15) ^ (byte & 0x01));
-
-		/*Bit 5*/
-		reg ^= ((reg & 0x0001)<<5);
-
-		/*Bit 12*/
-		reg ^= ((reg & 0x0001)<<12);
-	}
-	return reg;
-}
-
 /* Looks for an AC in the stream */
 int bluetooth_sniffer::sniff_ac()
 {

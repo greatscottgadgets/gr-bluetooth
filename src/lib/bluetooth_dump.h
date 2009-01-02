@@ -103,8 +103,6 @@ int UAP_from_hec(char *packet, uint8_t hec);
 
 void header();
 
-uint16_t crcgen(char *packet, int length, int UAP);
-
 int payload();
 
 int sniff_ac();

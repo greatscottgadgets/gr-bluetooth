@@ -58,9 +58,6 @@ int UAP_from_hec(uint8_t *packet);
 /* For unwhitened headers */
 void header();
 
-/* Create the CRC */
-uint16_t crcgen(char *packet, int length, int UAP);
-
 int sniff_ac();
 
 /* To deal with whitened data */
