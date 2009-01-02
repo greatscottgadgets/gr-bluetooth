@@ -251,7 +251,7 @@ void bluetooth_sniffer::new_header()
 			 break;
 			case 11:printf("EV5 Slots:3\n");
 			 break;
-			case 12:printf("DM1 Slots:1 clock: %d", count);
+			case 12:printf("DM1 Slots:1 clock: %d\n", count);
 				DM1(size, count);
 				break;
 			case 13:printf("DH3 Slots:3\n");
@@ -272,14 +272,18 @@ int bluetooth_sniffer::DM1(int size, int clock)
 	char *stream = d_stream + d_consumed + 126;
 	int count, bitlength;
 	uint16_t crc, check;
-	uint8_t length;
+	uint8_t length, llid;
 	char header[8];
+	char *corrected_header;
 
 	if(8 >= size)
 		return 1;
 
-	//unfec23 not needed because we are only looking at the first 8 symbols
-	unwhiten(stream, header, clock, 8, 18);
+	corrected_header = unfec23(stream, 8);
+	if(NULL == corrected_header)
+		return 0;
+	unwhiten(corrected_header, header, clock, 8, 18);
+	free(corrected_header);
 
 	printf("\npayload header: ");
 	for(count = 0; count < 8; count++)
@@ -288,8 +292,8 @@ int bluetooth_sniffer::DM1(int size, int clock)
 	}
 	printf("\n");
 
-	crc = header[0] | header[1] << 1;
-	switch (crc) {
+	llid = air_to_host8(header, 2);
+	switch (llid) {
 		case 1: printf("Continuation of fragment\n");break;
 		case 2: printf("Start of fragment\n");break;
 	}
@@ -332,6 +336,7 @@ int bluetooth_sniffer::DM5(int size, int clock)
 	char *stream = d_stream + d_consumed + 126;
 	int count, length, bitlength;
 	uint16_t crc, check;
+	uint8_t llid;
 	char *corrected_header;
 	char unwhitened_header[16];
 
@@ -356,8 +361,8 @@ int bluetooth_sniffer::DM5(int size, int clock)
 	}
 	printf("\n");
 
-	crc = unwhitened_header[0] | unwhitened_header[1] << 1;
-	printf("\nLLID -> %d", crc);
+	llid = air_to_host8(unwhitened_header, 2);
+	printf("\nLLID -> %d", llid);
 
 	length = air_to_host16(&unwhitened_header[3], 10);
 	printf("\nclock = %d  length = %d\n", clock, length);

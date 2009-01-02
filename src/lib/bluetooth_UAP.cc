@@ -206,7 +206,7 @@ void bluetooth_UAP::UAP_from_header()
 
 				default: /* CRC success */
 					/* It is very likely that this is the correct clock/UAP, but I have seen a false positive */
-					printf("Correct CRC! UAP = 0x%x Awaiting confirmation. . .\n", UAP, d_packets_observed);
+					printf("Correct CRC! UAP = 0x%x Awaiting confirmation. . .\n", UAP);
 					d_clock_candidates[count] = UAP;
 					first_clock = count;
 					crc_match = count;
@@ -318,10 +318,10 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, in
 {
 	int count, index, bitlength, length;
 	uint16_t crc, check;
+	char *corrected;
 
 	if(header_bytes == 2)
 	{
-		char *corrected;
 		char hdr[16];
 		if(size < 30)
 			return 1; //FIXME should throw exception
@@ -339,8 +339,11 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, in
 		char hdr[8];
 		if(size < 8)
 			return 1; //FIXME should throw exception
-		//unfec23 not needed because we are only looking at the first 8 symbols
-		unwhiten(stream, hdr, clock, 8, 18);
+		corrected = unfec23(stream, 8);
+		if(NULL == corrected)
+			return 0;
+		unwhiten(corrected, hdr, clock, 8, 18);
+		free(corrected);
 		/* payload length is payload body length + 1 byte payload header + 2 bytes CRC */
 		length = air_to_host8(&hdr[3], 5) + 3;
 		/* check that the length is within range allowed by specification */
@@ -351,7 +354,6 @@ int bluetooth_UAP::DM(char *stream, int clock, uint8_t UAP, int header_bytes, in
 	if(bitlength > size)
 		return 1; //FIXME should throw exception
 
-	char *corrected;
 	char payload[bitlength];
 	uint8_t packed_payload_air[length]; // more than one bit per byte but in air order
 	corrected = unfec23(stream, bitlength);
