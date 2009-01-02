@@ -48,11 +48,6 @@ private:
 
   bluetooth_sniffer (int lap, int uap);  	// private constructor
 
-/* Converts 8 bytes of grformat to a single byte */
-char gr_to_normal(char *stream);
-
-char gr_to_normal(uint8_t *stream);
-
 int UAP_from_hec(uint8_t *packet);
 
 /* For unwhitened headers */

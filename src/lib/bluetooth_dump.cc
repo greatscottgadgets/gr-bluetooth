@@ -98,12 +98,6 @@ bluetooth_dump::work (int noutput_items,
 	return d_consumed;
 }
 
-/* Converts 8 bytes of grformat to a single byte */
-char bluetooth_dump::gr_to_normal(char *stream)
-{
-	return stream[0] << 7 | stream[1] << 6 | stream[2] << 5 | stream[3] << 4 | stream[4] << 3 | stream[5] << 2 | stream[6] << 1 | stream[7];
-}
-
 //FIXME ought to use unfec13 from parent class but not certain what is going on here
 // this just repacks the bits into the first bytes in the stream, it's not the way to do it (neither is most of the rest of this file)
 /* stream points to the stream of data, length is length in bits */
@@ -154,7 +148,7 @@ int bluetooth_dump::HV3(char *stream)
 /* DV packet */
 int bluetooth_dump::DV(char *stream, int UAP, int size)
 {
-	int length, bitlength, count;
+	int length, bitlength;
 	uint16_t crc, check;
 
 	/* data field starts after 80 bit voice field.
@@ -179,15 +173,9 @@ int bluetooth_dump::DV(char *stream, int UAP, int size)
 		return 1;
 	}
 
-	for(count = 0; count < length+2; count++)
-		corrected[count] = gr_to_normal(corrected+(8*count));
-		//FIXME corrected now breaks air/host rules
-
-	//FIXME using packed data with wrong crcgen
-	crc = crcgen(corrected, length, UAP);
-
-	check = corrected[length+1] | corrected[length] << 8;
+	crc = crcgen(corrected, length*8, UAP);
 	free(corrected);
+	check = air_to_host16(&corrected[length*8], 16);
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -218,7 +206,7 @@ int bluetooth_dump::EV5(char *stream, int UAP, int size)
 /* DM1 packet */
 int bluetooth_dump::DM1(char *stream, int UAP, int size)
 {
-	int length, bitlength, count;
+	int length, bitlength;
 	uint16_t crc, check;	
 	length = 0;
 
@@ -243,15 +231,9 @@ int bluetooth_dump::DM1(char *stream, int UAP, int size)
 		return 1;
 	}
 
-	for(count = 0; count < length+2; count++)
-		corrected[count] = gr_to_normal(corrected+(8*count));
-		//FIXME corrected now breaks air/host rules
-
-	//FIXME using packed data with wrong crcgen
-	crc = crcgen(corrected, length, UAP);
-
-	check = corrected[length+1] | corrected[length] << 8;
+	crc = crcgen(corrected, length*8, UAP);
 	free(corrected);
+	check = air_to_host16(&corrected[length*8], 16);
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -264,7 +246,6 @@ int bluetooth_dump::DM1(char *stream, int UAP, int size)
 /* DH1 packet */
 int bluetooth_dump::DH1(char *stream, int UAP, int size)
 {
-	int count;
 	uint16_t crc, check, length;	
 	length = 0;
 
@@ -278,14 +259,8 @@ int bluetooth_dump::DH1(char *stream, int UAP, int size)
 	if(0 > size)
 		return 1;
 
-	for(count = 0; count < length+2; count++)
-		stream[count] = gr_to_normal(stream+(8*count));
-
-	//FIXME using packed data with wrong crcgen
-	crc = crcgen(stream, length, UAP);
-	check = stream[length];
-	check <<= 8;
-	check |= stream[length+1];
+	crc = crcgen(stream, length*8, UAP);
+	check = air_to_host16(&stream[length*8], 16);
 
 	if(crc != check)
 		printf("\nERROR: CRCs do not match 0x%04x != 0x%04x\n", crc, check);
@@ -299,7 +274,7 @@ int bluetooth_dump::DH1(char *stream, int UAP, int size)
 /* DM3 packet */
 int bluetooth_dump::DM3(char *stream, int UAP, int size)
 {
-	int length, bitlength, count;
+	int length, bitlength;
 	uint16_t crc, check;	
 	char *corrected_payload_header;
 	length = 0;
@@ -329,15 +304,9 @@ int bluetooth_dump::DM3(char *stream, int UAP, int size)
 		return 1;
 	}
 
-	for(count = 0; count < length+2; count++)
-		corrected[count] = gr_to_normal(corrected+(8*count));
-		//FIXME corrected now breaks air/host rules
-
-	//FIXME using packed data with wrong crcgen
-	crc = crcgen(corrected, length, UAP);
-
-	check = corrected[length+1] | corrected[length] << 8;
+	crc = crcgen(corrected, length*8, UAP);
 	free(corrected);
+	check = air_to_host16(&corrected[length*8], 16);
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else
@@ -350,7 +319,7 @@ int bluetooth_dump::DM3(char *stream, int UAP, int size)
 /* DH3 packet */
 int bluetooth_dump::DH3(char *stream, int UAP, int size)
 {
-	int length, count;
+	int length;
 	uint16_t crc, check;	
 	length = 0;
 
@@ -364,13 +333,8 @@ int bluetooth_dump::DH3(char *stream, int UAP, int size)
 	if(0 > size)
 		return 1;
 
-	for(count = 0; count < length+2; count++)
-		stream[count] = gr_to_normal(stream+(8*count));
-
-	//FIXME using packed data with wrong crcgen
-	crc = crcgen(stream, length, UAP);
-	check = stream[length+1] | stream[length] << 8;
-
+	crc = crcgen(stream, length*8, UAP);
+	check = air_to_host16(&stream[length*8], 16);
 	if(crc != check)
 		printf("ERROR: UAPs do not match\n");
 	else

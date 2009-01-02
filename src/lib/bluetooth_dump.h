@@ -48,9 +48,6 @@ private:
 
   bluetooth_dump ();  	// private constructor
 
-/* Converts 8 bytes of grformat to a single byte */
-char gr_to_normal(char *stream);
-
 /* stream points to the stream of data, length is length in bits */
 char *unfec13(char *stream, int length);
 
