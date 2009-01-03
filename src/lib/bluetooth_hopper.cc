@@ -31,65 +31,94 @@
  * a boost shared_ptr.  This is effectively the public constructor.
  */
 bluetooth_hopper_sptr 
-bluetooth_make_hopper (int LAP)
+bluetooth_make_hopper (int LAP, int channel)
 {
-  return bluetooth_hopper_sptr (new bluetooth_hopper (LAP));
+  return bluetooth_hopper_sptr (new bluetooth_hopper (LAP, channel));
 }
 
 //private constructor
-bluetooth_hopper::bluetooth_hopper (int LAP)
+bluetooth_hopper::bluetooth_hopper (int LAP, int channel)
   : bluetooth_UAP (LAP)
 {
 	printf("Bluetooth hopper\n\n");
 
-	/* there should be no more than sequence_length/channels initial candidates */
-	/* actually, the total number should be approximately (sequence_length/channels)/64 so this is very safe */
-	d_clock_candidates = (int*) malloc(sizeof(int) * sequence_length / channels);
+	/* this can hold twice the approximate number of initial candidates */
+	d_clock_candidates = (int*) malloc(sizeof(int) * (sequence_length / channels)/32);
 	/* this holds the entire hopping sequence */
-	char *d_sequence = (char*) malloc(sequence_length);
+	d_sequence = (char*) malloc(sequence_length);
 
 	precalc();
-	
-	//FIXME move to appropriate place
-	free(d_sequence);
-	free(d_clock_candidates);
+	d_have_clock6 = false;
+	d_num_candidates = sequence_length;
+	//FIXME should support more than one channel
+	d_channel = channel;
 }
 
 //virtual destructor.
 bluetooth_hopper::~bluetooth_hopper ()
 {
+	free(d_sequence);
+	free(d_clock_candidates);
 }
 
-//FIXME this is temporarily a direct copy from bluetooth_UAP for initial testing.
-//eventually it should do stuff like:
-//int address = 0xf24d952;
-//address_precalc(address);
-//gen_hops(sequence);
-//int known_clock_bits = 0x18;
-//int count = init_candidates(sequence, candidates, 74, known_clock_bits);
-//printf("count: %d\n", count);
-//count = winnow(sequence, candidates, count, 499, 74);
 int bluetooth_hopper::work (int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
 	d_stream = (char *) input_items[0];
 	d_stream_length = noutput_items;
-	int retval;
+	int retval, i;
 
 	retval = sniff_ac();
 	if(-1 == retval) {
 		d_consumed = noutput_items;
 	} else {
 		d_consumed = retval;
-		if(d_first_packet_time == 0)
-		{
+		if(d_first_packet_time == 0) {
+			/* this is our first packet to consider for CLK1-6/UAP discovery */
 			d_previous_packet_time = d_cumulative_count + d_consumed;
-			UAP_from_header();
+			d_have_clock6 = UAP_from_header();
 			d_first_packet_time = d_previous_packet_time;
-		} else {
-			UAP_from_header();
+		} else if(!d_have_clock6) {
+			/* still working on CLK1-6/UAP discoery */
+			d_have_clock6 = UAP_from_header();
 			d_previous_packet_time = d_cumulative_count + d_consumed;
+			if(d_have_clock6) {
+				/* got CLK1-6/UAP, start working on CLK1-27 */
+				printf("\nCalculating complete hopping sequence.\n");
+				address_precalc(((d_UAP<<24) | d_LAP) & 0xfffffff);
+				gen_hops(d_sequence);
+				/* generate list of initial clock candidates */
+				d_num_candidates = init_candidates(d_sequence, d_clock_candidates, d_channel, d_clock6);
+				printf("%d initial CLK1-27 candidates\n", d_num_candidates);
+				/* use previously observed packets to eliminate candidates */
+				for(i = 1; i < d_packets_observed; i++) {
+					d_num_candidates = winnow(d_sequence, d_clock_candidates, d_num_candidates, d_pattern_indices[i], d_channel);
+					printf("%d CLK1-27 candidates remaining\n", d_num_candidates);
+				}
+			}
+		} else {
+			/* continue working on CLK1-27 */
+			/* we need timing information from an additional packet, so run through UAP_from_header() again */
+			d_have_clock6 = UAP_from_header();
+			d_num_candidates = winnow(d_sequence, d_clock_candidates, d_num_candidates, d_pattern_indices[d_packets_observed-1], d_channel);
+			printf("%d CLK1-27 candidates remaining\n", d_num_candidates);
+		}
+		/* CLK1-27 results */
+		if(d_num_candidates == 1) {
+			/* win! */
+			printf("\nAcquired CLK1-27 = 0x%07x\n", d_clock_candidates[0]);
+			exit(0);
+		} else if(d_num_candidates == 0) {
+			/* fail! */
+			printf("Failed to acquire clock. starting over . . .\n\n");
+			/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
+			d_first_packet_time = 0;
+			d_previous_packet_time = 0;
+			d_previous_clock_offset = 0;
+			d_have_clock6 = false;
+			d_num_candidates = sequence_length;
+			d_packets_observed = 0;
 		}
 		d_consumed += 126;
 	}
@@ -251,6 +280,7 @@ int bluetooth_hopper::init_candidates(char *sequence, int *candidates, char chan
 		if (sequence[i] == channel) {
 			d_clock_candidates[count++] = i;
 		}
+		//FIXME ought to throw exception if count gets too big
 	}
 	return count;
 }

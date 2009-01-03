@@ -81,7 +81,8 @@ bluetooth_UAP::work (int noutput_items,
 			UAP_from_header();
 			d_first_packet_time = d_previous_packet_time;
 		} else {
-			UAP_from_header();
+			if (UAP_from_header())
+				exit(0);
 			d_previous_packet_time = d_cumulative_count + d_consumed;
 		}
 		d_consumed += 126;
@@ -145,7 +146,7 @@ int bluetooth_UAP::sniff_ac()
 	return -1;
 }
 
-void bluetooth_UAP::UAP_from_header()
+bool bluetooth_UAP::UAP_from_header()
 {
 	char *stream = d_stream + d_consumed + 72;
 	char header[18];
@@ -164,14 +165,21 @@ void bluetooth_UAP::UAP_from_header()
 
 	/* number of time slots elapsed since previous packet */
 	int interval = (difference + 312) / 625;
-	printf("Packet received after %d time slots.\n", interval + d_previous_clock_offset);
+	if(d_packets_observed < max_pattern_length)
+		d_pattern_indices[d_packets_observed] = interval + d_previous_clock_offset;
+	else
+	{
+		printf("Oops. More hops than we can remember.\n");
+		return false; //FIXME ought to throw exception
+	}
 	d_packets_observed++;
+	d_total_packets_observed++;
 
 	/* try every possible first packet clock value */
 	for(count = 0; count < 64; count++)
 	{
 		/* skip eliminated candidates unless this is our first time through */
-		if(d_clock_candidates[count] > -1 || d_first_packet_time == 0)
+		if(d_clock6_candidates[count] > -1 || d_first_packet_time == 0)
 		{
 			/* clock value for the current packet assuming count was the clock of the first packet */
 			int clock = (count + d_previous_clock_offset + interval) % 64;
@@ -188,17 +196,17 @@ void bluetooth_UAP::UAP_from_header()
 
 			/* if this is the first packet: populate the candidate list */
 			/* if not: check CRCs if UAPs match */
-			if(d_first_packet_time == 0 || UAP == d_clock_candidates[count])
+			if(d_first_packet_time == 0 || UAP == d_clock6_candidates[count])
 				retval = crc_check(stream+54, type, 3125+d_stream_length-(d_consumed + 126), clock, UAP);
 			switch(retval)
 			{
 				case -1: /* UAP mismatch */
 				case 0: /* CRC failure */
-					d_clock_candidates[count] = -1;
+					d_clock6_candidates[count] = -1;
 					break;
 
 				case 1: /* inconclusive result */
-					d_clock_candidates[count] = UAP;
+					d_clock6_candidates[count] = UAP;
 					/* remember this count because it may be the correct clock of the first packet */
 					first_clock = count;
 					remaining++;
@@ -207,7 +215,7 @@ void bluetooth_UAP::UAP_from_header()
 				default: /* CRC success */
 					/* It is very likely that this is the correct clock/UAP, but I have seen a false positive */
 					printf("Correct CRC! UAP = 0x%x Awaiting confirmation. . .\n", UAP);
-					d_clock_candidates[count] = UAP;
+					d_clock6_candidates[count] = UAP;
 					first_clock = count;
 					crc_match = count;
 					break;
@@ -221,23 +229,26 @@ void bluetooth_UAP::UAP_from_header()
 		/* eliminate all other candidates */
 		for(count = 0; count < 64; count++)
 			if(count != crc_match)
-					d_clock_candidates[count] = -1;
+					d_clock6_candidates[count] = -1;
 	}
 	d_previous_clock_offset += interval;
-	printf("reduced from %d to %d clock candidates\n", starting, remaining);
+	printf("reduced from %d to %d CLK1-6 candidates\n", starting, remaining);
 	if(0 == remaining)
 	{
 		printf("no candidates remaining! starting over . . .\n");
 		d_first_packet_time = 0;
 		d_previous_packet_time = 0;
 		d_previous_clock_offset = 0;
+		d_packets_observed = 0;
 	} else if(1 == starting && 1 == remaining)
 	{
 		/* we only trust this result if two packets in a row agree on the winner */
-		printf("We have a winner! UAP = 0x%x found after %d packets.\n", UAP, d_packets_observed);
-		printf("CLK1-6 at first packet was 0x%x.\n", first_clock);
-		exit(0);
+		printf("We have a winner! UAP = 0x%x found after %d total packets.\n", UAP, d_total_packets_observed);
+		d_clock6 = first_clock;
+		d_UAP = UAP;
+		return true;
 	}
+	return false;
 }
 
 int bluetooth_UAP::crc_check(char *stream, int type, int size, int clock, uint8_t UAP)

@@ -27,6 +27,9 @@
 #include <stdlib.h>
 #include <math.h>
 
+/* maximum number of hops to remember */
+static const int max_pattern_length = 100;
+
 class bluetooth_UAP;
 typedef boost::shared_ptr<bluetooth_UAP> bluetooth_UAP_sptr;
 
@@ -50,12 +53,20 @@ private:
 protected:
 	bluetooth_UAP (int LAP);	// private constructor
 
-	int d_limit;
 	uint64_t d_first_packet_time;
-	int d_clock_candidates[64];
 	int d_previous_packet_time;
 	int d_previous_clock_offset;
+	/* CLK1-6 candidates */
+	int d_clock6_candidates[64];
+	/* number of packets observed during one attempt at UAP/clock discovery */
 	int d_packets_observed;
+	/* total number of packets observed */
+	int d_total_packets_observed;
+	/* CLK1-6 */
+	uint8_t d_clock6;
+	/* remember patterns of observed hops */
+	int d_pattern_indices[max_pattern_length];
+	uint8_t d_pattern_channels[max_pattern_length];
 
 	/* Converts 8 bytes of grformat to a single byte */
 	char gr_to_normal(char *stream);
@@ -65,7 +76,7 @@ protected:
 	int sniff_ac();
 
 	/* Use packet headers to determine UAP */
-	void UAP_from_header();
+	bool UAP_from_header();
 
 	int crc_check(char *stream, int type, int size, int clock, uint8_t UAP);
 

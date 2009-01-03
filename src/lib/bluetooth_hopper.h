@@ -33,7 +33,7 @@ typedef boost::shared_ptr<bluetooth_hopper> bluetooth_hopper_sptr;
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_hopper.
  */
-bluetooth_hopper_sptr bluetooth_make_hopper (int LAP);
+bluetooth_hopper_sptr bluetooth_make_hopper (int LAP, int channel);
 
 /*!
  * \brief Sniff Bluetooth packets, determine UAP, reverse hopping sequence
@@ -45,10 +45,11 @@ private:
 	// The friend declaration allows bluetooth_make_hopper to
 	// access the private constructor.
 
-	friend bluetooth_hopper_sptr bluetooth_make_hopper (int LAP);
+	friend bluetooth_hopper_sptr bluetooth_make_hopper (int LAP, int channel);
 
-	bluetooth_hopper (int LAP);	// private constructor
+	bluetooth_hopper (int LAP, int channel);	// private constructor
 
+	/* CLK1-27 candidates */
 	int *d_clock_candidates;
 	/* these values for hop() can be precalculated */
 	int d_b, d_e;
@@ -61,6 +62,12 @@ private:
 	char d_perm_table[0x20][0x20][0x200];
 	/* this holds the entire hopping sequence */
 	char *d_sequence;
+	/* do we have CLK1-6? */
+	bool d_have_clock6;
+	/* number of candidates for CLK1-27 */
+	int d_num_candidates;
+	/* channel number (0-78) we are observing */
+	int d_channel;
 
 
 	/* do all the precalculation that can be done before knowing the address */

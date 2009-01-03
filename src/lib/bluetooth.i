@@ -66,12 +66,12 @@ private:
  */
 GR_SWIG_BLOCK_MAGIC(bluetooth,hopper);
 
-bluetooth_hopper_sptr bluetooth_make_hopper (int LAP);
+bluetooth_hopper_sptr bluetooth_make_hopper (int LAP, int channel);
 
 class bluetooth_hopper : public gr_sync_block
 {
 private:
-  bluetooth_hopper (int LAP);
+  bluetooth_hopper (int LAP, int channel);
 };
 
 /*
