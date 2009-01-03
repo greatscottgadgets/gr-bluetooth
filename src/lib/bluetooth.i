@@ -10,6 +10,7 @@
 #include "bluetooth_sniffer.h"
 #include "bluetooth_LAP.h"
 #include "bluetooth_UAP.h"
+#include "bluetooth_hopper.h"
 #include "bluetooth_block.h"
 #include "bluetooth_dump.h"
 #include <stdexcept>
@@ -57,6 +58,20 @@ class bluetooth_UAP : public gr_sync_block
 {
 private:
   bluetooth_UAP (int LAP);
+};
+
+/*
+ * First arg is the package prefix.
+ * Second arg is the name of the class minus the prefix.
+ */
+GR_SWIG_BLOCK_MAGIC(bluetooth,hopper);
+
+bluetooth_hopper_sptr bluetooth_make_hopper (int LAP);
+
+class bluetooth_hopper : public gr_sync_block
+{
+private:
+  bluetooth_hopper (int LAP);
 };
 
 /*

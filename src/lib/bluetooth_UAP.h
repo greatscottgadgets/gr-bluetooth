@@ -47,6 +47,7 @@ private:
 
 	friend bluetooth_UAP_sptr bluetooth_make_UAP (int LAP);
 
+protected:
 	bluetooth_UAP (int LAP);	// private constructor
 
 	int d_limit;
