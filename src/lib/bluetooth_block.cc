@@ -288,7 +288,8 @@ bool bluetooth_block::check_ac(char *stream, int LAP)
 	{
 		printf("POSSIBLE PACKET, LAP = %06x with %d errors\n", LAP, biterrors);
 		free(grdata);
-		return false;
+		//return false;
+		return true;
 	}
 
 	free(grdata);
