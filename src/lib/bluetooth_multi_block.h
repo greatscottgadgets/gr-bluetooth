@@ -19,47 +19,44 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
-#ifndef INCLUDED_BLUETOOTH_LAP_H
-#define INCLUDED_BLUETOOTH_LAP_H
+#ifndef INCLUDED_BLUETOOTH_MULTI_BLOCK_H
+#define INCLUDED_BLUETOOTH_MULTI_BLOCK_H
 
 #include <bluetooth_block.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-class bluetooth_LAP;
-typedef boost::shared_ptr<bluetooth_LAP> bluetooth_LAP_sptr;
+class bluetooth_multi_block;
+typedef boost::shared_ptr<bluetooth_multi_block> bluetooth_multi_block_sptr;
 
 /*!
- * \brief Return a shared_ptr to a new instance of bluetooth_LAP.
+ * \brief Return a shared_ptr to a new instance of bluetooth_multi_block.
  */
-bluetooth_LAP_sptr bluetooth_make_LAP (int x);
+bluetooth_multi_block_sptr bluetooth_make_multi_block ();
 
 /*!
  * \brief Sniff Bluetooth packets.
  * \ingroup block
  */
-class bluetooth_LAP : public bluetooth_block
+class bluetooth_multi_block : public bluetooth_block
 {
 private:
-  // The friend declaration allows bluetooth_make_LAP to
-  // access the private constructor.
+	// The friend declaration allows bluetooth_make_multi_block to
+	// access the private constructor.
 
-  friend bluetooth_LAP_sptr bluetooth_make_LAP (int x);
+	friend bluetooth_multi_block_sptr bluetooth_make_multi_block ();
 
-  bluetooth_LAP (int x);  	// private constructor
-
-  int d_x;
-
-  int sniff_ac();
+protected:
+	bluetooth_multi_block ();  	// private constructor
 
 public:
-  ~bluetooth_LAP ();	// public destructor
+	~bluetooth_multi_block ();	// public destructor
 
-  // Where all the action really happens
+	// Where all the action really happens
 
-  int work (int noutput_items,
-		    gr_vector_const_void_star &input_items,
-		    gr_vector_void_star &output_items);
+	int work (int noutput_items,
+		gr_vector_const_void_star &input_items,
+		gr_vector_void_star &output_items);
 };
 
-#endif /* INCLUDED_BLUETOOTH_LAP_H */
+#endif /* INCLUDED_BLUETOOTH_MULTI_BLOCK_H */
