@@ -22,7 +22,11 @@
 #ifndef INCLUDED_BLUETOOTH_MULTI_BLOCK_H
 #define INCLUDED_BLUETOOTH_MULTI_BLOCK_H
 
-#include <bluetooth_block.h>
+#include "bluetooth_block.h"
+#include "bluetooth_LAP.h"
+#include <gr_pwr_squelch_cc.h>
+#include <gr_firdes.h>
+#include <gr_freq_xlating_fir_filter_ccf.h>
 #include <stdio.h>
 #include <stdlib.h>
 

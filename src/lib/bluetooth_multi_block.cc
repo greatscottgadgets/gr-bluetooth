@@ -29,7 +29,7 @@
 #include "config.h"
 #endif
 
-#include <bluetooth_multi_block.h>
+#include "bluetooth_multi_block.h"
 #include <sys/time.h>
 
 /*
@@ -46,6 +46,17 @@ bluetooth_make_multi_block ()
 bluetooth_multi_block::bluetooth_multi_block ()
   : bluetooth_block ()
 {
+	//FIXME hard-coded stuff:
+	double sample_rate = 2000000;	
+	double center_freq = 0;	
+	int decimation_rate = 2;
+
+	gr_pwr_squelch_cc_sptr squelch = gr_make_pwr_squelch_cc(30.0, 0.01, 0, false);
+	std::vector<float> channel_filter = gr_firdes::low_pass(1.0, sample_rate, 500000, 500000, gr_firdes::WIN_HANN);
+	gr_freq_xlating_fir_filter_ccf_sptr ddc =
+		gr_make_freq_xlating_fir_filter_ccf(decimation_rate, channel_filter, center_freq, sample_rate);
+	//ick, this is in python:
+	//demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=samples_per_symbol)
 }
 
 //virtual destructor.
