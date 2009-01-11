@@ -45,18 +45,39 @@ bluetooth_make_multi_block ()
 //private constructor
 bluetooth_multi_block::bluetooth_multi_block ()
   : bluetooth_block ()
+  //FIXME need to gr_make_io_signature with sizeof(gr_complex)
+  //maybe that means not being a subclass of bluetooth_block :-(
 {
-	//FIXME hard-coded stuff:
-	double sample_rate = 2000000;	
-	double center_freq = 0;	
+	//FIXME hard-coded stuff
+	//some should be constants, some selectable
+	double sample_rate = 2000000;
+	double center_freq = 0;
 	int decimation_rate = 2;
+	double threshold = 30;
+	double alpha = 0.01;
+	int ramp = 0;
+	bool gate = false;
+	double gain = 1;
+	double cutoff_freq = 500000;
+	double transition_width = 500000;
+	/* how many time slots we attempt to decode on each hop:
+	 * 1 for now, could be as many as 5 plus a little slop
+	 */
+	int slots 1;
+	int symbols_per_slot = 625;
+	/* symbols per second */
+	int symbol_rate = 1000000;
+	int samples_required = (int) slots * symbols_per_slot * sample_rate / symbol_rate;
 
-	gr_pwr_squelch_cc_sptr squelch = gr_make_pwr_squelch_cc(30.0, 0.01, 0, false);
-	std::vector<float> channel_filter = gr_firdes::low_pass(1.0, sample_rate, 500000, 500000, gr_firdes::WIN_HANN);
+	gr_pwr_squelch_cc_sptr squelch = gr_make_pwr_squelch_cc(threshold, alpha, ramp, gate);
+	std::vector<float> channel_filter =
+		gr_firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr_firdes::WIN_HANN);
 	gr_freq_xlating_fir_filter_ccf_sptr ddc =
 		gr_make_freq_xlating_fir_filter_ccf(decimation_rate, channel_filter, center_freq, sample_rate);
 	//ick, this is in python:
 	//demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=samples_per_symbol)
+	
+	set_history(samples_required);
 }
 
 //virtual destructor.
@@ -69,4 +90,6 @@ bluetooth_multi_block::work (int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
+	//something like this:
+	//squelch->general_work(int noutput_items, gr_vector_int &ninput_items, gr_vector_const_void_star &input_items, gr_vector_void_star &output_items)
 }
