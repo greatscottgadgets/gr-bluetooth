@@ -60,6 +60,7 @@ ourlib_LTLIBRARIES = _bluetooth.la
 # These are the source files that go into the shared library
 _bluetooth_la_SOURCES = 			\
 	bluetooth.cc			\
+	bluetooth_piconet.cc	\
 	bluetooth_LAP.cc		\
 	bluetooth_UAP.cc		\
 	bluetooth_hopper.cc		\
@@ -82,6 +83,7 @@ bluetooth.cc bluetooth.py: $(LOCAL_IFILES) $(ALL_IFILES)
 
 # These headers get installed in ${prefix}/include/gnuradio
 grinclude_HEADERS =			\
+	bluetooth_piconet.h		\
 	bluetooth_LAP.h			\
 	bluetooth_UAP.h			\
 	bluetooth_hopper.h		\

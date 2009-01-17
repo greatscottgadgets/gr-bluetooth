@@ -68,9 +68,6 @@ protected:
 	int d_pattern_indices[max_pattern_length];
 	uint8_t d_pattern_channels[max_pattern_length];
 
-	/* Converts 8 bytes of grformat to a single byte */
-	char gr_to_normal(char *stream);
-
 	int UAP_from_hec(uint8_t *packet);
 
 	int sniff_ac();

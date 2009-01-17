@@ -63,7 +63,7 @@ bluetooth_multi_block::bluetooth_multi_block ()
 	/* how many time slots we attempt to decode on each hop:
 	 * 1 for now, could be as many as 5 plus a little slop
 	 */
-	int slots 1;
+	int slots = 1;
 	int symbols_per_slot = 625;
 	/* symbols per second */
 	int symbol_rate = 1000000;
