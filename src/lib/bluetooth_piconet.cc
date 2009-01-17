@@ -24,7 +24,7 @@
 #include "config.h"
 #endif
 
-#include <bluetooth_piconet.h>
+#include "bluetooth_piconet.h"
 #include <stdlib.h>
 
 /* constructor */
@@ -209,13 +209,13 @@ int bluetooth_piconet::init_candidates(char channel, int known_clock_bits)
 }
 
 /* narrow a list of candidate clock values based on a single observed hop */
-int bluetooth_piconet::winnow(int count, int offset, char channel)
+int bluetooth_piconet::winnow(int offset, char channel)
 {
 	int i;
 	int new_count = 0; /* number of candidates after winnowing */
 
 	/* check every candidate */
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < d_num_candidates; i++) {
 		if (d_sequence[(d_clock_candidates[i] + offset) % SEQUENCE_LENGTH] == channel) {
 			/* this candidate matches the latest hop */
 			/* blow away old list of candidates with new one */
@@ -223,7 +223,8 @@ int bluetooth_piconet::winnow(int count, int offset, char channel)
 			d_clock_candidates[new_count++] = d_clock_candidates[i];
 		}
 	}
-	//FIXME maybe do something if count == 1
-	//FIXME maybe do something if count == 0
+	d_num_candidates = new_count;
+	//FIXME maybe do something if new_count == 1
+	//FIXME maybe do something if new_count == 0
 	return new_count;
 }
