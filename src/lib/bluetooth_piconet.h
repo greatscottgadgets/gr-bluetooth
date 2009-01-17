@@ -90,6 +90,9 @@ public:
 	/* constructor */
 	bluetooth_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
 
+	/* destructor */
+	~bluetooth_piconet();
+
 	/* narrow a list of candidate clock values based on a single observed hop */
 	int winnow(int count, int offset, char channel);
 

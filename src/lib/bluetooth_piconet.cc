@@ -44,6 +44,13 @@ bluetooth_piconet::bluetooth_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, 
 	d_num_candidates = init_candidates(channel, clock6);
 }
 
+/* destructor */
+bluetooth_piconet::~bluetooth_piconet()
+{
+	free(d_clock_candidates);
+	free(d_sequence);
+}
+
 /* do all the precalculation that can be done before knowing the address */
 void bluetooth_piconet::precalc()
 {
