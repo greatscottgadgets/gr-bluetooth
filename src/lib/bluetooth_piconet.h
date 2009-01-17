@@ -22,11 +22,23 @@
 #ifndef INCLUDED_BLUETOOTH_PICONET_H
 #define INCLUDED_BLUETOOTH_PICONET_H
 
+#include <gr_sync_block.h>
 #include <stdint.h>
 
-class bluetooth_piconet
+class bluetooth_piconet;
+typedef boost::shared_ptr<bluetooth_piconet> bluetooth_piconet_sptr;
+
+/*!
+ * \brief Return a shared_ptr to a new instance of bluetooth_piconet.
+ */
+bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
+
+class bluetooth_piconet : public gr_sync_block
 {
 private:
+	/* allow bluetooth_make_piconet to access the private constructor. */
+	friend bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
+
 	/* number of hops in the hopping sequence (i.e. number of possible values of CLK1-27) */
 	static const int SEQUENCE_LENGTH = 134217728;
 
@@ -97,6 +109,9 @@ public:
 	/* narrow a list of candidate clock values based on a single observed hop */
 	int winnow(int offset, char channel);
 
+	//FIXME cut if we are no longer a gr_sync_block
+	int work (int noutput_items, gr_vector_const_void_star &input_items,
+		gr_vector_void_star &output_items);
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

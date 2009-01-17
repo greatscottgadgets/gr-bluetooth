@@ -25,10 +25,28 @@
 #endif
 
 #include "bluetooth_piconet.h"
+#include <gr_io_signature.h>
 #include <stdlib.h>
+
+/*
+ * Create a new instance of bluetooth_piconet and return
+ * a boost shared_ptr.  This is effectively the public constructor.
+ */
+bluetooth_piconet_sptr
+bluetooth_make_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel)
+{
+	return bluetooth_piconet_sptr (new bluetooth_piconet (LAP, UAP, clock6, channel));
+}
+
+//FIXME there is no reason for this to be a gr_sync_block except that I'm too
+//lazy to figure out how else to get this to compile, link, and execute
 
 /* constructor */
 bluetooth_piconet::bluetooth_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel)
+	: gr_sync_block ("bluetooth piconet",
+		gr_make_io_signature (0, 0, sizeof (char)),
+		gr_make_io_signature (0, 0, 0))
+
 {
 	/* this can hold twice the approximate number of initial candidates */
 	d_clock_candidates = (uint32_t*) malloc(sizeof(uint32_t) * (SEQUENCE_LENGTH / CHANNELS)/32);
@@ -50,6 +68,13 @@ bluetooth_piconet::~bluetooth_piconet()
 	free(d_clock_candidates);
 	free(d_sequence);
 }
+
+int bluetooth_piconet::work (int noutput_items, gr_vector_const_void_star &input_items,
+	gr_vector_void_star &output_items)
+{
+	return 0;
+}
+
 
 /* do all the precalculation that can be done before knowing the address */
 void bluetooth_piconet::precalc()
