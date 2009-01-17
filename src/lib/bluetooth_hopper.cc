@@ -25,6 +25,7 @@
 #endif
 
 #include "bluetooth_hopper.h"
+#include "bluetooth_piconet.h"
 
 /*
  * Create a new instance of bluetooth_hopper and return
@@ -77,12 +78,12 @@ int bluetooth_hopper::work (int noutput_items,
 			if(d_have_clock6) {
 				/* got CLK1-6/UAP, start working on CLK1-27 */
 				printf("\nCalculating complete hopping sequence.\n");
-				d_piconet = bluetooth_piconet(d_LAP, d_UAP, d_clock6, d_channel);
+				d_piconet = bluetooth_make_piconet(d_LAP, d_UAP, d_clock6, d_channel);
 				//FIXME need d_num_candidates accessor
 				//printf("%d initial CLK1-27 candidates\n", d_num_candidates);
 				/* use previously observed packets to eliminate candidates */
 				for(i = 1; i < d_packets_observed; i++) {
-					d_num_candidates = d_piconet.winnow(d_pattern_indices[i], d_channel);
+					d_num_candidates = d_piconet->winnow(d_pattern_indices[i], d_channel);
 					printf("%d CLK1-27 candidates remaining\n", d_num_candidates);
 				}
 			}
@@ -90,7 +91,7 @@ int bluetooth_hopper::work (int noutput_items,
 			/* continue working on CLK1-27 */
 			/* we need timing information from an additional packet, so run through UAP_from_header() again */
 			d_have_clock6 = UAP_from_header();
-			d_num_candidates = d_piconet.winnow(d_pattern_indices[d_packets_observed-1], d_channel);
+			d_num_candidates = d_piconet->winnow(d_pattern_indices[d_packets_observed-1], d_channel);
 			printf("%d CLK1-27 candidates remaining\n", d_num_candidates);
 		}
 		/* CLK1-27 results */

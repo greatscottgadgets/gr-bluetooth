@@ -57,7 +57,7 @@ private:
 	/* channel number (0-78) we are observing */
 	int d_channel;
 	/* the piconet we are monitoring */
-	bluetooth_piconet d_piconet;
+	bluetooth_piconet_sptr d_piconet;
 
 public:
   ~bluetooth_hopper ();	// public destructor
