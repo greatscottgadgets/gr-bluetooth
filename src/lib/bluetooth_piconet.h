@@ -22,8 +22,8 @@
 #ifndef INCLUDED_BLUETOOTH_PICONET_H
 #define INCLUDED_BLUETOOTH_PICONET_H
 
-#include <gr_sync_block.h>
 #include <stdint.h>
+#include <boost/enable_shared_from_this.hpp>
 
 class bluetooth_piconet;
 typedef boost::shared_ptr<bluetooth_piconet> bluetooth_piconet_sptr;
@@ -33,7 +33,7 @@ typedef boost::shared_ptr<bluetooth_piconet> bluetooth_piconet_sptr;
  */
 bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
 
-class bluetooth_piconet : public gr_sync_block
+class bluetooth_piconet
 {
 private:
 	/* allow bluetooth_make_piconet to access the private constructor. */
@@ -109,9 +109,6 @@ public:
 	/* narrow a list of candidate clock values based on a single observed hop */
 	int winnow(int offset, char channel);
 
-	//FIXME cut if we are no longer a gr_sync_block
-	int work (int noutput_items, gr_vector_const_void_star &input_items,
-		gr_vector_void_star &output_items);
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

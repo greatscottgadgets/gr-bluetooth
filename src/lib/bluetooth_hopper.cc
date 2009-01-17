@@ -25,7 +25,6 @@
 #endif
 
 #include "bluetooth_hopper.h"
-#include "bluetooth_piconet.h"
 
 /*
  * Create a new instance of bluetooth_hopper and return

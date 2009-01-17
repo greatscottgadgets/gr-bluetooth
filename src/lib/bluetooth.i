@@ -14,7 +14,6 @@
 #include "bluetooth_block.h"
 #include "bluetooth_multi_block.h"
 #include "bluetooth_dump.h"
-#include "bluetooth_piconet.h"
 #include <stdexcept>
 %}
 
@@ -104,16 +103,3 @@ private:
   bluetooth_dump ();
 };
 
-/*
- * First arg is the package prefix.
- * Second arg is the name of the class minus the prefix.
- */
-GR_SWIG_BLOCK_MAGIC(bluetooth,piconet);
-
-bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
-
-class bluetooth_piconet : public gr_sync_block
-{
-private:
-  bluetooth_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
-};
