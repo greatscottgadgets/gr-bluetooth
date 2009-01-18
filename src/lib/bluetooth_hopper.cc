@@ -78,6 +78,7 @@ int bluetooth_hopper::work (int noutput_items,
 			if(d_have_clock6) {
 				/* got CLK1-6/UAP, start working on CLK1-27 */
 				printf("\nCalculating complete hopping sequence.\n");
+				//FIXME check if boost does magic to ensure this is not a memory leak:
 				d_piconet = bluetooth_make_piconet(d_LAP, d_UAP, d_clock6, d_channel);
 				printf("%d initial CLK1-27 candidates\n", d_piconet->get_num_candidates());
 				/* use previously observed packets to eliminate candidates */

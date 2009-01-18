@@ -42,10 +42,61 @@ private:
 	/* constructor */
 	bluetooth_packet(char *stream);
 
-public:
+	/* index into whitening data array */
+	static const uint8_t INDICES[64];
 
+	/* whitening data */
+	static const uint8_t WHITENING_DATA[127];
+
+	/* Error correction coding for Access Code */
+	uint8_t *lfsr(uint8_t *data, int length, int k, uint8_t *g);
+
+	/* Reverse the bits in a byte */
+	uint8_t reverse(char byte);
+
+	/* Generate Access Code from an LAP */
+	uint8_t *acgen(int LAP);
+
+	/* Convert from normal bytes to one-LSB-per-byte format */
+	void convert_to_grformat(uint8_t input, uint8_t *output);
+
+	/* Decode 1/3 rate FEC, three like symbols in a row */
+	char *unfec13(char *stream, char *output, int length);
+
+	/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
+	char *unfec23(char *input, int length);
+
+	/* When passed 10 bits of data this returns a pointer to a 5 bit hamming code */
+	char *fec23gen(char *data);
+
+	/* Create an Access Code from LAP and check it against stream */
+	bool check_ac(char *stream, int LAP);
+
+	/* Print general information about a frame */
+	void print_out();
+
+	/* Convert some number of bits of an air order array to a host order integer */
+	uint8_t air_to_host8(char *air_order, int bits);
+	uint16_t air_to_host16(char *air_order, int bits);
+	uint32_t air_to_host32(char *air_order, int bits);
+	// hmmm, maybe these should have pointer output so they can be overloaded
+
+	/* Convert some number of bits in a host order integer to an air order array */
+	void host_to_air(uint8_t host_order, char *air_order, int bits);
+
+	/* Remove the whitening from an air order array */
+	void unwhiten(char* input, char* output, int clock, int length, int skip);
+
+	/* Create the 16bit CRC for packet payloads - input air order stream */
+	uint16_t crcgen(char *payload, int length, int UAP);
+
+public:
 	/* destructor */
 	~bluetooth_packet();
 };
+
+const uint8_t bluetooth_packet::INDICES[] = {99, 85, 17, 50, 102, 58, 108, 45, 92, 62, 32, 118, 88, 11, 80, 2, 37, 69, 55, 8, 20, 40, 74, 114, 15, 106, 30, 78, 53, 72, 28, 26, 68, 7, 39, 113, 105, 77, 71, 25, 84, 49, 57, 44, 61, 117, 10, 1, 123, 124, 22, 125, 111, 23, 42, 126, 6, 112, 76, 24, 48, 43, 116, 0};
+
+const uint8_t bluetooth_packet::WHITENING_DATA[] = {1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
 
 #endif /* INCLUDED_BLUETOOTH_PACKET_H */
