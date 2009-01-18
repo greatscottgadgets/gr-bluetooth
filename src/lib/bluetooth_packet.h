@@ -63,6 +63,13 @@ private:
 	/* lower address part found in access code */
 	uint32_t d_LAP;
 
+	/* type-specific CRC checks */
+	//FIXME shouldn't be static
+	static int fhs(char *stream, int clock, uint8_t UAP, int size);
+	static int DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
+	static int DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
+	static int EV(char *stream, int clock, uint8_t UAP, int type, int size);
+
 public:
 	/* search a symbol stream to find a packet, return index */
 	static int sniff_ac(char *stream, int stream_length);
@@ -105,6 +112,14 @@ public:
 
 	/* Create the 16bit CRC for packet payloads - input air order stream */
 	static uint16_t crcgen(char *payload, int length, int UAP);
+
+	/* extract UAP by reversing the HEC computation */
+	static int UAP_from_hec(uint8_t *packet);
+
+	//FIXME this shouldn't be static, the caller should have to make a
+	//bluetooth_packet and then call this
+	/* check if the packet's CRC is correct */
+	static int crc_check(char *stream, int type, int size, int clock, uint8_t UAP);
 
 	/* return the packet's LAP */
 	uint32_t get_LAP();

@@ -68,22 +68,8 @@ protected:
 	int d_pattern_indices[max_pattern_length];
 	uint8_t d_pattern_channels[max_pattern_length];
 
-	int UAP_from_hec(uint8_t *packet);
-
-	int sniff_ac();
-
 	/* Use packet headers to determine UAP */
 	bool UAP_from_header();
-
-	int crc_check(char *stream, int type, int size, int clock, uint8_t UAP);
-
-	int fhs(char *stream, int clock, uint8_t UAP, int size);
-
-	int DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
-
-	int DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
-
-	int EV(char *stream, int clock, uint8_t UAP, int type, int size);
 
 public:
   ~bluetooth_UAP ();	// public destructor

@@ -25,6 +25,7 @@
 #endif
 
 #include "bluetooth_hopper.h"
+#include "bluetooth_packet.h"
 
 /*
  * Create a new instance of bluetooth_hopper and return
@@ -61,10 +62,11 @@ int bluetooth_hopper::work (int noutput_items,
 	int retval, i;
 	int num_candidates = -1;
 
-	retval = sniff_ac();
+	retval = bluetooth_packet::sniff_ac(d_stream, noutput_items);
 	if(-1 == retval) {
 		d_consumed = noutput_items;
 	} else {
+		//FIXME this is broken if the packet's LAP != d_LAP
 		d_consumed = retval;
 		if(d_first_packet_time == 0) {
 			/* this is our first packet to consider for CLK1-6/UAP discovery */
