@@ -50,8 +50,6 @@ private:
 
   int d_x;
 
-  int sniff_ac();
-
 public:
   ~bluetooth_LAP ();	// public destructor
 
