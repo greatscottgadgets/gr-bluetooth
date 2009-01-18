@@ -238,3 +238,16 @@ int bluetooth_piconet::winnow(int offset, char channel)
 	//FIXME maybe do something if new_count == 0
 	return new_count;
 }
+
+/* CLK1-27 */
+uint32_t bluetooth_piconet::get_clock()
+{
+	/* this is completely bogus unless d_num_candidates == 1 */
+	return d_clock_candidates[0];
+}
+
+/* number of remaning candidates for CLK1-27 */
+int bluetooth_piconet::get_num_candidates()
+{
+	return d_num_candidates;
+}

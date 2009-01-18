@@ -109,7 +109,11 @@ public:
 	/* narrow a list of candidate clock values based on a single observed hop */
 	int winnow(int offset, char channel);
 
+	/* CLK1-27 */
+	uint32_t get_clock();
+
+	/* number of remaning candidates for CLK1-27 */
+	int get_num_candidates();
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */
-

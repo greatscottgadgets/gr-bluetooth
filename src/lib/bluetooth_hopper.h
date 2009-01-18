@@ -52,8 +52,6 @@ private:
 
 	/* do we have CLK1-6? */
 	bool d_have_clock6;
-	/* number of candidates for CLK1-27 */
-	int d_num_candidates;
 	/* channel number (0-78) we are observing */
 	int d_channel;
 	/* the piconet we are monitoring */

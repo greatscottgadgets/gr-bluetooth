@@ -59,6 +59,7 @@ int bluetooth_hopper::work (int noutput_items,
 	d_stream = (char *) input_items[0];
 	d_stream_length = noutput_items;
 	int retval, i;
+	int num_candidates = -1;
 
 	retval = sniff_ac();
 	if(-1 == retval) {
@@ -78,29 +79,26 @@ int bluetooth_hopper::work (int noutput_items,
 				/* got CLK1-6/UAP, start working on CLK1-27 */
 				printf("\nCalculating complete hopping sequence.\n");
 				d_piconet = bluetooth_make_piconet(d_LAP, d_UAP, d_clock6, d_channel);
-				//FIXME need d_num_candidates accessor
-				//printf("%d initial CLK1-27 candidates\n", d_num_candidates);
+				printf("%d initial CLK1-27 candidates\n", d_piconet->get_num_candidates());
 				/* use previously observed packets to eliminate candidates */
 				for(i = 1; i < d_packets_observed; i++) {
-					d_num_candidates = d_piconet->winnow(d_pattern_indices[i], d_channel);
-					printf("%d CLK1-27 candidates remaining\n", d_num_candidates);
+					num_candidates = d_piconet->winnow(d_pattern_indices[i], d_channel);
+					printf("%d CLK1-27 candidates remaining\n", num_candidates);
 				}
 			}
 		} else {
 			/* continue working on CLK1-27 */
 			/* we need timing information from an additional packet, so run through UAP_from_header() again */
 			d_have_clock6 = UAP_from_header();
-			d_num_candidates = d_piconet->winnow(d_pattern_indices[d_packets_observed-1], d_channel);
-			printf("%d CLK1-27 candidates remaining\n", d_num_candidates);
+			num_candidates = d_piconet->winnow(d_pattern_indices[d_packets_observed-1], d_channel);
+			printf("%d CLK1-27 candidates remaining\n", num_candidates);
 		}
 		/* CLK1-27 results */
-		if(d_num_candidates == 1) {
+		if(num_candidates == 1) {
 			/* win! */
-			//FIXME need clock accessor
-			printf("\nAcquired CLK1-27\n");
-			//printf("\nAcquired CLK1-27 = 0x%07x\n", d_clock_candidates[0]);
+			printf("\nAcquired CLK1-27 = 0x%07x\n", d_piconet->get_clock());
 			exit(0);
-		} else if(d_num_candidates == 0) {
+		} else if(num_candidates == 0) {
 			/* fail! */
 			printf("Failed to acquire clock. starting over . . .\n\n");
 			/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
@@ -108,7 +106,6 @@ int bluetooth_hopper::work (int noutput_items,
 			d_previous_packet_time = 0;
 			d_previous_clock_offset = 0;
 			d_have_clock6 = false;
-			d_num_candidates = sequence_length;
 			d_packets_observed = 0;
 		}
 		d_consumed += 126;
