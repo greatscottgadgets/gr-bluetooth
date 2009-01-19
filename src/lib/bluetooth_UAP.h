@@ -22,7 +22,8 @@
 #ifndef INCLUDED_BLUETOOTH_UAP_H
 #define INCLUDED_BLUETOOTH_UAP_H
 
-#include <bluetooth_block.h>
+#include "bluetooth_block.h"
+#include "bluetooth_packet.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -69,7 +70,7 @@ protected:
 	uint8_t d_pattern_channels[max_pattern_length];
 
 	/* Use packet headers to determine UAP */
-	bool UAP_from_header();
+	bool UAP_from_header(bluetooth_packet_sptr packet);
 
 public:
   ~bluetooth_UAP ();	// public destructor

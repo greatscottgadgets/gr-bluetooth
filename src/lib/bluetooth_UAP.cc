@@ -25,7 +25,6 @@
 #endif
 
 #include "bluetooth_UAP.h"
-#include "bluetooth_packet.h"
 
 /*
  * Create a new instance of bluetooth_UAP and return
@@ -75,16 +74,16 @@ bluetooth_UAP::work (int noutput_items,
 	if(-1 == retval) {
 		d_consumed = noutput_items;
 	} else {
-		bluetooth_packet_sptr packet = bluetooth_make_packet(&d_stream[retval], noutput_items - retval);
+		d_consumed = retval;
+		bluetooth_packet_sptr packet = bluetooth_make_packet(&d_stream[retval], 3125 + noutput_items - retval);
 		if(packet->get_LAP() == d_LAP) {
-			d_consumed = retval;
 			if(d_first_packet_time == 0)
 			{
 				d_previous_packet_time = d_cumulative_count + d_consumed;
-				UAP_from_header();
+				UAP_from_header(packet);
 				d_first_packet_time = d_previous_packet_time;
 			} else {
-				if (UAP_from_header())
+				if (UAP_from_header(packet))
 					exit(0);
 				d_previous_packet_time = d_cumulative_count + d_consumed;
 			}
@@ -97,7 +96,7 @@ bluetooth_UAP::work (int noutput_items,
 	return d_consumed;
 }
 
-bool bluetooth_UAP::UAP_from_header()
+bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 {
 	char *stream = d_stream + d_consumed + 72;
 	char header[18];
@@ -148,9 +147,7 @@ bool bluetooth_UAP::UAP_from_header()
 			/* if this is the first packet: populate the candidate list */
 			/* if not: check CRCs if UAPs match */
 			if(d_first_packet_time == 0 || UAP == d_clock6_candidates[count])
-				retval = bluetooth_packet::crc_check(stream+54, type, 3125+d_stream_length-(d_consumed + 126), clock, UAP);
-				//FIXME:
-				//bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items - retval);
+				retval = packet->crc_check(type, clock, UAP);
 			switch(retval)
 			{
 				case -1: /* UAP mismatch */

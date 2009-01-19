@@ -92,6 +92,7 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 
 	//FIXME maybe should verify LAP
 	d_LAP = air_to_host32(&d_symbols[38], 24);
+	d_length = length;
 }
 
 int bluetooth_packet::sniff_ac(char *stream, int stream_length)
@@ -483,40 +484,43 @@ int bluetooth_packet::UAP_from_hec(uint8_t *packet)
 }
 
 /* check if the packet's CRC is correct */
-int bluetooth_packet::crc_check(char *stream, int type, int size, int clock, uint8_t UAP)
+int bluetooth_packet::crc_check(int type, int clock, uint8_t UAP)
 {
 	/* return value of 1 represents inconclusive result (default) */
 	int retval = 1;
 	/* number of bytes in the payload header */
 	int header_bytes = 2;
+	/* skip the packet header */
+	char *stream = d_symbols + 54;
 
 	switch(type)
 	{
 		case 2:/* FHS packets are sent with a UAP of 0x00 in the HEC */
-			retval = fhs(stream, clock, UAP, size);
+			retval = fhs(stream, clock, UAP, d_length);
 			break;
 
 		case 8:/* DV - skip 80bits for voice then treat like a DM1 */
 			stream += 80;
+			//FIXME d_length does not reflect += 80
 		case 3:/* DM1 */
 			header_bytes = 1;
 		case 10:/* DM3 */
 		case 14:/* DM5 */
-			retval = DM(stream, clock, UAP, header_bytes, size);
+			retval = DM(stream, clock, UAP, header_bytes, d_length);
 			break;
 
 		case 4:/* DH1 */
 			header_bytes = 1;
 		case 11:/* DH3 */
 		case 15:/* DH5 */
-			retval = DH(stream, clock, UAP, header_bytes, size);
+			retval = DH(stream, clock, UAP, header_bytes, d_length);
 			break;
 
 		case 7:/* EV3 */
 		case 12:/* EV4 */
 		case 13:/* EV5 */
 			/* Unknown length, need to cycle through it until CRC matches */
-			retval = EV(stream, clock, UAP, type, size);
+			retval = EV(stream, clock, UAP, type, d_length);
 			break;
 	}
 	/* never return a zero result unless this ia a FHS or DM1 */
@@ -550,9 +554,7 @@ int bluetooth_packet::fhs(char *stream, int clock, uint8_t UAP, int size)
 
 	fhslap = air_to_host32(&payload[34], 24);
 
-	//FIXME we would have a d_LAP if crc_check were not static
-	//if((fhsuap == UAP) && (fhslap == d_LAP))
-	if(fhsuap == UAP)
+	if((fhsuap == UAP) && (fhslap == d_LAP))
 		return 1000;
 	else
 		return 0;
