@@ -542,8 +542,6 @@ int bluetooth_packet::crc_check(int type, int clock, uint8_t UAP)
 {
 	/* return value of 1 represents inconclusive result (default) */
 	int retval = 1;
-	/* number of bytes in the payload header */
-	int header_bytes = 2;
 	/* skip the packet header */
 	char *stream = d_symbols + 54;
 
@@ -553,21 +551,17 @@ int bluetooth_packet::crc_check(int type, int clock, uint8_t UAP)
 			retval = fhs(stream, clock, UAP, d_length);
 			break;
 
-		case 8:/* DV - skip 80bits for voice then treat like a DM1 */
-			stream += 80;
-			//FIXME d_length does not reflect += 80
+		case 8:/* DV */
 		case 3:/* DM1 */
-			header_bytes = 1;
 		case 10:/* DM3 */
 		case 14:/* DM5 */
-			retval = DM(stream, clock, UAP, header_bytes, d_length);
+			retval = DM(stream, clock, UAP, type, d_length);
 			break;
 
 		case 4:/* DH1 */
-			header_bytes = 1;
 		case 11:/* DH3 */
 		case 15:/* DH5 */
-			retval = DH(stream, clock, UAP, header_bytes, d_length);
+			retval = DH(stream, clock, UAP, type, d_length);
 			break;
 
 		case 7:/* EV3 */
@@ -614,42 +608,90 @@ int bluetooth_packet::fhs(char *stream, int clock, uint8_t UAP, int size)
 		return 0;
 }
 
-/* DM 1/3/5 packet (and DV)*/
-int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size)
+/* decode payload header, return value indicates success */
+bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header_bytes, int size, bool fec)
 {
-	int bitlength, length;
-	uint16_t crc, check;
 	char *corrected;
 
 	if(header_bytes == 2)
 	{
 		if(size < 30)
-			return 1; //FIXME should throw exception
-		corrected = unfec23(stream, 16);
-		if(NULL == corrected)
-			return 0;
-		unwhiten(corrected, d_payload_header, clock, 16, 18);
-		free(corrected);
+			return false; //FIXME should throw exception
+		if(fec) {
+			corrected = unfec23(stream, 16);
+			if(NULL == corrected)
+				return false;
+			unwhiten(corrected, d_payload_header, clock, 16, 18);
+			free(corrected);
+		} else {
+			unwhiten(stream, d_payload_header, clock, 16, 18);
+		}
 		/* payload length is payload body length + 2 bytes payload header + 2 bytes CRC */
-		length = air_to_host16(&d_payload_header[3], 10) + 4;
-		/* check that the length is within range allowed by specification */
-		if(length > 228) //FIXME should be 125 if DM3
-			return 0;
+		d_payload_length = air_to_host16(&d_payload_header[3], 10) + 4;
 	} else {
 		if(size < 8)
-			return 1; //FIXME should throw exception
-		corrected = unfec23(stream, 8);
-		if(NULL == corrected)
-			return 0;
-		unwhiten(corrected, d_payload_header, clock, 8, 18);
-		free(corrected);
+			return false; //FIXME should throw exception
+		if(fec) {
+			corrected = unfec23(stream, 8);
+			if(NULL == corrected)
+				return false;
+			unwhiten(corrected, d_payload_header, clock, 8, 18);
+			free(corrected);
+		} else {
+			unwhiten(stream, d_payload_header, clock, 8, 18);
+		}
 		/* payload length is payload body length + 1 byte payload header + 2 bytes CRC */
-		length = air_to_host8(&d_payload_header[3], 5) + 3;
-		/* check that the length is within range allowed by specification */
-		if(length > 20)
+		d_payload_length = air_to_host8(&d_payload_header[3], 5) + 3;
+	}
+	d_payload_llid = air_to_host8(&d_payload_header[0], 2);
+	d_payload_flow = air_to_host8(&d_payload_header[2], 1);
+	return true;
+}
+
+/* DM 1/3/5 packet (and DV)*/
+int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int type, int size)
+{
+	int bitlength;
+	uint16_t crc, check;
+	char *corrected;
+	/* number of bytes in the payload header */
+	int header_bytes = 2;
+	/* maximum payload length */
+	int max_length;
+
+	switch(type)
+	{
+		case(8): /* DV */
+			/* skip 80 voice bits, then treat the rest like a DM1 */
+			stream += 80;
+			size -= 80;
+			header_bytes = 1;
+			/* I don't think the length of the voice field ("synchronous data
+			 * field") is included in the length indicated by the payload
+			 * header in the data field ("asynchronous data field"), but I
+			 * could be wrong.
+			 */
+			max_length = 12;
+			break;
+		case(3): /* DM1 */
+			header_bytes = 1;
+			max_length = 20;
+			break;
+		case(10): /* DM3 */
+			max_length = 125;
+			break;
+		case(14): /* DM5 */
+			max_length = 228;
+			break;
+		default: /* not a DM1/3/5 or DV */
 			return 0;
 	}
-	bitlength = length*8;
+	if(!decode_payload_header(stream, clock, header_bytes, size, true))
+		return 0;
+	/* check that the length indicated in the payload header is within spec */
+	if(d_payload_length > max_length)
+		return 0;
+	bitlength = d_payload_length*8;
 	if(bitlength > size)
 		return 1; //FIXME should throw exception
 
@@ -659,8 +701,8 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int header_bytes,
 		return 0;
 	unwhiten(corrected, payload, clock, bitlength, 18);
 	free(corrected);
-	crc = crcgen(payload, (length-2)*8, UAP);
-	check = air_to_host16(&payload[(length-2)*8], 16);
+	crc = crcgen(payload, (d_payload_length-2)*8, UAP);
+	check = air_to_host16(&payload[(d_payload_length-2)*8], 16);
 
 	if(crc == check) {
 		d_payload_crc = crc;
@@ -673,38 +715,43 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int header_bytes,
 
 /* DH 1/3/5 packet */
 /* similar to DM 1/3/5 but without FEC */
-int bluetooth_packet::DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size)
+int bluetooth_packet::DH(char *stream, int clock, uint8_t UAP, int type, int size)
 {
-	int bitlength, length;
+	int bitlength;
 	uint16_t crc, check;
-
-	if(size < (header_bytes * 8))
-		return 1; //FIXME should throw exception
-
-	if(header_bytes == 2)
+	/* number of bytes in the payload header */
+	int header_bytes = 2;
+	/* maximum payload length */
+	int max_length;
+	
+	switch(type)
 	{
-		unwhiten(stream, d_payload_header, clock, 16, 18);
-		/* payload length is payload body length + 2 bytes payload header + 2 bytes CRC */
-		length = air_to_host16(&d_payload_header[3], 10) + 4;
-		/* check that the length is within range allowed by specification */
-		if(length > 343) //FIXME should be 187 if DH3
-			return 0;
-	} else {
-		unwhiten(stream, d_payload_header, clock, 8, 18);
-		/* payload length is payload body length + 1 byte payload header + 2 bytes CRC */
-		length = air_to_host8(&d_payload_header[3], 5) + 3;
-		/* check that the length is within range allowed by specification */
-		if(length > 30)
+		case(4): /* DH1 */
+			header_bytes = 1;
+			max_length = 30;
+			break;
+		case(11): /* DH3 */
+			max_length = 187;
+			break;
+		case(15): /* DH5 */
+			max_length = 343;
+			break;
+		default: /* not a DH1/3/5 */
 			return 0;
 	}
-	bitlength = length*8;
+	if(!decode_payload_header(stream, clock, header_bytes, size, false))
+		return 0;
+	/* check that the length indicated in the payload header is within spec */
+	if(d_payload_length > max_length)
+		return 0;
+	bitlength = d_payload_length*8;
 	if(bitlength > size)
 		return 1; //FIXME should throw exception
 
 	char payload[bitlength];
 	unwhiten(stream, payload, clock, bitlength, 18);
-	crc = crcgen(payload, (length-2)*8, UAP);
-	check = air_to_host16(&payload[(length-2)*8], 16);
+	crc = crcgen(payload, (d_payload_length-2)*8, UAP);
+	check = air_to_host16(&payload[(d_payload_length-2)*8], 16);
 
 	if(crc == check) {
 		d_payload_crc = crc;
@@ -761,6 +808,7 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 		if(crc == check) {
 			d_payload_crc = crc;
 			d_payload_header_length = 0;
+			d_payload_length = count + 2;
 			return 10;
 		}
 	}

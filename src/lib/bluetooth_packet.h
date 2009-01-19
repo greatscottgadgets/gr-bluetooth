@@ -91,6 +91,21 @@ private:
 	/* set to 0, 1, 2, or -1 for unknown */
 	int d_payload_header_length;
 
+	/* LLID field of payload header (2 bits) */
+	uint8_t d_payload_llid;
+
+	/* flow field of payload header (1 bit) */
+	uint8_t d_payload_flow;
+
+	/* payload length: the total length of the asynchronous data.
+	 * This does not include the length of synchronous data, such as the voice
+	 * field of a DV packet.
+	 * If there is a payload header, this payload length is payload body length
+	 * (the length indicated in the payload header's length field) plus
+	 * d_payload_header_length plus 2 bytes CRC (if present).
+	 */
+	int d_payload_length;
+
 	/* CRC of packet payload */
 	uint16_t d_payload_crc;
 
@@ -109,9 +124,12 @@ private:
 	/* type-specific CRC checks */
 	//FIXME probably ought to use d_symbols, d_length
 	int fhs(char *stream, int clock, uint8_t UAP, int size);
-	int DM(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
-	int DH(char *stream, int clock, uint8_t UAP, int header_bytes, int size);
+	int DM(char *stream, int clock, uint8_t UAP, int type, int size);
+	int DH(char *stream, int clock, uint8_t UAP, int type, int size);
 	int EV(char *stream, int clock, uint8_t UAP, int type, int size);
+
+	/* decode payload header, return value indicates success */
+	bool decode_payload_header(char *stream, int clock, int header_bytes, int size, bool fec);
 
 public:
 	/* search a symbol stream to find a packet, return index */
