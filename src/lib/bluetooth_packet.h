@@ -64,6 +64,8 @@ private:
 	static const string TYPE_NAMES[16];
 
 	/* the raw symbol stream, one bit per char */
+	//FIXME maybe this should be a vector so we can grow it only to the size
+	//needed and later shrink it if we find we have more symbols than necessary
 	char d_symbols[MAX_SYMBOLS];
 
 	/* lower address part found in access code */
@@ -85,11 +87,24 @@ private:
 	/* the packet may have a payload header of 0, 1, or 2 bytes, reserving 2 */
 	char d_payload_header[16];
 
+	/* number of payload header bytes */
+	/* set to 0, 1, 2, or -1 for unknown */
+	int d_payload_header_length;
+
 	/* CRC of packet payload */
 	uint16_t d_payload_crc;
 
 	/* is the packet whitened? */
 	bool d_whitened;
+
+	/* do we know the UAP? */
+	bool d_have_UAP;
+
+	/* do we know the clock (master CLK1-27)? */
+	bool d_have_clock;
+
+	/* CLK1-27 of master */
+	uint32_t d_clock;
 
 	/* type-specific CRC checks */
 	//FIXME probably ought to use d_symbols, d_length
@@ -167,6 +182,12 @@ public:
 
 	/* set the packet's whitened flag */
 	void set_whitened(bool whitened);
+
+	/* return the packet's clock (CLK1-27) */
+	uint32_t get_clock();
+
+	/* set the packet's clock (CLK1-27) */
+	void set_clock(uint32_t clock);
 
 	/* destructor */
 	~bluetooth_packet();

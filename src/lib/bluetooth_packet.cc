@@ -101,6 +101,9 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	d_LAP = air_to_host32(&d_symbols[38], 24);
 	d_length = length;
 	d_whitened = true;
+	d_have_UAP = false;
+	d_have_clock = false;
+	d_payload_header_length = -1;
 }
 
 /* search a symbol stream to find a packet, return index */
@@ -465,13 +468,31 @@ uint32_t bluetooth_packet::get_LAP()
 /* return the packet's UAP */
 uint8_t bluetooth_packet::get_UAP()
 {
+	//FIXME throw exception if !d_have_UAP
 	return d_UAP;
 }
 
 /* set the packet's UAP */
 void bluetooth_packet::set_UAP(uint8_t UAP)
 {
+	//FIXME probably should do something if d_have_UAP && (UAP != d_UAP)
 	d_UAP = UAP;
+	d_have_UAP = true;
+}
+
+/* return the packet's clock (CLK1-27) */
+uint32_t bluetooth_packet::get_clock()
+{
+	//FIXME throw exception if !d_have_clock
+	return d_clock;
+}
+
+/* set the packet's clock (CLK1-27) */
+void bluetooth_packet::set_clock(uint32_t clock)
+{
+	//FIXME probably should do something if d_have_clock && (clock != d_clock)
+	d_clock = clock;
+	d_have_clock = true;
 }
 
 /* is the packet whitened? */
@@ -643,6 +664,7 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int header_bytes,
 
 	if(crc == check) {
 		d_payload_crc = crc;
+		d_payload_header_length = header_bytes;
 		return 10;
 	}
 
@@ -686,6 +708,7 @@ int bluetooth_packet::DH(char *stream, int clock, uint8_t UAP, int header_bytes,
 
 	if(crc == check) {
 		d_payload_crc = crc;
+		d_payload_header_length = header_bytes;
 		return 10;
 	}
 
@@ -737,6 +760,7 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 		/* Check CRC */
 		if(crc == check) {
 			d_payload_crc = crc;
+			d_payload_header_length = 0;
 			return 10;
 		}
 	}
@@ -757,6 +781,7 @@ void bluetooth_packet::decode_header()
 
 	unfec13(stream, header, 18);
 
+	//FIXME only go through all this if !d_have_clock
 	for(count = 0; count < 64; count++)
 	{
 		unwhiten(header, unwhitened, count, 18, 0);
@@ -767,7 +792,7 @@ void bluetooth_packet::decode_header()
 
 		UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
 
-		//FIXME should verify we have d_UAP
+		//FIXME throw exception if !d_have_UAP
 		if(UAP != d_UAP)
 			continue;
 
