@@ -921,5 +921,9 @@ void bluetooth_packet::decode_header()
 void bluetooth_packet::print()
 {
 	cout << TYPE_NAMES[d_packet_type] << endl;
-	//FIXME print more stuff, like llid, payload header bits, payload length, crc, etc.
+	if(d_payload_header_length > 0) {
+		cout << "  LLID: " << d_payload_llid << endl;
+		cout << "  flow: " << d_payload_flow << endl;
+		cout << "  payload length: " << d_payload_length << endl;
+	}
 }
