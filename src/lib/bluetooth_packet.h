@@ -23,7 +23,10 @@
 #define INCLUDED_BLUETOOTH_PACKET_H
 
 #include <stdint.h>
+#include <string>
 #include <boost/enable_shared_from_this.hpp>
+
+using namespace std;
 
 class bluetooth_packet;
 typedef boost::shared_ptr<bluetooth_packet> bluetooth_packet_sptr;
@@ -56,6 +59,9 @@ private:
 
 	/* lookup table for trailer hamming distance */
 	static const uint8_t TRAILER_DISTANCE[2048];
+
+	/* string representations of packet type */
+	static const string TYPE_NAMES[16];
 
 	/* the raw symbol stream, one bit per char */
 	char d_symbols[MAX_SYMBOLS];
@@ -140,6 +146,9 @@ public:
 
 	/* decode the packet header */
 	void decode_header();
+
+	/* print packet information */
+	void print();
 
 	/* return the packet's LAP */
 	uint32_t get_LAP();

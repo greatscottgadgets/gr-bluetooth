@@ -26,6 +26,7 @@
 
 #include "bluetooth_packet.h"
 #include <stdlib.h>
+#include <iostream>
 
 /* initialize constant class member arrays */
 /* isn't it silly that this can't be done in the class declaration? */
@@ -68,6 +69,12 @@ const uint8_t bluetooth_packet::TRAILER_DISTANCE[] = {
 	3,4,4,5,4,5,5,5,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,1,2,2,3,2,3,3,4,4,5,5,5,5,5,5,4,3,4,4,5,4,5,5,5,3,4,4,5,4,5,5,5,2,3,3,4,3,4,4,5,
 	5,5,5,4,5,4,4,3,4,5,5,5,5,5,5,4,4,5,5,5,5,5,5,4,3,4,4,5,4,5,5,5,5,4,4,3,4,3,3,2,5,5,5,4,5,4,4,3,5,5,5,4,5,4,4,3,4,5,5,5,5,5,5,4,
 	4,5,5,5,5,5,5,4,3,4,4,5,4,5,5,5,3,4,4,5,4,5,5,5,2,3,3,4,3,4,4,5,5,5,5,4,5,4,4,3,4,5,5,5,5,5,5,4,4,5,5,5,5,5,5,4,3,4,4,5,4,5,5,5
+};
+
+const string bluetooth_packet::TYPE_NAMES[] = {
+	//FIXME maybe should track logical transport and have separate names for each
+	"NULL", "POLL", "FHS", "DM1", "DH1/2-DH1", "HV1", "HV2/2-EV3", "HV3/EV3/3-EV3",
+	"DV/3-DH1", "AUX1", "DM3/2-DH3", "DH3/3-DH3", "EV4/2-EV5", "EV5/3-EV5", "DM5/2-DH5", "DH5/3-DH5"
 };
 
 /*
@@ -821,7 +828,12 @@ void bluetooth_packet::decode_header()
 				DH(stream, count, UAP, 2, size);
 				break;
 		}
-		//FIXME move to separate method that prints more info
-		printf("packet type = %d\n", d_packet_type);
 	}
+}
+
+/* print packet information */
+void bluetooth_packet::print()
+{
+	cout << TYPE_NAMES[d_packet_type] << endl;
+	//FIXME print more stuff, like llid, payload header bits, payload length, crc, etc.
 }
