@@ -131,6 +131,9 @@ private:
 	/* decode payload header, return value indicates success */
 	bool decode_payload_header(char *stream, int clock, int header_bytes, int size, bool fec);
 
+	/* Remove the whitening from an air order array */
+	void unwhiten(char* input, char* output, int clock, int length, int skip);
+
 public:
 	/* search a symbol stream to find a packet, return index */
 	static int sniff_ac(char *stream, int stream_length);
@@ -168,17 +171,14 @@ public:
 	/* Convert some number of bits in a host order integer to an air order array */
 	static void host_to_air(uint8_t host_order, char *air_order, int bits);
 
-	/* Remove the whitening from an air order array */
-	static void unwhiten(char* input, char* output, int clock, int length, int skip);
-
 	/* Create the 16bit CRC for packet payloads - input air order stream */
 	static uint16_t crcgen(char *payload, int length, int UAP);
 
 	/* extract UAP by reversing the HEC computation */
 	static int UAP_from_hec(uint8_t *packet);
 
-	/* check if the packet's CRC is correct */
-	int crc_check(int type, int clock, uint8_t UAP);
+	/* check if the packet's CRC is correct for a given clock (CLK1-6) */
+	int crc_check(int clock);
 
 	/* decode the packet header */
 	void decode_header();
@@ -206,6 +206,12 @@ public:
 
 	/* set the packet's clock (CLK1-27) */
 	void set_clock(uint32_t clock);
+
+	/* try a clock value (CLK1-6) to unwhiten packet header,
+	 * sets resultant d_packet_type and d_UAP, returns UAP.
+	 */
+	//FIXME should this be merged with set_clock()?
+	uint8_t try_clock(int clock);
 
 	/* destructor */
 	~bluetooth_packet();

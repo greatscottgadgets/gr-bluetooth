@@ -57,16 +57,16 @@ int bluetooth_hopper::work (int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
-	d_stream = (char *) input_items[0];
+	char *in = (char *) input_items[0];
 	int retval, i;
 	int num_candidates = -1;
 
-	retval = bluetooth_packet::sniff_ac(d_stream, noutput_items);
+	retval = bluetooth_packet::sniff_ac(in, noutput_items);
 	if(-1 == retval) {
 		d_consumed = noutput_items;
 	} else {
 		d_consumed = retval;
-		bluetooth_packet_sptr packet = bluetooth_make_packet(&d_stream[retval], 3125 + noutput_items - retval);
+		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
 		if(packet->get_LAP() == d_LAP) {
 			if(d_first_packet_time == 0) {
 				/* this is our first packet to consider for CLK1-6/UAP discovery */

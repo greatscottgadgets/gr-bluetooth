@@ -65,15 +65,15 @@ bluetooth_UAP::work (int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
-	d_stream = (char *) input_items[0];
+	char *in = (char *) input_items[0];
 	int retval;
 
-	retval = bluetooth_packet::sniff_ac(d_stream, noutput_items);
+	retval = bluetooth_packet::sniff_ac(in, noutput_items);
 	if(-1 == retval) {
 		d_consumed = noutput_items;
 	} else {
 		d_consumed = retval;
-		bluetooth_packet_sptr packet = bluetooth_make_packet(&d_stream[retval], 3125 + noutput_items - retval);
+		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
 		if(packet->get_LAP() == d_LAP) {
 			if(d_first_packet_time == 0)
 			{
@@ -97,17 +97,11 @@ bluetooth_UAP::work (int noutput_items,
 //FIXME move to bluetooth_piconet
 bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 {
-	char *stream = d_stream + d_consumed + 72;
-	char header[18];
-	char unwhitened[18];
-	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
-	uint8_t UAP, type;
+	uint8_t UAP;
 	int count, retval, first_clock;
 	int crc_match = -1;
 	int starting = 0;
 	int remaining = 0;
-
-	bluetooth_packet::unfec13(stream, header, 18);
 
 	/* number of samples elapsed since previous packet */
 	int difference = (d_cumulative_count + d_consumed) - d_previous_packet_time;
@@ -132,21 +126,14 @@ bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 		{
 			/* clock value for the current packet assuming count was the clock of the first packet */
 			int clock = (count + d_previous_clock_offset + interval) % 64;
-
-			bluetooth_packet::unwhiten(header, unwhitened, clock, 18, 0);
-			unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
-			unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
-			unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
-
-			UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
-			type = bluetooth_packet::air_to_host8(&unwhitened[3], 4);
-			retval = -1;
 			starting++;
+			UAP = packet->try_clock(clock);
+			retval = -1;
 
 			/* if this is the first packet: populate the candidate list */
 			/* if not: check CRCs if UAPs match */
 			if(d_first_packet_time == 0 || UAP == d_clock6_candidates[count])
-				retval = packet->crc_check(type, clock, UAP);
+				retval = packet->crc_check(clock);
 			switch(retval)
 			{
 				case -1: /* UAP mismatch */

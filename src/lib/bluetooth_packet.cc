@@ -431,7 +431,8 @@ void bluetooth_packet::unwhiten(char* input, char* output, int clock, int length
 
 	for(count = 0; count < length; count++)
 	{
-		output[count] = input[count] ^ WHITENING_DATA[index];
+		/* unwhiten if d_unwhitened, otherwise just copy input to output */
+		output[count] = (d_whitened) ? input[count] ^ WHITENING_DATA[index] : input[count];
 		index += 1;
 		index %= 127;
 	}
@@ -537,43 +538,43 @@ int bluetooth_packet::UAP_from_hec(uint8_t *packet)
 	return hec;
 }
 
-/* check if the packet's CRC is correct for a given clock */
-int bluetooth_packet::crc_check(int type, int clock, uint8_t UAP)
+/* check if the packet's CRC is correct for a given clock (CLK1-6) */
+int bluetooth_packet::crc_check(int clock)
 {
 	/* return value of 1 represents inconclusive result (default) */
 	int retval = 1;
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
 
-	switch(type)
+	switch(d_packet_type)
 	{
 		case 2:/* FHS packets are sent with a UAP of 0x00 in the HEC */
-			retval = fhs(stream, clock, UAP, d_length);
+			retval = fhs(stream, clock, d_UAP, d_length);
 			break;
 
 		case 8:/* DV */
 		case 3:/* DM1 */
 		case 10:/* DM3 */
 		case 14:/* DM5 */
-			retval = DM(stream, clock, UAP, type, d_length);
+			retval = DM(stream, clock, d_UAP, d_packet_type, d_length);
 			break;
 
 		case 4:/* DH1 */
 		case 11:/* DH3 */
 		case 15:/* DH5 */
-			retval = DH(stream, clock, UAP, type, d_length);
+			retval = DH(stream, clock, d_UAP, d_packet_type, d_length);
 			break;
 
 		case 7:/* EV3 */
 		case 12:/* EV4 */
 		case 13:/* EV5 */
 			/* Unknown length, need to cycle through it until CRC matches */
-			retval = EV(stream, clock, UAP, type, d_length);
+			retval = EV(stream, clock, d_UAP, d_packet_type, d_length);
 			break;
 	}
 	/* never return a zero result unless this ia a FHS or DM1 */
 	/* any other type could have actually been something else */
-	if(retval == 0 && (type < 2 || type > 3))
+	if(retval == 0 && (d_packet_type < 2 || d_packet_type > 3))
 		return 1;
 	return retval;
 }
@@ -815,6 +816,31 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 	return 0;
 }
 
+/* try a clock value (CLK1-6) to unwhiten packet header,
+ * sets resultant d_packet_type and d_UAP, returns UAP.
+ */
+uint8_t bluetooth_packet::try_clock(int clock)
+{
+	/* skip 72 bit access code */
+	char *stream = d_symbols + 72;
+	/* 18 bit packet header */
+	char header[18];
+	char unwhitened[18];
+	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
+
+	unfec13(stream, header, 18);
+	unwhiten(header, unwhitened, clock, 18, 0);
+
+	unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
+	unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
+	unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
+
+	d_UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
+	d_packet_type = air_to_host8(&unwhitened[3], 4);
+
+	return d_UAP;
+}
+
 /* decode the packet header */
 void bluetooth_packet::decode_header()
 {
@@ -835,6 +861,7 @@ void bluetooth_packet::decode_header()
 	//FIXME only go through all this if !d_have_clock
 	for(count = 0; count < 64; count++)
 	{
+		//FIXME use try_clock() or otherwise merge functions
 		unwhiten(header, unwhitened, count, 18, 0);
 
 		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
