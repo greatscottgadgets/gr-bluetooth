@@ -58,7 +58,6 @@ int bluetooth_hopper::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	d_stream = (char *) input_items[0];
-	d_stream_length = noutput_items;
 	int retval, i;
 	int num_candidates = -1;
 

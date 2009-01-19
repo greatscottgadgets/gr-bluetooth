@@ -41,7 +41,6 @@ bluetooth_UAP::bluetooth_UAP (int LAP)
   : bluetooth_block ()
 {
 	d_LAP = LAP;
-	d_stream_length = 0;
 	d_consumed = 0;
 
 	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x\n\n", LAP);
@@ -67,7 +66,6 @@ bluetooth_UAP::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	d_stream = (char *) input_items[0];
-	d_stream_length = noutput_items;
 	int retval;
 
 	retval = bluetooth_packet::sniff_ac(d_stream, noutput_items);
@@ -96,6 +94,7 @@ bluetooth_UAP::work (int noutput_items,
 	return d_consumed;
 }
 
+//FIXME move to bluetooth_piconet
 bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 {
 	char *stream = d_stream + d_consumed + 72;
