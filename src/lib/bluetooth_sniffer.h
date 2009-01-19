@@ -22,7 +22,7 @@
 #ifndef INCLUDED_BLUETOOTH_SNIFFER_H
 #define INCLUDED_BLUETOOTH_SNIFFER_H
 
-#include <bluetooth_block.h>
+#include "bluetooth_block.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -48,15 +48,7 @@ private:
 
   bluetooth_sniffer (int lap, int uap);  	// private constructor
 
-/* To deal with whitened data */
-void new_header(int length);
-
-int DM1(int size, int clock);
-
-int DM5(int size, int clock);
-
-
- public:
+public:
   ~bluetooth_sniffer ();	// public destructor
 
   // Where all the action really happens

@@ -63,8 +63,24 @@ private:
 	/* lower address part found in access code */
 	uint32_t d_LAP;
 
+	/* upper address part */
+	uint8_t d_UAP;
+
 	/* number of symbols */
 	int d_length;
+
+	/* packet type */
+	int d_packet_type;
+
+	/* packet header, one bit per char */
+	char d_packet_header[18];
+
+	/* payload header, one bit per char */
+	/* the packet may have a payload header of 0, 1, or 2 bytes, reserving 2 */
+	char d_payload_header[16];
+
+	/* CRC of packet payload */
+	uint16_t d_payload_crc;
 
 	/* type-specific CRC checks */
 	//FIXME probably ought to use d_symbols, d_length
@@ -122,8 +138,17 @@ public:
 	/* check if the packet's CRC is correct */
 	int crc_check(int type, int clock, uint8_t UAP);
 
+	/* decode the packet header */
+	void decode_header();
+
 	/* return the packet's LAP */
 	uint32_t get_LAP();
+
+	/* return the packet's UAP */
+	uint8_t get_UAP();
+
+	/* set the packet's UAP */
+	void set_UAP(uint8_t UAP);
 
 	/* destructor */
 	~bluetooth_packet();
