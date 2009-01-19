@@ -13,7 +13,6 @@
 #include "bluetooth_hopper.h"
 #include "bluetooth_block.h"
 #include "bluetooth_multi_block.h"
-#include "bluetooth_dump.h"
 #include <stdexcept>
 %}
 
@@ -88,18 +87,3 @@ class bluetooth_hopper : public gr_sync_block
 private:
   bluetooth_hopper (int LAP, int channel);
 };
-
-/*
- * First arg is the package prefix.
- * Second arg is the name of the class minus the prefix.
- */
-GR_SWIG_BLOCK_MAGIC(bluetooth,dump);
-
-bluetooth_dump_sptr bluetooth_make_dump ();
-
-class bluetooth_dump : public gr_sync_block
-{
-private:
-  bluetooth_dump ();
-};
-

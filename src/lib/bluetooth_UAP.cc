@@ -107,7 +107,7 @@ bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 	int starting = 0;
 	int remaining = 0;
 
-	unfec13(stream, header, 18);
+	bluetooth_packet::unfec13(stream, header, 18);
 
 	/* number of samples elapsed since previous packet */
 	int difference = (d_cumulative_count + d_consumed) - d_previous_packet_time;
@@ -133,13 +133,13 @@ bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 			/* clock value for the current packet assuming count was the clock of the first packet */
 			int clock = (count + d_previous_clock_offset + interval) % 64;
 
-			unwhiten(header, unwhitened, clock, 18, 0);
+			bluetooth_packet::unwhiten(header, unwhitened, clock, 18, 0);
 			unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
 			unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
 			unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
 
 			UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
-			type = air_to_host8(&unwhitened[3], 4);
+			type = bluetooth_packet::air_to_host8(&unwhitened[3], 4);
 			retval = -1;
 			starting++;
 

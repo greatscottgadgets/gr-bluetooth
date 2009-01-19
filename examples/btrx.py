@@ -6,7 +6,6 @@ Receives samples from USRP, file (as created by usrp_rx_cfile.py), or standard i
 If LAP is unspecified, LAP detection mode is enabled.
 If LAP is specified without UAP, UAP detection mode is enabled.
 If both LAP and UAP are specified, sniffing mode is enabled.
-Alternatively, dump mode can be specified.
 """
 
 from gnuradio import gr, eng_notation, blks2
@@ -38,8 +37,6 @@ class my_top_block(gr.top_block):
 						help="use named input file instead of USRP")
 		parser.add_option("-l", "--lap", type="string", default=None,
 						help="LAP of the master device")
-		parser.add_option("-m", "--dump", action="store_true", default=False,
-						help="dump mode")
 		parser.add_option("-n", "--channel", type="int", default=None,
 						help="channel number for hop reversal (0-78) (default=None)") 
 		parser.add_option("-r", "--sample-rate", type="eng_float", default=None,
@@ -158,26 +155,22 @@ class my_top_block(gr.top_block):
 			demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=samples_per_symbol)
 
 			# bluetooth decoding
-			if options.dump:
-				# dump mode
-				dst = bluetooth.dump()
+			if options.lap is None:
+				# print out LAP for every frame detected
+				dst = bluetooth.LAP(ddc_freq)
 			else:
-				if options.lap is None:
-					# print out LAP for every frame detected
-					dst = bluetooth.LAP(ddc_freq)
-				else:
-					if options.uap is None:
-						if options.channel is None:
-							# determine UAP from frames matching the user-specified LAP
-							# FIXME analyze multiple channels together, not separately
-							dst = bluetooth.UAP(int(options.lap, 16))
-						else:
-							# determine UAP and clock
-							# FIXME analyze multiple channels together, not separately
-							dst = bluetooth.hopper(int(options.lap, 16), options.channel)
+				if options.uap is None:
+					if options.channel is None:
+						# determine UAP from frames matching the user-specified LAP
+						# FIXME analyze multiple channels together, not separately
+						dst = bluetooth.UAP(int(options.lap, 16))
 					else:
-						# sniffer mode
-						dst = bluetooth.sniffer(int(options.lap, 16), int(options.uap, 16))
+						# determine UAP and clock
+						# FIXME analyze multiple channels together, not separately
+						dst = bluetooth.hopper(int(options.lap, 16), options.channel)
+				else:
+					# sniffer mode
+					dst = bluetooth.sniffer(int(options.lap, 16), int(options.uap, 16))
 		
 			# connect the blocks
 			self.connect(stage3, ddc)
