@@ -48,15 +48,8 @@ private:
 
   bluetooth_sniffer (int lap, int uap);  	// private constructor
 
-int UAP_from_hec(uint8_t *packet);
-
-/* For unwhitened headers */
-void header();
-
-int sniff_ac();
-
 /* To deal with whitened data */
-void new_header();
+void new_header(int length);
 
 int DM1(int size, int clock);
 

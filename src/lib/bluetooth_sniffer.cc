@@ -29,7 +29,8 @@
 #include "config.h"
 #endif
 
-#include <bluetooth_sniffer.h>
+#include "bluetooth_sniffer.h"
+#include "bluetooth_packet.h"
 
 /*
  * Create a new instance of bluetooth_sniffer and return
@@ -47,12 +48,11 @@ bluetooth_sniffer::bluetooth_sniffer (int lap, int uap)
 {
 	d_LAP = lap;
 	d_UAP = uap;
-	d_stream_length = 0;
 	d_consumed = 0;
 	printf("Bluetooth packet sniffer\n\n");
 
-	/* ensure that we are always given at least 126 symbols (AC + header) */
-	set_history(126); //FIXME should this be increased to include payload?
+	/* ensure that we are always given at least 3125 symbols (5 time slots) */
+	set_history(3125);
 }
 
 //virtual destructor.
@@ -66,15 +66,16 @@ bluetooth_sniffer::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	d_stream = (char *) input_items[0];
-	d_stream_length = noutput_items;
 	int retval;
 
-	retval = sniff_ac();
+	retval = bluetooth_packet::sniff_ac(d_stream, noutput_items);
 	if(-1 == retval) {
 		d_consumed = noutput_items;
 	} else {
 		d_consumed = retval;
-		new_header();
+		bluetooth_packet_sptr packet = bluetooth_make_packet(&d_stream[retval], 3125 + noutput_items - retval);
+		if(packet->get_LAP() == d_LAP)
+			new_header(noutput_items);
 		d_consumed += 126;
 	}
 
@@ -82,75 +83,7 @@ bluetooth_sniffer::work (int noutput_items,
 	return d_consumed;
 }
 
-/* Pointer to start of header, UAP */
-int bluetooth_sniffer::UAP_from_hec(uint8_t *packet)
-{
-	char byte;
-	int count;
-	uint8_t hec;
-
-	hec = *(packet + 2);
-	byte = *(packet + 1);
-
-	for(count = 0; count < 10; count++)
-	{
-		if(2==count)
-			byte = *packet;
-
-		/*Bit 1*/
-		hec ^= ((hec & 0x01)<<1);
-		/*Bit 2*/
-		hec ^= ((hec & 0x01)<<2);
-		/*Bit 5*/
-		hec ^= ((hec & 0x01)<<5);
-		/*Bit 7*/
-		hec ^= ((hec & 0x01)<<7);
-
-		hec = (hec >> 1) | (((hec & 0x01) ^ (byte & 0x01)) << 7);
-		byte >>= 1;
-	}
-	return hec;
-}
-
-/* Looks for an AC in the stream */
-int bluetooth_sniffer::sniff_ac()
-{
-	int jump, count;
-	uint16_t trailer; // barker code plus trailer
-	uint32_t LAP;
-	char *stream;
-	int jumps[16] = {3,2,1,3,3,0,2,3,3,2,0,3,3,1,2,3};
-
-	for(count = 0; count < d_stream_length; count += jump)
-	{
-		stream = &d_stream[count];
-		jump = jumps[stream[0] << 3 | stream[1] << 2 | stream[2] << 1 | stream[3]];
-		if(0 == jump)
-		{
-			/* Found the start, now check the end... */
-			trailer = air_to_host16(&stream[61], 11);
-			/* stream[4] should probably be used in the jump trick instead of here.
-			 * Then again, an even better solution would have some error tolerance,
-			 * but we would probably have to abandon the jump trick. */
-			if((stream[4] == stream[0]) && ((0x558 == trailer) || (0x2a7 == trailer)))
-			{
-				LAP = air_to_host32(&stream[38], 24);
-				if(LAP == d_LAP && check_ac(stream, LAP))
-				{
-					/*printf("AC\n");
-					for(int x = 0; x < 72; x++)
-						printf("%d", stream[x]);
-					printf("\n");*/
-					return count;
-				}
-			}
-			jump = 1;
-		}
-	}
-	return -1;
-}
-
-void bluetooth_sniffer::new_header()
+void bluetooth_sniffer::new_header(int length)
 {
 	char *stream = d_stream + d_consumed + 72;
 	char header[18];
@@ -159,7 +92,7 @@ void bluetooth_sniffer::new_header()
 	uint8_t UAP, ltadr;
 	int count, size;
 
-	size = d_stream_length - 126;
+	size = length - 126;
 	//printf("Start Header");
 
 	unfec13(stream, header, 18);
@@ -172,7 +105,7 @@ void bluetooth_sniffer::new_header()
 		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
 		unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
 
-		UAP = UAP_from_hec(unwhitened_air);
+		UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
 
 		if(UAP != d_UAP)
 			continue;

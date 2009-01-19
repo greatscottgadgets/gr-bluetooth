@@ -95,6 +95,7 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	d_length = length;
 }
 
+/* search a symbol stream to find a packet, return index */
 int bluetooth_packet::sniff_ac(char *stream, int stream_length)
 {
 	/* Looks for an AC in the stream */
