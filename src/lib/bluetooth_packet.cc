@@ -542,8 +542,8 @@ int bluetooth_packet::crc_check(int type, int clock, uint8_t UAP)
 {
 	/* return value of 1 represents inconclusive result (default) */
 	int retval = 1;
-	/* skip the packet header */
-	char *stream = d_symbols + 54;
+	/* skip the access code and packet header */
+	char *stream = d_symbols + 126;
 
 	switch(type)
 	{
@@ -818,13 +818,16 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 /* decode the packet header */
 void bluetooth_packet::decode_header()
 {
+	/* skip 72 bit access code */
 	char *stream = d_symbols + 72;
+	/* 18 bit packet header */
 	char header[18];
 	char unwhitened[18];
 	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
 	uint8_t UAP, ltadr;
 	int count, size;
 
+	/* number of symbols remaining after access code and packet header */
 	size = d_length - 126;
 
 	unfec13(stream, header, 18);
@@ -862,14 +865,14 @@ void bluetooth_packet::decode_header()
 				/* no payload to decode */
 				break;
 			case 2: /* FHS */
-				fhs(stream, count, UAP, size);
+				fhs(stream + 54, count, UAP, size);
 				break;
 			case 3: /* DM1 */
-				DM(stream, count, UAP, 1, size);
+				DM(stream + 54, count, UAP, d_packet_type, size);
 				break;
 			case 4: /* DH1 */
 				/* assuming DH1 but could be 2-DH1 */
-				DH(stream, count, UAP, 1, size);
+				DH(stream + 54, count, UAP, d_packet_type, size);
 				break;
 			case 5: /* HV1 */
 				/* don't know how to decode */
@@ -880,23 +883,22 @@ void bluetooth_packet::decode_header()
 				break;
 			case 7: /* EV3 */
 				/* assuming EV3 but could be HV3 or 3-EV3 */
-				EV(stream, count, UAP, d_packet_type, size);
+				EV(stream + 54, count, UAP, d_packet_type, size);
 				break;
 			case 8: /* DV */
 				/* assuming DV but could be 3-DH1 */
-				/* skip 80bits for voice then treat like a DM1 */
-				DM(stream + 80, count, UAP, 1, size);
+				DM(stream + 54, count, UAP, d_packet_type, size);
 				break;
 			case 9: /* AUX1 */
 				/* don't know how to decode */
 				break;
 			case 10: /* DM3 */
 				/* assuming DM3 but could be 2-DH3 */
-				DM(stream, count, UAP, 2, size);
+				DM(stream + 54, count, UAP, d_packet_type, size);
 				break;
 			case 11: /* DH3 */
 				/* assuming DH3 but could be 3-DH3 */
-				DH(stream, count, UAP, 2, size);
+				DH(stream + 54, count, UAP, d_packet_type, size);
 				break;
 			case 12: /* EV4 */
 				/* assuming EV4 but could be 2-EV5 */
@@ -904,14 +906,14 @@ void bluetooth_packet::decode_header()
 				break;
 			case 13: /* EV5 */
 				/* assuming EV5 but could be 3-EV5 */
-				EV(stream, count, UAP, d_packet_type, size);
+				EV(stream + 54, count, UAP, d_packet_type, size);
 			case 14: /* DM5 */
 				/* assuming DM5 but could be 2-DH5 */
-				DM(stream, count, UAP, 2, size);
+				DM(stream + 54, count, UAP, d_packet_type, size);
 				break;
 			case 15: /* DH5 */
 				/* assuming DH5 but could be 3-DH5 */
-				DH(stream, count, UAP, 2, size);
+				DH(stream + 54, count, UAP, d_packet_type, size);
 				break;
 		}
 	}
@@ -922,8 +924,8 @@ void bluetooth_packet::print()
 {
 	cout << TYPE_NAMES[d_packet_type] << endl;
 	if(d_payload_header_length > 0) {
-		cout << "  LLID: " << d_payload_llid << endl;
-		cout << "  flow: " << d_payload_flow << endl;
-		cout << "  payload length: " << d_payload_length << endl;
+		printf("  LLID: %d\n", d_payload_llid);
+		printf("  flow: %d\n", d_payload_flow);
+		printf("  payload length: %d\n", d_payload_length);
 	}
 }
