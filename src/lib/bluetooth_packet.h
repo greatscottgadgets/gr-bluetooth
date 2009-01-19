@@ -88,6 +88,9 @@ private:
 	/* CRC of packet payload */
 	uint16_t d_payload_crc;
 
+	/* is the packet whitened? */
+	bool d_whitened;
+
 	/* type-specific CRC checks */
 	//FIXME probably ought to use d_symbols, d_length
 	int fhs(char *stream, int clock, uint8_t UAP, int size);
@@ -158,6 +161,12 @@ public:
 
 	/* set the packet's UAP */
 	void set_UAP(uint8_t UAP);
+
+	/* is the packet whitened? */
+	bool get_whitened();
+
+	/* set the packet's whitened flag */
+	void set_whitened(bool whitened);
 
 	/* destructor */
 	~bluetooth_packet();

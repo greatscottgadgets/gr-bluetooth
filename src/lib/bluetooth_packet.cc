@@ -100,6 +100,7 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	//FIXME maybe should verify LAP
 	d_LAP = air_to_host32(&d_symbols[38], 24);
 	d_length = length;
+	d_whitened = true;
 }
 
 /* search a symbol stream to find a packet, return index */
@@ -471,6 +472,18 @@ uint8_t bluetooth_packet::get_UAP()
 void bluetooth_packet::set_UAP(uint8_t UAP)
 {
 	d_UAP = UAP;
+}
+
+/* is the packet whitened? */
+bool bluetooth_packet::get_whitened()
+{
+	return d_whitened;
+}
+
+/* set the packet's whitened flag */
+void bluetooth_packet::set_whitened(bool whitened)
+{
+	d_whitened = whitened;
 }
 
 /* extract UAP by reversing the HEC computation */
