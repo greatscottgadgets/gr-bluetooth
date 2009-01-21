@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 #include <libgen.h>
@@ -100,7 +101,7 @@ static const unsigned int DEFAULT_MTU = 1500;
 static const unsigned short ether_type = 0xfed5; // current dtap ethertype
 
 int write_interface(int fd, unsigned char *data, unsigned int data_len,
-   unsigned char *ether_addr) {
+   uint64_t src_addr, uint64_t dst_addr) {
 
 	unsigned char frame[DEFAULT_MTU]; // XXX buffer overflow?
 	struct ethhdr eh;
@@ -108,8 +109,17 @@ int write_interface(int fd, unsigned char *data, unsigned int data_len,
 	if(fd < 0)
 		return data_len;
 
-	memcpy(eh.h_dest, ether_addr, ETH_ALEN);
-	memcpy(eh.h_source, ether_addr, ETH_ALEN);
+	unsigned char src_mac[6];
+	unsigned char dst_mac[6];
+	uint8_t i, shift;
+	for(i=0;i<6;i++) {
+		shift = 8*(5-i);
+		src_mac[i] = (src_addr & (0xff << shift)) >> shift;
+		dst_mac[i] = (dst_addr & (0xff << shift)) >> shift;
+	}
+
+	memcpy(eh.h_dest, dst_mac, ETH_ALEN);
+	memcpy(eh.h_source, src_mac, ETH_ALEN);
 	eh.h_proto = htons(ether_type);
 
 	memcpy(frame, &eh, sizeof(eh));
