@@ -68,7 +68,7 @@ _bluetooth_la_SOURCES = 			\
 	bluetooth_block.cc		\
 	bluetooth_multi_block.cc	\
 	bluetooth_sniffer.cc		\
-	bluetooth_tun2.cc		\
+	bluetooth_tun.cc		\
 	tun.cc
 
 # magic flags
@@ -93,7 +93,7 @@ grinclude_HEADERS =			\
 	bluetooth_block.h		\
 	bluetooth_multi_block.h		\
 	bluetooth_sniffer.h		\
-	bluetooth_tun2.h		\
+	bluetooth_tun.h		\
 	tun.cc
 
 
