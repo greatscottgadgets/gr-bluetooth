@@ -33,6 +33,7 @@
 #include <gr_io_signature.h>
 #include <gr_firdes.h>
 #include <math.h>
+#include <gr_math.h>
 
 /* constructor */
 bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_freq, int squelch_threshold)

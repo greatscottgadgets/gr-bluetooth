@@ -141,6 +141,7 @@ class my_top_block(gr.top_block):
 		# look for packets on each channel specified by options.ddc
 		# this works well for a small number of channels, but a more efficient
 		# method should be possible for a large number of contiguous channels.
+		channel = 0
 		for ddc_option in options.ddc.split(","):
 			ddc_freq = int(eng_notation.str_to_num(ddc_option))
 
@@ -157,8 +158,9 @@ class my_top_block(gr.top_block):
 			# bluetooth decoding
 			if options.lap is None:
 				# print out LAP for every frame detected
-				dst = bluetooth.LAP(ddc_freq)
-				#dst = bluetooth.tun2(ddc_freq)
+				#dst = bluetooth.LAP(ddc_freq)
+				dst = bluetooth.tun(ddc_freq, channel)
+				channel = channel + 1
 			else:
 				if options.uap is None:
 					if options.channel is None:
