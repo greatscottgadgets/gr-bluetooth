@@ -30,66 +30,186 @@
 #endif
 
 #include "bluetooth_multi_block.h"
-#include <sys/time.h>
+#include <gr_io_signature.h>
+#include <gr_firdes.h>
+#include <math.h>
 
-/*
- * Create a new instance of bluetooth_multi_block and return
- * a boost shared_ptr.  This is effectively the public constructor.
- */
-bluetooth_multi_block_sptr
-bluetooth_make_multi_block ()
+/* constructor */
+bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_freq, int squelch_threshold)
+  : gr_sync_block ("bluetooth multi block",
+	      gr_make_io_signature (1, 1, sizeof (gr_complex)),
+	      gr_make_io_signature (0, 0, 0))
 {
-  return bluetooth_multi_block_sptr (new bluetooth_multi_block ());
-}
-
-//private constructor
-bluetooth_multi_block::bluetooth_multi_block ()
-  : bluetooth_block ()
-  //FIXME need to gr_make_io_signature with sizeof(gr_complex)
-  //maybe that means not being a subclass of bluetooth_block :-(
-{
-	//FIXME hard-coded stuff
-	//some should be constants, some selectable
-	double sample_rate = 2000000;
-	double center_freq = 0;
-	int decimation_rate = 2;
-	double threshold = 30;
-	double alpha = 0.01;
-	int ramp = 0;
-	bool gate = false;
-	double gain = 1;
-	double cutoff_freq = 500000;
-	double transition_width = 500000;
-	/* how many time slots we attempt to decode on each hop:
+	d_cumulative_count = 0;
+	d_sample_rate = sample_rate;
+	d_center_freq = center_freq;
+	set_channels();
+	d_squelch_threshold = squelch_threshold;
+	/*
+	 * how many time slots we attempt to decode on each hop:
 	 * 1 for now, could be as many as 5 plus a little slop
 	 */
 	int slots = 1;
-	int symbols_per_slot = 625;
-	/* symbols per second */
-	int symbol_rate = 1000000;
-	int samples_required = (int) slots * symbols_per_slot * sample_rate / symbol_rate;
+	d_samples_per_symbol = sample_rate / SYMBOL_RATE;
+	//FIXME make sure that d_samples_per_symbol >= 2 (requirement of clock_recovery_mm_ff)
+	d_samples_per_slot = (int) SYMBOLS_PER_SLOT * d_samples_per_symbol;
+	int samples_required = (int) slots * d_samples_per_slot;
 
-	gr_pwr_squelch_cc_sptr squelch = gr_make_pwr_squelch_cc(threshold, alpha, ramp, gate);
-	std::vector<float> channel_filter =
-		gr_firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr_firdes::WIN_HANN);
-	gr_freq_xlating_fir_filter_ccf_sptr ddc =
-		gr_make_freq_xlating_fir_filter_ccf(decimation_rate, channel_filter, center_freq, sample_rate);
-	//ick, this is in python:
-	//demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=samples_per_symbol)
-	
+	/* power squelch */
+	// maybe implement locally instead of using gr_pwr_squelch_cc
+	//double alpha = 0.01;
+	//int ramp = 0;
+	//bool gate = false;
+	//d_squelch = gr_make_pwr_squelch_cc(squelch_threshold, alpha, ramp, gate);
+	//printf("squelch hist: %d\n", d_squelch->history());
+	//samples_required += d_squelch->history();
+
+	/* channel filter coefficients */
+	double gain = 1;
+	double cutoff_freq = 500000;
+	double transition_width = 500000;
+	d_channel_filter = gr_firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr_firdes::WIN_HANN);
+	printf("filter taps: %d\n", (int) d_channel_filter.size());
+	/* d_channel_filter.size() will be the history requirement of ddc */
+	samples_required += (d_channel_filter.size() - 1);
+
+	/* we will decimate by the largest integer that results in enough samples per symbol */
+	d_ddc_decimation_rate = (int) d_samples_per_symbol / 2;
+	double channel_samples_per_symbol = d_samples_per_symbol / d_ddc_decimation_rate;
+
+	/* fm demodulator */
+	d_demod_sensitivity = M_PI_2 / channel_samples_per_symbol;
+
+	/* mm_cr variables */
+	d_gain_mu = 0.175;
+	d_mu = 0.32;
+	d_omega_relative_limit = 0.005;
+	d_omega = channel_samples_per_symbol;
+	d_gain_omega = .25 * d_gain_mu * d_gain_mu;
+	d_min_omega = d_omega*(1.0 - d_omega_relative_limit);
+	d_max_omega = d_omega*(1.0 + d_omega_relative_limit);
+	d_omega_mid = 0.5*(d_min_omega+d_max_omega);
+	d_interp = new gri_mmse_fir_interpolator();
+	d_last_sample = 0;
+	samples_required += d_ddc_decimation_rate * d_interp->ntaps();
+
 	set_history(samples_required);
 }
 
-//virtual destructor.
-bluetooth_multi_block::~bluetooth_multi_block ()
+static inline float
+slice(float x)
 {
+	return x < 0 ? -1.0F : 1.0F;
 }
 
-int 
-bluetooth_multi_block::work (int noutput_items,
-			       gr_vector_const_void_star &input_items,
-			       gr_vector_void_star &output_items)
+/* M&M clock recovery, adapted from gr_clock_recovery_mm_ff */
+int bluetooth_multi_block::mm_cr(const float *in, int ninput_items, float *out, int noutput_items)
 {
-	//something like this:
-	//squelch->general_work(int noutput_items, gr_vector_int &ninput_items, gr_vector_const_void_star &input_items, gr_vector_void_star &output_items)
+	int   ii = 0;             // input index
+	int   oo = 0;             // output index
+	int   ni = ninput_items - d_interp->ntaps(); // don't use more input than this
+	float mm_val;
+
+	while (oo < noutput_items && ii < ni)
+	{
+		// produce output sample
+		out[oo] = d_interp->interpolate (&in[ii], d_mu);
+		mm_val = slice(d_last_sample) * out[oo] - slice(out[oo]) * d_last_sample;
+		d_last_sample = out[oo];
+
+		d_omega += d_gain_omega * mm_val;
+		d_omega = d_omega_mid + gr_branchless_clip(d_omega-d_omega_mid, d_omega_relative_limit);   // make sure we don't walk away
+		d_mu += d_omega + d_gain_mu * mm_val;
+
+		ii += (int) floor(d_mu);
+		d_mu -= floor(d_mu);
+		oo++;
+	}
+
+	/* return number of output items produced */
+	return oo;
+}
+
+/* fm demodulation, taken from gr_quadrature_demod_cf */
+void bluetooth_multi_block::demod(const gr_complex *in, float *out, int noutput_items)
+{
+	int i;
+	gr_complex product;
+
+	for (i = 1; i < noutput_items; i++)
+	{
+		gr_complex product = in[i] * conj (in[i-1]);
+		out[i] = d_demod_sensitivity * gr_fast_atan2f(imag(product), real(product));
+	}
+}
+
+/* binary slicer, similar to gr_binary_slicer_fb */
+void bluetooth_multi_block::slicer(const float *in, char *out, int noutput_items)
+{
+	int i;
+
+	for (i = 0; i < noutput_items; i++)
+		out[i] = (in[i] < 0) ? 0 : 1;
+}
+
+/* produce symbols stream for a particular channel pulled out of the raw samples */
+int bluetooth_multi_block::channel_symbols(int channel, gr_vector_const_void_star &in, char *out, int ninput_items)
+{
+	//FIXME add squelch 
+
+	/* ddc */
+	double ddc_center_freq = channel_freq(channel);
+	gr_freq_xlating_fir_filter_ccf_sptr ddc =
+		gr_make_freq_xlating_fir_filter_ccf(d_ddc_decimation_rate, d_channel_filter, -ddc_center_freq, d_sample_rate);
+	int ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput(ninput_items - (ddc->history() - 1));
+	gr_complex ddc_out[ddc_noutput_items];
+	gr_vector_void_star ddc_out_vector(1);
+	ddc_out_vector[0] = ddc_out;
+	ddc_noutput_items = ddc->work(ddc_noutput_items, in, ddc_out_vector);
+
+	/* fm demodulation */
+	int demod_noutput_items = ddc_noutput_items - 1;
+	float demod_out[demod_noutput_items];
+	demod(ddc_out, demod_out, demod_noutput_items);
+
+	/* clock recovery */
+	int cr_ninput_items = demod_noutput_items;
+	int noutput_items = cr_ninput_items; // poor estimate but probably safe
+	float cr_out[noutput_items];
+	noutput_items = mm_cr(demod_out, cr_ninput_items, cr_out, noutput_items);
+
+	/* binary slicer */
+	slicer(cr_out, out, noutput_items);
+
+	return noutput_items;
+}
+
+/* add some number of symbols to the block's history requirement */
+void bluetooth_multi_block::set_symbol_history(int num_symbols)
+{
+	set_history((int) (history() + (num_symbols * d_samples_per_symbol)));
+}
+
+/* set available channels based on d_center_freq and d_sample_rate */
+void bluetooth_multi_block::set_channels()
+{
+	/* center frequency described as a fractional channel */
+	double center = (d_center_freq - BASE_FREQUENCY) / CHANNEL_WIDTH;
+	/* bandwidth in terms of channels */
+	double channel_bandwidth = d_sample_rate / CHANNEL_WIDTH;
+	/* low edge of our received signal */
+	double low_edge = center - (channel_bandwidth / 2);
+	/* high edge of our received signal */
+	double high_edge = center + (channel_bandwidth / 2);
+	/* minimum bandwidth required per channel - ideally 1.0 (1 MHz), but can probably decode with a bit less */
+	double min_channel_width = 0.9;
+
+	d_low_channel = (int) (low_edge + (min_channel_width / 2) + 1);
+	d_high_channel = (int) (high_edge - (min_channel_width / 2));
+}
+
+/* returns relative (with respect to d_center_freq) frequency in Hz of given channel */
+double bluetooth_multi_block::channel_freq(int channel)
+{
+	return BASE_FREQUENCY + (channel * CHANNEL_WIDTH) - d_center_freq;
 }

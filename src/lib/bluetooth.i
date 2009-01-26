@@ -12,7 +12,6 @@
 #include "bluetooth_UAP.h"
 #include "bluetooth_hopper.h"
 #include "bluetooth_block.h"
-#include "bluetooth_multi_block.h"
 #include "bluetooth_tun.h"
 #include <stdexcept>
 %}
@@ -45,20 +44,6 @@ class bluetooth_LAP : public gr_sync_block
 {
 private:
   bluetooth_LAP (int x);
-};
-
-/*
- * First arg is the package prefix.
- * Second arg is the name of the class minus the prefix.
- */
-GR_SWIG_BLOCK_MAGIC(bluetooth,multi_block);
-
-bluetooth_multi_block_sptr bluetooth_make_multi_block ();
-
-class bluetooth_multi_block : public gr_sync_block
-{
-private:
-  bluetooth_multi_block ();
 };
 
 /*
