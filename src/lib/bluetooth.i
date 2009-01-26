@@ -95,10 +95,10 @@ private:
  */
 GR_SWIG_BLOCK_MAGIC(bluetooth,tun);
 
-bluetooth_tun_sptr bluetooth_make_tun (int x);
+bluetooth_tun_sptr bluetooth_make_tun (int x, int channel);
 
 class bluetooth_tun : public gr_sync_block
 {
 private:
-  bluetooth_tun (int x);
+  bluetooth_tun (int x, int channel);
 };

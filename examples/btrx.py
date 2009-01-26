@@ -47,6 +47,8 @@ class my_top_block(gr.top_block):
 						help="power squelch threshold in dB (default=None)")
 		parser.add_option("-u", "--uap", type="string", default=None,
 						help="UAP of the master device")
+		parser.add_option("-w","--wireshark", action="store_true", default=False,
+						help="direct output to a tun interface")
 		parser.add_option("-2","--usrp2", action="store_true", default=False,
 						help="use USRP2 (or file originating from USRP2) instead of USRP")
 
@@ -157,10 +159,12 @@ class my_top_block(gr.top_block):
 
 			# bluetooth decoding
 			if options.lap is None:
-				# print out LAP for every frame detected
-				#dst = bluetooth.LAP(ddc_freq)
-				dst = bluetooth.tun(ddc_freq, channel)
-				channel = channel + 1
+				if options.wireshark:
+					dst = bluetooth.tun(ddc_freq, channel)
+					channel = channel + 1
+				else:
+					# print out LAP for every frame detected
+					dst = bluetooth.LAP(ddc_freq)
 			else:
 				if options.uap is None:
 					if options.channel is None:

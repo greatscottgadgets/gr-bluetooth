@@ -33,7 +33,7 @@ typedef boost::shared_ptr<bluetooth_tun> bluetooth_tun_sptr;
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_tun.
  */
-bluetooth_tun_sptr bluetooth_make_tun (int x);
+bluetooth_tun_sptr bluetooth_make_tun (int x, int channel);
 
 /*!
  * \brief Sniff Bluetooth packets.
@@ -45,14 +45,15 @@ private:
   // The friend declaration allows bluetooth_make_tun to
   // access the private constructor.
 
-  friend bluetooth_tun_sptr bluetooth_make_tun (int x);
+  friend bluetooth_tun_sptr bluetooth_make_tun (int x, int channel);
 
-  bluetooth_tun (int x);  	// private constructor
+  bluetooth_tun (int x, int channel);  	// private constructor
 
   int d_x;
 
   // Wireshark interface
   int			d_tunfd;	// TUN fd
+  char			chan_name[20];  // TUN interface name
   unsigned char		d_ether_addr[ETH_ALEN];
 public:
   ~bluetooth_tun ();	// public destructor

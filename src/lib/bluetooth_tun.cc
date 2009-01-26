@@ -39,17 +39,17 @@
  * a boost shared_ptr.  This is effectively the public constructor.
  */
 bluetooth_tun_sptr
-bluetooth_make_tun (int x)
+bluetooth_make_tun (int x, int channel)
 {
-  return bluetooth_tun_sptr (new bluetooth_tun (x));
+  return bluetooth_tun_sptr (new bluetooth_tun (x, channel));
 }
 
-static const char *chan_name = "gr-bluetooth";	// Bluetooth TUN interface name
-
 //private constructor
-bluetooth_tun::bluetooth_tun (int x)
+bluetooth_tun::bluetooth_tun (int x, int channel)
   : bluetooth_block ()
 {
+	sprintf(chan_name, "gr-bluetooth-%d", channel);
+
 	if((d_tunfd = mktun(chan_name, d_ether_addr)) == -1) {
 		fprintf(stderr, "warning: was not able to open TUN device, "
 		   "disabling Wireshark interface\n");
