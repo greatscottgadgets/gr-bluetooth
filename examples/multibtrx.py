@@ -128,7 +128,11 @@ class my_top_block(gr.top_block):
 			# print out LAP for every frame detected
 			dst = bluetooth.multi_LAP(options.sample_rate, options.freq, 0)
 		else:
-			raise SystemExit, "not implemented"
+			if options.uap is None:
+				# determine UAP from frames matching the user-specified LAP
+				dst = bluetooth.multi_UAP(options.sample_rate, options.freq, 0, int(options.lap, 16))
+			else:
+				raise SystemExit, "not implemented"
 	
 		# connect the blocks
 		self.connect(stage2, dst)

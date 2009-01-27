@@ -19,36 +19,46 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
-#ifndef INCLUDED_BLUETOOTH_MULTI_LAP_H
-#define INCLUDED_BLUETOOTH_MULTI_LAP_H
+#ifndef INCLUDED_BLUETOOTH_MULTI_UAP_H
+#define INCLUDED_BLUETOOTH_MULTI_UAP_H
 
 #include "bluetooth_multi_block.h"
+#include "bluetooth_piconet.h"
 
-class bluetooth_multi_LAP;
-typedef boost::shared_ptr<bluetooth_multi_LAP> bluetooth_multi_LAP_sptr;
+class bluetooth_multi_UAP;
+typedef boost::shared_ptr<bluetooth_multi_UAP> bluetooth_multi_UAP_sptr;
 
 /*!
- * \brief Return a shared_ptr to a new instance of bluetooth_multi_LAP.
+ * \brief Return a shared_ptr to a new instance of bluetooth_multi_UAP.
  */
-bluetooth_multi_LAP_sptr bluetooth_make_multi_LAP(double sample_rate, double center_freq, int squelch_threshold);
+bluetooth_multi_UAP_sptr bluetooth_make_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP);
 
 /*!
  * \brief Sniff Bluetooth packets.
  * \ingroup block
  */
-class bluetooth_multi_LAP : public bluetooth_multi_block
+class bluetooth_multi_UAP : public bluetooth_multi_block
 {
 private:
-	// The friend declaration allows bluetooth_make_multi_LAP to
+	// The friend declaration allows bluetooth_make_multi_UAP to
 	// access the private constructor.
-	friend bluetooth_multi_LAP_sptr bluetooth_make_multi_LAP(double sample_rate, double center_freq, int squelch_threshold);
+	friend bluetooth_multi_UAP_sptr bluetooth_make_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP);
 
 	/* constructor */
-	bluetooth_multi_LAP(double sample_rate, double center_freq, int squelch_threshold);
+	bluetooth_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP);
+
+    /* remember the time slot of the previous packet for interval computation */
+	int d_previous_slot;
+
+	/* LAP of the target piconet */
+	uint32_t d_LAP;
+
+	/* the piconet we are monitoring */
+	bluetooth_piconet_sptr d_piconet;
 
 public:
 	/* destructor */
-	~bluetooth_multi_LAP();
+	~bluetooth_multi_UAP();
 
 	/* handle input */
 	int work(int noutput_items,
@@ -56,4 +66,4 @@ public:
 		    gr_vector_void_star &output_items);
 };
 
-#endif /* INCLUDED_BLUETOOTH_MULTI_LAP_H */
+#endif /* INCLUDED_BLUETOOTH_MULTI_UAP_H */

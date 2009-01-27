@@ -169,7 +169,6 @@ class my_top_block(gr.top_block):
 				if options.uap is None:
 					if options.channel is None:
 						# determine UAP from frames matching the user-specified LAP
-						# FIXME analyze multiple channels together, not separately
 						dst = bluetooth.UAP(int(options.lap, 16))
 					else:
 						# determine UAP and clock

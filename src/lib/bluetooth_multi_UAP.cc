@@ -29,45 +29,44 @@
 #include "config.h"
 #endif
 
-#include "bluetooth_multi_LAP.h"
+#include "bluetooth_multi_UAP.h"
 #include "bluetooth_packet.h"
 
 /*
- * Create a new instance of bluetooth_multi_LAP and return
+ * Create a new instance of bluetooth_multi_UAP and return
  * a boost shared_ptr.  This is effectively the public constructor.
  */
-bluetooth_multi_LAP_sptr
-bluetooth_make_multi_LAP(double sample_rate, double center_freq, int squelch_threshold)
+bluetooth_multi_UAP_sptr
+bluetooth_make_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP)
 {
-  return bluetooth_multi_LAP_sptr (new bluetooth_multi_LAP(sample_rate, center_freq, squelch_threshold));
+  return bluetooth_multi_UAP_sptr (new bluetooth_multi_UAP(sample_rate, center_freq, squelch_threshold, LAP));
 }
 
 //private constructor
-bluetooth_multi_LAP::bluetooth_multi_LAP(double sample_rate, double center_freq, int squelch_threshold)
+bluetooth_multi_UAP::bluetooth_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP)
   : bluetooth_multi_block(sample_rate, center_freq, squelch_threshold)
 {
-	set_symbol_history(72);
+	d_LAP = LAP;
+	d_previous_slot = 0;
+	set_symbol_history(3125);
+	d_piconet = bluetooth_make_piconet(d_LAP);
 	printf("lowest channel: %d, highest channel %d\n", d_low_channel, d_high_channel);
 }
 
 //virtual destructor.
-bluetooth_multi_LAP::~bluetooth_multi_LAP ()
+bluetooth_multi_UAP::~bluetooth_multi_UAP ()
 {
 }
 
 int 
-bluetooth_multi_LAP::work(int noutput_items,
+bluetooth_multi_UAP::work(int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
-	int retval, channel;
+	int retval, interval, current_slot, channel;
 	char symbols[history()]; //poor estimate but safe
 
-	/*
-	 * This would be more efficient with a filterbank.  Then again, there is no compelling reason
-	 * to use this rather than the single channel bluetooth_LAP, so the filterbank probably ought
-	 * to be in examples/btrx.py and is not needed here or in bluetooth_multi_block.
-	 */
+	//FIXME maybe limit to one channel for real-time performance
 	for (channel = d_low_channel; channel <= d_high_channel; channel++)
 	{
 		int num_symbols = channel_symbols(channel, input_items, symbols, history());
@@ -79,9 +78,13 @@ bluetooth_multi_LAP::work(int noutput_items,
 			retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(retval > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
-				//FIXME verify that boost cleans up after the local variable expires
-				printf("GOT PACKET on channel %d, LAP = %06x at time slot %d\n",
-					channel, (int) packet->get_LAP(), (int) (d_cumulative_count / d_samples_per_slot));
+				if(packet->get_LAP() == d_LAP) {
+					current_slot = (int) (d_cumulative_count / d_samples_per_slot);
+					interval = current_slot - d_previous_slot;
+					if (d_piconet->UAP_from_header(packet, interval, channel))
+						exit(0);
+					d_previous_slot = current_slot;
+				}
 			}
 		}
 	}
