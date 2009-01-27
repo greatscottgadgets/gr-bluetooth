@@ -49,7 +49,7 @@ bluetooth_UAP::bluetooth_UAP (int LAP)
 	set_history(3125);
 
 	d_cumulative_count = 0;
-	d_first_packet_time = 0;
+	d_got_first_packet = false;
 	d_previous_packet_time = 0;
 	d_previous_clock_offset = 0;
 	d_packets_observed = 0;
@@ -66,7 +66,7 @@ bluetooth_UAP::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	char *in = (char *) input_items[0];
-	int retval;
+	int retval, difference, interval, current_time;
 
 	retval = bluetooth_packet::sniff_ac(in, noutput_items);
 	if(-1 == retval) {
@@ -75,16 +75,14 @@ bluetooth_UAP::work (int noutput_items,
 		d_consumed = retval;
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
 		if(packet->get_LAP() == d_LAP) {
-			if(d_first_packet_time == 0)
-			{
-				d_previous_packet_time = d_cumulative_count + d_consumed;
-				UAP_from_header(packet);
-				d_first_packet_time = d_previous_packet_time;
-			} else {
-				if (UAP_from_header(packet))
-					exit(0);
-				d_previous_packet_time = d_cumulative_count + d_consumed;
-			}
+			current_time = d_cumulative_count + d_consumed;
+			/* number of samples elapsed since previous packet */
+			difference = current_time - d_previous_packet_time;
+			/* number of time slots elapsed since previous packet */
+			interval = (difference + 312) / 625;
+			if (UAP_from_header(packet, interval))
+				exit(0);
+			d_previous_packet_time = current_time;
 		}
 		d_consumed += 126;
 	}
@@ -95,7 +93,7 @@ bluetooth_UAP::work (int noutput_items,
 }
 
 //FIXME move to bluetooth_piconet
-bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
+bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet, int interval)
 {
 	uint8_t UAP;
 	int count, retval, first_clock;
@@ -103,11 +101,8 @@ bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 	int starting = 0;
 	int remaining = 0;
 
-	/* number of samples elapsed since previous packet */
-	int difference = (d_cumulative_count + d_consumed) - d_previous_packet_time;
-
-	/* number of time slots elapsed since previous packet */
-	int interval = (difference + 312) / 625;
+	if(!d_got_first_packet)
+		interval = 0;
 	if(d_packets_observed < max_pattern_length)
 		d_pattern_indices[d_packets_observed] = interval + d_previous_clock_offset;
 	else
@@ -122,7 +117,7 @@ bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 	for(count = 0; count < 64; count++)
 	{
 		/* skip eliminated candidates unless this is our first time through */
-		if(d_clock6_candidates[count] > -1 || d_first_packet_time == 0)
+		if(d_clock6_candidates[count] > -1 || !d_got_first_packet)
 		{
 			/* clock value for the current packet assuming count was the clock of the first packet */
 			int clock = (count + d_previous_clock_offset + interval) % 64;
@@ -132,7 +127,7 @@ bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 
 			/* if this is the first packet: populate the candidate list */
 			/* if not: check CRCs if UAPs match */
-			if(d_first_packet_time == 0 || UAP == d_clock6_candidates[count])
+			if(!d_got_first_packet || UAP == d_clock6_candidates[count])
 				retval = packet->crc_check(clock);
 			switch(retval)
 			{
@@ -168,12 +163,12 @@ bool bluetooth_UAP::UAP_from_header(bluetooth_packet_sptr packet)
 					d_clock6_candidates[count] = -1;
 	}
 	d_previous_clock_offset += interval;
+	d_got_first_packet = true;
 	printf("reduced from %d to %d CLK1-6 candidates\n", starting, remaining);
 	if(0 == remaining)
 	{
 		printf("no candidates remaining! starting over . . .\n");
-		d_first_packet_time = 0;
-		d_previous_packet_time = 0;
+		d_got_first_packet = false;
 		d_previous_clock_offset = 0;
 		d_packets_observed = 0;
 	} else if(1 == starting && 1 == remaining)

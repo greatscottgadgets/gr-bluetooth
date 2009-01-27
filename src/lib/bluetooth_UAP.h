@@ -54,7 +54,7 @@ private:
 protected:
 	bluetooth_UAP (int LAP);	// private constructor
 
-	uint64_t d_first_packet_time;
+	bool d_got_first_packet;
 	int d_previous_packet_time;
 	int d_previous_clock_offset;
 	/* CLK1-6 candidates */
@@ -70,7 +70,7 @@ protected:
 	uint8_t d_pattern_channels[max_pattern_length];
 
 	/* Use packet headers to determine UAP */
-	bool UAP_from_header(bluetooth_packet_sptr packet);
+	bool UAP_from_header(bluetooth_packet_sptr packet, int interval);
 
 public:
   ~bluetooth_UAP ();	// public destructor

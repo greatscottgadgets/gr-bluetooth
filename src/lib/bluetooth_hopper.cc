@@ -58,7 +58,7 @@ int bluetooth_hopper::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	char *in = (char *) input_items[0];
-	int retval, i;
+	int retval, i, interval, difference, current_time;
 	int num_candidates = -1;
 
 	retval = bluetooth_packet::sniff_ac(in, noutput_items);
@@ -68,15 +68,14 @@ int bluetooth_hopper::work (int noutput_items,
 		d_consumed = retval;
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
 		if(packet->get_LAP() == d_LAP) {
-			if(d_first_packet_time == 0) {
-				/* this is our first packet to consider for CLK1-6/UAP discovery */
-				d_previous_packet_time = d_cumulative_count + d_consumed;
-				d_have_clock6 = UAP_from_header(packet);
-				d_first_packet_time = d_previous_packet_time;
-			} else if(!d_have_clock6) {
-				/* still working on CLK1-6/UAP discoery */
-				d_have_clock6 = UAP_from_header(packet);
-				d_previous_packet_time = d_cumulative_count + d_consumed;
+			current_time = d_cumulative_count + d_consumed;
+			/* number of samples elapsed since previous packet */
+			difference = current_time - d_previous_packet_time;
+			/* number of time slots elapsed since previous packet */
+			interval = (difference + 312) / 625;
+			if(!d_have_clock6) {
+				/* working on CLK1-6/UAP discoery */
+				d_have_clock6 = UAP_from_header(packet, interval);
 				if(d_have_clock6) {
 					/* got CLK1-6/UAP, start working on CLK1-27 */
 					printf("\nCalculating complete hopping sequence.\n");
@@ -92,10 +91,12 @@ int bluetooth_hopper::work (int noutput_items,
 			} else {
 				/* continue working on CLK1-27 */
 				/* we need timing information from an additional packet, so run through UAP_from_header() again */
-				d_have_clock6 = UAP_from_header(packet);
+				d_have_clock6 = UAP_from_header(packet, interval);
+				//FIXME what if !d_have_clock6?
 				num_candidates = d_piconet->winnow(d_pattern_indices[d_packets_observed-1], d_channel);
 				printf("%d CLK1-27 candidates remaining\n", num_candidates);
 			}
+			d_previous_packet_time = current_time;
 			/* CLK1-27 results */
 			if(num_candidates == 1) {
 				/* win! */
@@ -105,7 +106,7 @@ int bluetooth_hopper::work (int noutput_items,
 				/* fail! */
 				printf("Failed to acquire clock. starting over . . .\n\n");
 				/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
-				d_first_packet_time = 0;
+				d_got_first_packet = false;
 				d_previous_packet_time = 0;
 				d_previous_clock_offset = 0;
 				d_have_clock6 = false;
