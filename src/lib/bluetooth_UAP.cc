@@ -41,7 +41,6 @@ bluetooth_UAP::bluetooth_UAP (int LAP)
   : bluetooth_block ()
 {
 	d_LAP = LAP;
-	d_consumed = 0;
 
 	printf("Bluetooth UAP sniffer\nUsing LAP:0x%06x\n\n", LAP);
 
@@ -65,16 +64,16 @@ bluetooth_UAP::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	char *in = (char *) input_items[0];
-	int retval, difference, interval, current_time;
+	int retval, difference, interval, current_time, consumed;
 
 	retval = bluetooth_packet::sniff_ac(in, noutput_items);
 	if(-1 == retval) {
-		d_consumed = noutput_items;
+		consumed = noutput_items;
 	} else {
-		d_consumed = retval;
+		consumed = retval;
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
 		if(packet->get_LAP() == d_LAP) {
-			current_time = d_cumulative_count + d_consumed;
+			current_time = d_cumulative_count + consumed;
 			/* number of samples elapsed since previous packet */
 			difference = current_time - d_previous_packet_time;
 			/* number of time slots elapsed since previous packet */
@@ -83,10 +82,10 @@ bluetooth_UAP::work (int noutput_items,
 				exit(0);
 			d_previous_packet_time = current_time;
 		}
-		d_consumed += 126;
+		consumed += 126;
 	}
-	d_cumulative_count += d_consumed;
+	d_cumulative_count += consumed;
 
 	// Tell runtime system how many output items we produced.
-	return d_consumed;
+	return consumed;
 }

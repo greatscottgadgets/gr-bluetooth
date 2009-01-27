@@ -40,5 +40,4 @@ bluetooth_block::bluetooth_block ()
 	      gr_make_io_signature (IN, IN, sizeof (char)),
 	      gr_make_io_signature (OUT, OUT, OUT))
 {
-	d_consumed = 0;
 }

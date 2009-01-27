@@ -38,7 +38,6 @@ protected:
 
 	bluetooth_block ();
 
-	uint16_t d_consumed;
 	// could be 32 bits, but then it would roll over after about 70 minutes
 	uint64_t d_cumulative_count;
 	uint32_t d_LAP;

@@ -60,17 +60,17 @@ int bluetooth_hopper::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	char *in = (char *) input_items[0];
-	int retval, interval, difference, current_time;
+	int retval, interval, difference, current_time, consumed;
 	int num_candidates = -1;
 
 	retval = bluetooth_packet::sniff_ac(in, noutput_items);
 	if(-1 == retval) {
-		d_consumed = noutput_items;
+		consumed = noutput_items;
 	} else {
-		d_consumed = retval;
+		consumed = retval;
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
 		if(packet->get_LAP() == d_LAP) {
-			current_time = d_cumulative_count + d_consumed;
+			current_time = d_cumulative_count + consumed;
 			/* number of samples elapsed since previous packet */
 			difference = current_time - d_previous_packet_time;
 			/* number of time slots elapsed since previous packet */
@@ -109,10 +109,10 @@ int bluetooth_hopper::work (int noutput_items,
 				d_have_clock6 = false;
 			}
 		}
-		d_consumed += 126;
+		consumed += 126;
 	}
-	d_cumulative_count += d_consumed;
+	d_cumulative_count += consumed;
 
 	// Tell runtime system how many output items we produced.
-	return d_consumed;
+	return consumed;
 }

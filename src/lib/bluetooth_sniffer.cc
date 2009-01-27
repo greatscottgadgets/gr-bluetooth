@@ -48,7 +48,6 @@ bluetooth_sniffer::bluetooth_sniffer (int lap, int uap)
 {
 	d_LAP = lap;
 	d_UAP = uap;
-	d_consumed = 0;
 	printf("Bluetooth packet sniffer\n\n");
 
 	/* ensure that we are always given at least 3125 symbols (5 time slots) */
@@ -66,22 +65,22 @@ bluetooth_sniffer::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	char *in = (char *) input_items[0];
-	int retval;
+	int retval, consumed;
 
 	retval = bluetooth_packet::sniff_ac(in, noutput_items);
 	if(-1 == retval) {
-		d_consumed = noutput_items;
+		consumed = noutput_items;
 	} else {
-		d_consumed = retval;
+		consumed = retval;
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
 		if(packet->get_LAP() == d_LAP) {
 			packet->set_UAP(d_UAP);
 			packet->decode_header();
 			packet->print();
 		}
-		d_consumed += 126;
+		consumed += 126;
 	}
 
   // Tell runtime system how many output items we produced.
-	return d_consumed;
+	return consumed;
 }
