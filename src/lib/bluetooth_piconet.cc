@@ -60,8 +60,6 @@ bluetooth_piconet::~bluetooth_piconet()
 /* initialize the hop reversal process */
 int bluetooth_piconet::init_hop_reversal(char channel)
 {
-	d_channel = channel;
-
 	/* this can hold twice the approximate number of initial candidates */
 	d_clock_candidates = (uint32_t*) malloc(sizeof(uint32_t) * (SEQUENCE_LENGTH / CHANNELS)/32);
 
@@ -262,7 +260,7 @@ int bluetooth_piconet::winnow()
 	int new_count = d_num_candidates;
 
 	for (; d_winnowed < d_packets_observed; d_winnowed++)
-		new_count = winnow(d_pattern_indices[d_winnowed], d_channel);
+		new_count = winnow(d_pattern_indices[d_winnowed], d_pattern_channels[d_winnowed]);
 	
 	return new_count;
 }
@@ -275,7 +273,7 @@ uint32_t bluetooth_piconet::get_clock()
 }
 
 /* use packet headers to determine UAP */
-bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet, int interval)
+bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet, int interval, int channel)
 {
 	uint8_t UAP;
 	int count, retval, first_clock;
@@ -286,9 +284,10 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet, int interv
 	if(!d_got_first_packet)
 		interval = 0;
 	if(d_packets_observed < MAX_PATTERN_LENGTH)
+	{
 		d_pattern_indices[d_packets_observed] = interval + d_previous_clock_offset;
-		//FIXME track channel too
-	else
+		d_pattern_channels[d_packets_observed] = channel;
+	} else
 	{
 		printf("Oops. More hops than we can remember.\n");
 		return false; //FIXME ought to throw exception

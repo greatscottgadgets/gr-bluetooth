@@ -89,10 +89,6 @@ private:
 	/* number of observed packets that have been used to winnow the candidates */
 	int d_winnowed;
 
-	/* the channel we are observing */
-	//FIXME should support multiple channels
-	int d_channel;
-
 	/* CLK1-6 candidates */
 	int d_clock6_candidates[64];
 
@@ -154,7 +150,7 @@ public:
 	uint32_t get_clock();
 
 	/* use packet headers to determine UAP */
-	bool UAP_from_header(bluetooth_packet_sptr packet, int interval);
+	bool UAP_from_header(bluetooth_packet_sptr packet, int interval, int channel);
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

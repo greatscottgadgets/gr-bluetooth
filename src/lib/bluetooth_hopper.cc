@@ -77,7 +77,7 @@ int bluetooth_hopper::work (int noutput_items,
 			interval = (difference + 312) / 625;
 			if(!d_have_clock6) {
 				/* working on CLK1-6/UAP discoery */
-				d_have_clock6 = d_piconet->UAP_from_header(packet, interval);
+				d_have_clock6 = d_piconet->UAP_from_header(packet, interval, d_channel);
 				if(d_have_clock6) {
 					/* got CLK1-6/UAP, start working on CLK1-27 */
 					printf("\nCalculating complete hopping sequence.\n");
@@ -89,7 +89,7 @@ int bluetooth_hopper::work (int noutput_items,
 			} else {
 				/* continue working on CLK1-27 */
 				/* we need timing information from an additional packet, so run through UAP_from_header() again */
-				d_have_clock6 = d_piconet->UAP_from_header(packet, interval);
+				d_have_clock6 = d_piconet->UAP_from_header(packet, interval, d_channel);
 				//FIXME what if !d_have_clock6?
 				num_candidates = d_piconet->winnow();
 				printf("%d CLK1-27 candidates remaining\n", num_candidates);

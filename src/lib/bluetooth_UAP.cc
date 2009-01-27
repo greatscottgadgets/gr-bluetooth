@@ -78,7 +78,7 @@ bluetooth_UAP::work (int noutput_items,
 			difference = current_time - d_previous_packet_time;
 			/* number of time slots elapsed since previous packet */
 			interval = (difference + 312) / 625;
-			if (d_piconet->UAP_from_header(packet, interval))
+			if (d_piconet->UAP_from_header(packet, interval, 0))
 				exit(0);
 			d_previous_packet_time = current_time;
 		}
