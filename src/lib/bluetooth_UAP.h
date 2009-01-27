@@ -24,12 +24,9 @@
 
 #include "bluetooth_block.h"
 #include "bluetooth_packet.h"
+#include "bluetooth_piconet.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-
-/* maximum number of hops to remember */
-static const int max_pattern_length = 100;
 
 class bluetooth_UAP;
 typedef boost::shared_ptr<bluetooth_UAP> bluetooth_UAP_sptr;
@@ -54,23 +51,11 @@ private:
 protected:
 	bluetooth_UAP (int LAP);	// private constructor
 
-	bool d_got_first_packet;
+	/* remember the sample count of the previous packet for interval computation */
 	int d_previous_packet_time;
-	int d_previous_clock_offset;
-	/* CLK1-6 candidates */
-	int d_clock6_candidates[64];
-	/* number of packets observed during one attempt at UAP/clock discovery */
-	int d_packets_observed;
-	/* total number of packets observed */
-	int d_total_packets_observed;
-	/* CLK1-6 */
-	uint8_t d_clock6;
-	/* remember patterns of observed hops */
-	int d_pattern_indices[max_pattern_length];
-	uint8_t d_pattern_channels[max_pattern_length];
 
-	/* Use packet headers to determine UAP */
-	bool UAP_from_header(bluetooth_packet_sptr packet, int interval);
+	/* the piconet we are monitoring */
+	bluetooth_piconet_sptr d_piconet;
 
 public:
   ~bluetooth_UAP ();	// public destructor

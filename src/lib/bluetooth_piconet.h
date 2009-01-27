@@ -22,6 +22,7 @@
 #ifndef INCLUDED_BLUETOOTH_PICONET_H
 #define INCLUDED_BLUETOOTH_PICONET_H
 
+#include "bluetooth_packet.h"
 #include <stdint.h>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -31,19 +32,22 @@ typedef boost::shared_ptr<bluetooth_piconet> bluetooth_piconet_sptr;
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_piconet.
  */
-bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
+bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP);
 
 class bluetooth_piconet
 {
 private:
 	/* allow bluetooth_make_piconet to access the private constructor. */
-	friend bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
+	friend bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP);
 
 	/* number of hops in the hopping sequence (i.e. number of possible values of CLK1-27) */
 	static const int SEQUENCE_LENGTH = 134217728;
 
 	/* number of channels in use */
 	static const int CHANNELS = 79;
+
+	/* maximum number of hops to remember */
+	static const int MAX_PATTERN_LENGTH = 100;
 
 	/* lower address part (of master's BD_ADDR) */
 	uint32_t d_LAP;
@@ -73,6 +77,37 @@ private:
 	/* number of candidates for CLK1-27 */
 	int d_num_candidates;
 
+	/* have we collected the first packet in a UAP discovery attempt? */
+	bool d_got_first_packet;
+
+	/* number of packets observed during one attempt at UAP/clock discovery */
+	int d_packets_observed;
+
+	/* total number of packets observed */
+	int d_total_packets_observed;
+
+	/* number of observed packets that have been used to winnow the candidates */
+	int d_winnowed;
+
+	/* the channel we are observing */
+	//FIXME should support multiple channels
+	int d_channel;
+
+	/* CLK1-6 candidates */
+	int d_clock6_candidates[64];
+
+	/* CLK1-6 */
+	uint8_t d_clock6;
+
+	/* remember patterns of observed hops */
+	int d_pattern_indices[MAX_PATTERN_LENGTH];
+	uint8_t d_pattern_channels[MAX_PATTERN_LENGTH];
+
+	/* number of time slots between first packet and previous packet */
+	int d_previous_clock_offset;
+
+	bool d_hop_reversal_inited;
+
 
 	/* do all the precalculation that can be done before knowing the address */
 	void precalc();
@@ -100,20 +135,26 @@ private:
 
 public:
 	/* constructors */
-	bluetooth_piconet();
-	bluetooth_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel);
+	bluetooth_piconet(uint32_t LAP);
 
 	/* destructor */
 	~bluetooth_piconet();
 
+	/* initialize the hop reversal process */
+	/* returns number of initial initial candidates for CLK1-27 */
+	int init_hop_reversal(char channel);
+
 	/* narrow a list of candidate clock values based on a single observed hop */
 	int winnow(int offset, char channel);
+
+	/* narrow a list of candidate clock values based on all observed hops */
+	int winnow();
 
 	/* CLK1-27 */
 	uint32_t get_clock();
 
-	/* number of remaning candidates for CLK1-27 */
-	int get_num_candidates();
+	/* use packet headers to determine UAP */
+	bool UAP_from_header(bluetooth_packet_sptr packet, int interval);
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

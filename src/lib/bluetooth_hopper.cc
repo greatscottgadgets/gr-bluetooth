@@ -46,6 +46,8 @@ bluetooth_hopper::bluetooth_hopper (int LAP, int channel)
 	d_have_clock6 = false;
 	//FIXME should support more than one channel
 	d_channel = channel;
+
+	d_piconet = bluetooth_make_piconet(d_LAP);
 }
 
 //virtual destructor.
@@ -58,7 +60,7 @@ int bluetooth_hopper::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	char *in = (char *) input_items[0];
-	int retval, i, interval, difference, current_time;
+	int retval, interval, difference, current_time;
 	int num_candidates = -1;
 
 	retval = bluetooth_packet::sniff_ac(in, noutput_items);
@@ -75,25 +77,21 @@ int bluetooth_hopper::work (int noutput_items,
 			interval = (difference + 312) / 625;
 			if(!d_have_clock6) {
 				/* working on CLK1-6/UAP discoery */
-				d_have_clock6 = UAP_from_header(packet, interval);
+				d_have_clock6 = d_piconet->UAP_from_header(packet, interval);
 				if(d_have_clock6) {
 					/* got CLK1-6/UAP, start working on CLK1-27 */
 					printf("\nCalculating complete hopping sequence.\n");
-					//FIXME check if boost does magic to ensure this is not a memory leak:
-					d_piconet = bluetooth_make_piconet(d_LAP, d_UAP, d_clock6, d_channel);
-					printf("%d initial CLK1-27 candidates\n", d_piconet->get_num_candidates());
+					printf("%d initial CLK1-27 candidates\n", d_piconet->init_hop_reversal(d_channel));
 					/* use previously observed packets to eliminate candidates */
-					for(i = 1; i < d_packets_observed; i++) {
-						num_candidates = d_piconet->winnow(d_pattern_indices[i], d_channel);
-						printf("%d CLK1-27 candidates remaining\n", num_candidates);
-					}
+					num_candidates = d_piconet->winnow();
+					printf("%d CLK1-27 candidates remaining\n", num_candidates);
 				}
 			} else {
 				/* continue working on CLK1-27 */
 				/* we need timing information from an additional packet, so run through UAP_from_header() again */
-				d_have_clock6 = UAP_from_header(packet, interval);
+				d_have_clock6 = d_piconet->UAP_from_header(packet, interval);
 				//FIXME what if !d_have_clock6?
-				num_candidates = d_piconet->winnow(d_pattern_indices[d_packets_observed-1], d_channel);
+				num_candidates = d_piconet->winnow();
 				printf("%d CLK1-27 candidates remaining\n", num_candidates);
 			}
 			d_previous_packet_time = current_time;
@@ -106,11 +104,9 @@ int bluetooth_hopper::work (int noutput_items,
 				/* fail! */
 				printf("Failed to acquire clock. starting over . . .\n\n");
 				/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
-				d_got_first_packet = false;
-				d_previous_packet_time = 0;
-				d_previous_clock_offset = 0;
+				//FIXME maybe ought to just reset the existing piconet
+				d_piconet = bluetooth_make_piconet(d_LAP);
 				d_have_clock6 = false;
-				d_packets_observed = 0;
 			}
 		}
 		d_consumed += 126;

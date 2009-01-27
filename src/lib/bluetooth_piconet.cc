@@ -32,33 +32,50 @@
  * a boost shared_ptr.  This is effectively the public constructor.
  */
 bluetooth_piconet_sptr
-bluetooth_make_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel)
+bluetooth_make_piconet(uint32_t LAP)
 {
-       return bluetooth_piconet_sptr (new bluetooth_piconet (LAP, UAP, clock6, channel));
+       return bluetooth_piconet_sptr (new bluetooth_piconet (LAP));
 }
 
 /* constructor */
-bluetooth_piconet::bluetooth_piconet(uint32_t LAP, uint8_t UAP, uint8_t clock6, char channel)
+bluetooth_piconet::bluetooth_piconet(uint32_t LAP)
 {
+	d_LAP = LAP;
+
+	d_got_first_packet = false;
+	d_previous_clock_offset = 0;
+	d_packets_observed = 0;
+	d_hop_reversal_inited = false;
+}
+
+/* destructor */
+bluetooth_piconet::~bluetooth_piconet()
+{
+	if(d_hop_reversal_inited) {
+		free(d_clock_candidates);
+		free(d_sequence);
+	}
+}
+
+/* initialize the hop reversal process */
+int bluetooth_piconet::init_hop_reversal(char channel)
+{
+	d_channel = channel;
+
 	/* this can hold twice the approximate number of initial candidates */
 	d_clock_candidates = (uint32_t*) malloc(sizeof(uint32_t) * (SEQUENCE_LENGTH / CHANNELS)/32);
 
 	/* this holds the entire hopping sequence */
 	d_sequence = (char*) malloc(SEQUENCE_LENGTH);
 
-	d_LAP = LAP;
-	d_UAP = UAP;
 	precalc();
 	address_precalc(((d_UAP<<24) | d_LAP) & 0xfffffff);
 	gen_hops();
-	d_num_candidates = init_candidates(channel, clock6);
-}
+	d_num_candidates = init_candidates(channel, d_clock6);
+	d_winnowed = 0;
+	d_hop_reversal_inited = true;
 
-/* destructor */
-bluetooth_piconet::~bluetooth_piconet()
-{
-	free(d_clock_candidates);
-	free(d_sequence);
+	return d_num_candidates;
 }
 
 /* do all the precalculation that can be done before knowing the address */
@@ -239,6 +256,17 @@ int bluetooth_piconet::winnow(int offset, char channel)
 	return new_count;
 }
 
+/* narrow a list of candidate clock values based on all observed hops */
+int bluetooth_piconet::winnow()
+{
+	int new_count = d_num_candidates;
+
+	for (; d_winnowed < d_packets_observed; d_winnowed++)
+		new_count = winnow(d_pattern_indices[d_winnowed], d_channel);
+	
+	return new_count;
+}
+
 /* CLK1-27 */
 uint32_t bluetooth_piconet::get_clock()
 {
@@ -246,8 +274,93 @@ uint32_t bluetooth_piconet::get_clock()
 	return d_clock_candidates[0];
 }
 
-/* number of remaning candidates for CLK1-27 */
-int bluetooth_piconet::get_num_candidates()
+/* use packet headers to determine UAP */
+bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet, int interval)
 {
-	return d_num_candidates;
+	uint8_t UAP;
+	int count, retval, first_clock;
+	int crc_match = -1;
+	int starting = 0;
+	int remaining = 0;
+
+	if(!d_got_first_packet)
+		interval = 0;
+	if(d_packets_observed < MAX_PATTERN_LENGTH)
+		d_pattern_indices[d_packets_observed] = interval + d_previous_clock_offset;
+		//FIXME track channel too
+	else
+	{
+		printf("Oops. More hops than we can remember.\n");
+		return false; //FIXME ought to throw exception
+	}
+	d_packets_observed++;
+	d_total_packets_observed++;
+
+	/* try every possible first packet clock value */
+	for(count = 0; count < 64; count++)
+	{
+		/* skip eliminated candidates unless this is our first time through */
+		if(d_clock6_candidates[count] > -1 || !d_got_first_packet)
+		{
+			/* clock value for the current packet assuming count was the clock of the first packet */
+			int clock = (count + d_previous_clock_offset + interval) % 64;
+			starting++;
+			UAP = packet->try_clock(clock);
+			retval = -1;
+
+			/* if this is the first packet: populate the candidate list */
+			/* if not: check CRCs if UAPs match */
+			if(!d_got_first_packet || UAP == d_clock6_candidates[count])
+				retval = packet->crc_check(clock);
+			switch(retval)
+			{
+				case -1: /* UAP mismatch */
+				case 0: /* CRC failure */
+					d_clock6_candidates[count] = -1;
+					break;
+
+				case 1: /* inconclusive result */
+					d_clock6_candidates[count] = UAP;
+					/* remember this count because it may be the correct clock of the first packet */
+					first_clock = count;
+					remaining++;
+					break;
+
+				default: /* CRC success */
+					/* It is very likely that this is the correct clock/UAP, but I have seen a false positive */
+					printf("Correct CRC! UAP = 0x%x Awaiting confirmation. . .\n", UAP);
+					d_clock6_candidates[count] = UAP;
+					first_clock = count;
+					crc_match = count;
+					break;
+			}
+		}
+	}
+	if(crc_match > -1)
+	{
+		/* set things up for one additional packet to confirm */
+		remaining = 1;
+		/* eliminate all other candidates */
+		for(count = 0; count < 64; count++)
+			if(count != crc_match)
+					d_clock6_candidates[count] = -1;
+	}
+	d_previous_clock_offset += interval;
+	d_got_first_packet = true;
+	printf("reduced from %d to %d CLK1-6 candidates\n", starting, remaining);
+	if(0 == remaining)
+	{
+		printf("no candidates remaining! starting over . . .\n");
+		d_got_first_packet = false;
+		d_previous_clock_offset = 0;
+		d_packets_observed = 0;
+	} else if(1 == starting && 1 == remaining)
+	{
+		/* we only trust this result if two packets in a row agree on the winner */
+		printf("We have a winner! UAP = 0x%x found after %d total packets.\n", UAP, d_total_packets_observed);
+		d_clock6 = first_clock;
+		d_UAP = UAP;
+		return true;
+	}
+	return false;
 }
