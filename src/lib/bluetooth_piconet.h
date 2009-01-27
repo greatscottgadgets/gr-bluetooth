@@ -137,8 +137,8 @@ public:
 	~bluetooth_piconet();
 
 	/* initialize the hop reversal process */
-	/* returns number of initial initial candidates for CLK1-27 */
-	int init_hop_reversal(char channel);
+	/* returns number of initial candidates for CLK1-27 */
+	int init_hop_reversal();
 
 	/* narrow a list of candidate clock values based on a single observed hop */
 	int winnow(int offset, char channel);

@@ -58,7 +58,7 @@ bluetooth_piconet::~bluetooth_piconet()
 }
 
 /* initialize the hop reversal process */
-int bluetooth_piconet::init_hop_reversal(char channel)
+int bluetooth_piconet::init_hop_reversal()
 {
 	/* this can hold twice the approximate number of initial candidates */
 	d_clock_candidates = (uint32_t*) malloc(sizeof(uint32_t) * (SEQUENCE_LENGTH / CHANNELS)/32);
@@ -69,7 +69,7 @@ int bluetooth_piconet::init_hop_reversal(char channel)
 	precalc();
 	address_precalc(((d_UAP<<24) | d_LAP) & 0xfffffff);
 	gen_hops();
-	d_num_candidates = init_candidates(channel, d_clock6);
+	d_num_candidates = init_candidates(d_pattern_channels[0], d_clock6);
 	d_winnowed = 0;
 	d_hop_reversal_inited = true;
 

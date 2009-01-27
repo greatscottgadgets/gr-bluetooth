@@ -29,42 +29,47 @@
 #include "config.h"
 #endif
 
-#include "bluetooth_multi_UAP.h"
+#include "bluetooth_multi_hopper.h"
 #include "bluetooth_packet.h"
 
 /*
- * Create a new instance of bluetooth_multi_UAP and return
+ * Create a new instance of bluetooth_multi_hopper and return
  * a boost shared_ptr.  This is effectively the public constructor.
  */
-bluetooth_multi_UAP_sptr
-bluetooth_make_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP)
+bluetooth_multi_hopper_sptr
+bluetooth_make_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP)
 {
-  return bluetooth_multi_UAP_sptr (new bluetooth_multi_UAP(sample_rate, center_freq, squelch_threshold, LAP));
+  return bluetooth_multi_hopper_sptr (new bluetooth_multi_hopper(sample_rate, center_freq, squelch_threshold, LAP));
 }
 
 //private constructor
-bluetooth_multi_UAP::bluetooth_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP)
+bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP)
   : bluetooth_multi_block(sample_rate, center_freq, squelch_threshold)
 {
 	d_LAP = LAP;
 	d_previous_slot = 0;
+	d_have_clock6 = false;
 	set_symbol_history(3125);
 	d_piconet = bluetooth_make_piconet(d_LAP);
 	printf("lowest channel: %d, highest channel %d\n", d_low_channel, d_high_channel);
 }
 
 //virtual destructor.
-bluetooth_multi_UAP::~bluetooth_multi_UAP ()
+bluetooth_multi_hopper::~bluetooth_multi_hopper ()
 {
 }
 
 int 
-bluetooth_multi_UAP::work(int noutput_items,
+bluetooth_multi_hopper::work(int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
 	int retval, interval, current_slot, channel;
 	char symbols[history()]; //poor estimate but safe
+	int num_candidates = -1;
+
+	current_slot = (int) (d_cumulative_count / d_samples_per_slot);
+	interval = current_slot - d_previous_slot;
 
 	//FIXME maybe limit to one channel for real-time performance
 	for (channel = d_low_channel; channel <= d_high_channel; channel++)
@@ -79,10 +84,38 @@ bluetooth_multi_UAP::work(int noutput_items,
 			if(retval > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
 				if(packet->get_LAP() == d_LAP) {
-					current_slot = (int) (d_cumulative_count / d_samples_per_slot);
-					interval = current_slot - d_previous_slot;
-					if (d_piconet->UAP_from_header(packet, interval, channel))
+					if(!d_have_clock6) {
+						/* working on CLK1-6/UAP discoery */
+						d_have_clock6 = d_piconet->UAP_from_header(packet, interval, channel);
+						if(d_have_clock6) {
+							/* got CLK1-6/UAP, start working on CLK1-27 */
+							printf("\nCalculating complete hopping sequence.\n");
+							printf("%d initial CLK1-27 candidates\n", d_piconet->init_hop_reversal());
+							/* use previously observed packets to eliminate candidates */
+							num_candidates = d_piconet->winnow();
+							printf("%d CLK1-27 candidates remaining\n", num_candidates);
+						}
+					} else {
+						/* continue working on CLK1-27 */
+						/* we need timing information from an additional packet, so run through UAP_from_header() again */
+						d_have_clock6 = d_piconet->UAP_from_header(packet, interval, channel);
+						//FIXME what if !d_have_clock6?
+						num_candidates = d_piconet->winnow();
+						printf("%d CLK1-27 candidates remaining\n", num_candidates);
+					}
+					/* CLK1-27 results */
+					if(num_candidates == 1) {
+						/* win! */
+						printf("\nAcquired CLK1-27 = 0x%07x\n", d_piconet->get_clock());
 						exit(0);
+					} else if(num_candidates == 0) {
+						/* fail! */
+						printf("Failed to acquire clock. starting over . . .\n\n");
+						/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
+						//FIXME maybe ought to just reset the existing piconet
+						d_piconet = bluetooth_make_piconet(d_LAP);
+						d_have_clock6 = false;
+					}
 					d_previous_slot = current_slot;
 					break;
 				}

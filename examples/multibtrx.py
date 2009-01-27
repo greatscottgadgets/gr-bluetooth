@@ -39,6 +39,8 @@ class my_top_block(gr.top_block):
 						help="LAP of the master device")
 		parser.add_option("-n", "--channel", type="int", default=None,
 						help="channel number for hop reversal (0-78) (default=None)") 
+		parser.add_option("-p", "--hop", action="store_true", default=False,
+						help="reverse hopping sequence to determine master clock")
 		parser.add_option("-r", "--sample-rate", type="eng_float", default=None,
 						help="sample rate of input (default: use DECIM)")
 		parser.add_option("-s", "--input-shorts", action="store_true", default=False,
@@ -129,8 +131,12 @@ class my_top_block(gr.top_block):
 			dst = bluetooth.multi_LAP(options.sample_rate, options.freq, 0)
 		else:
 			if options.uap is None:
-				# determine UAP from frames matching the user-specified LAP
-				dst = bluetooth.multi_UAP(options.sample_rate, options.freq, 0, int(options.lap, 16))
+				if options.hop:
+					# determine UAP and then master clock from hopping sequence
+					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, 0, int(options.lap, 16))
+				else:
+					# determine UAP from frames matching the user-specified LAP
+					dst = bluetooth.multi_UAP(options.sample_rate, options.freq, 0, int(options.lap, 16))
 			else:
 				raise SystemExit, "not implemented"
 	
