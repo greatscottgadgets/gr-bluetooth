@@ -80,7 +80,7 @@ int bluetooth_hopper::work (int noutput_items,
 				if(d_have_clock6) {
 					/* got CLK1-6/UAP, start working on CLK1-27 */
 					printf("\nCalculating complete hopping sequence.\n");
-					printf("%d initial CLK1-27 candidates\n", d_piconet->init_hop_reversal());
+					printf("%d initial CLK1-27 candidates\n", d_piconet->init_hop_reversal(false));
 					/* use previously observed packets to eliminate candidates */
 					num_candidates = d_piconet->winnow();
 					printf("%d CLK1-27 candidates remaining\n", num_candidates);

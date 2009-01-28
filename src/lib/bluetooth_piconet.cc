@@ -58,15 +58,22 @@ bluetooth_piconet::~bluetooth_piconet()
 }
 
 /* initialize the hop reversal process */
-int bluetooth_piconet::init_hop_reversal()
+int bluetooth_piconet::init_hop_reversal(bool aliased)
 {
+	int max_candidates;
+
+	if(aliased)
+		max_candidates = (SEQUENCE_LENGTH / ALIASED_CHANNELS) / 32;
+	else
+		max_candidates = (SEQUENCE_LENGTH / CHANNELS) / 32;
+		
 	/* this can hold twice the approximate number of initial candidates */
-	d_clock_candidates = (uint32_t*) malloc(sizeof(uint32_t) * (SEQUENCE_LENGTH / CHANNELS)/32);
+	d_clock_candidates = (uint32_t*) malloc(sizeof(uint32_t) * max_candidates);
 
 	/* this holds the entire hopping sequence */
 	d_sequence = (char*) malloc(SEQUENCE_LENGTH);
 
-	precalc();
+	precalc(aliased);
 	address_precalc(((d_UAP<<24) | d_LAP) & 0xfffffff);
 	gen_hops();
 	d_num_candidates = init_candidates(d_pattern_channels[0], d_clock6);
@@ -77,15 +84,19 @@ int bluetooth_piconet::init_hop_reversal()
 }
 
 /* do all the precalculation that can be done before knowing the address */
-void bluetooth_piconet::precalc()
+void bluetooth_piconet::precalc(bool aliased)
 {
 	int i;
 	int z, p_high, p_low;
 
 	/* populate frequency register bank*/
 	for (i = 0; i < CHANNELS; i++)
-		d_bank[i] = (i * 2) % CHANNELS;
-	/* actual frequency is 2402 + bank[i] MHz */
+		if(aliased)
+			/* for a specific aliasing receiver implementation */
+			d_bank[i] = ((((i * 2) % CHANNELS) + 24) % ALIASED_CHANNELS) + 26;
+		else
+			d_bank[i] = ((i * 2) % CHANNELS);
+	/* actual frequency is 2402 + d_bank[i] MHz */
 
 	/* populate perm_table for all possible inputs */
 	for (z = 0; z < 0x20; z++)

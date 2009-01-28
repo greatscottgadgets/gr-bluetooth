@@ -25,6 +25,8 @@ class my_top_block(gr.top_block):
 						help="number of samples to collect [default=+inf]")
 		parser.add_option("-R", "--rx-subdev-spec", type="subdev", default=(0, 0),
 						help="select USRP Rx side A or B (default=A)")
+		parser.add_option("-a", "--aliased", action="store_true", default=False,
+						help="using a particular aliasing receiver implementation")
 		parser.add_option("-c", "--ddc", type="string", default="0",
 						help="comma separated list of ddc frequencies (default=0)")
 		parser.add_option("-d", "--decim", type="int", default=32,
@@ -133,7 +135,7 @@ class my_top_block(gr.top_block):
 			if options.uap is None:
 				if options.hop:
 					# determine UAP and then master clock from hopping sequence
-					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, 0, int(options.lap, 16))
+					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, 0, int(options.lap, 16), options.aliased)
 				else:
 					# determine UAP from frames matching the user-specified LAP
 					dst = bluetooth.multi_UAP(options.sample_rate, options.freq, 0, int(options.lap, 16))

@@ -43,6 +43,9 @@ private:
 	/* number of channels in use */
 	static const int CHANNELS = 79;
 
+	/* number of aliased channels received */
+	static const int ALIASED_CHANNELS = 25;
+
 	/* maximum number of hops to remember */
 	static const int MAX_PATTERN_LENGTH = 100;
 
@@ -103,7 +106,7 @@ private:
 
 
 	/* do all the precalculation that can be done before knowing the address */
-	void precalc();
+	void precalc(bool aliased);
 
 	/* do precalculation that requires the address */
 	void address_precalc(int address);
@@ -138,7 +141,7 @@ public:
 
 	/* initialize the hop reversal process */
 	/* returns number of initial candidates for CLK1-27 */
-	int init_hop_reversal();
+	int init_hop_reversal(bool aliased);
 
 	/* narrow a list of candidate clock values based on a single observed hop */
 	int winnow(int offset, char channel);

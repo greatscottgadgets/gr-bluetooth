@@ -37,16 +37,17 @@
  * a boost shared_ptr.  This is effectively the public constructor.
  */
 bluetooth_multi_hopper_sptr
-bluetooth_make_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP)
+bluetooth_make_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased)
 {
-  return bluetooth_multi_hopper_sptr (new bluetooth_multi_hopper(sample_rate, center_freq, squelch_threshold, LAP));
+  return bluetooth_multi_hopper_sptr (new bluetooth_multi_hopper(sample_rate, center_freq, squelch_threshold, LAP, aliased));
 }
 
 //private constructor
-bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP)
+bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased)
   : bluetooth_multi_block(sample_rate, center_freq, squelch_threshold)
 {
 	d_LAP = LAP;
+	d_aliased = aliased;
 	d_previous_slot = 0;
 	d_first_packet_slot = -1;
 	d_have_clock6 = false;
@@ -75,26 +76,7 @@ bluetooth_multi_hopper::work(int noutput_items,
 
 	if (d_have_clock27) {
 		/* now that we know the clock and UAP, follow along and sniff each time slot on the correct channel */
-		uint32_t clock27 = (current_slot + d_clock_offset) % bluetooth_piconet::SEQUENCE_LENGTH;
-		channel = d_piconet->hop(clock27);
-		if (channel >= d_low_channel && channel <= d_high_channel) {
-			//FIXME history() + noutput_items?
-			num_symbols = channel_symbols(channel, input_items, symbols, history());
-			if (num_symbols >= 72 ) {
-				latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
-				retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
-				if(retval > -1) {
-					bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
-					if(packet->get_LAP() == d_LAP) {
-						printf("clock 0x%07x, channel %d: ", clock27, channel);
-						packet->set_UAP(d_piconet->get_UAP());
-						packet->set_clock(clock27);
-						packet->decode_header();
-						packet->print();
-					}
-				}
-			}
-		}
+		hopalong(input_items, symbols, current_slot);
 	} else {
 		//FIXME maybe limit to one channel for real-time performance
 		for (channel = d_low_channel; channel <= d_high_channel; channel++)
@@ -117,7 +99,7 @@ bluetooth_multi_hopper::work(int noutput_items,
 							if(d_have_clock6) {
 								/* got CLK1-6/UAP, start working on CLK1-27 */
 								printf("\nCalculating complete hopping sequence.\n");
-								printf("%d initial CLK1-27 candidates\n", d_piconet->init_hop_reversal());
+								printf("%d initial CLK1-27 candidates\n", d_piconet->init_hop_reversal(d_aliased));
 								/* use previously observed packets to eliminate candidates */
 								num_candidates = d_piconet->winnow();
 								printf("%d CLK1-27 candidates remaining\n", num_candidates);
@@ -160,4 +142,30 @@ bluetooth_multi_hopper::work(int noutput_items,
 	 * input items so that our next run starts one slot later.
 	 */
 	return (int) d_samples_per_slot;
+}
+
+/* follow a piconet's hopping sequence and look for packets on the appropriate channel for each time slot */
+void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, char *symbols, int current_slot)
+{
+	int ac_index, channel, num_symbols, latest_ac;
+	uint32_t clock27 = (current_slot + d_clock_offset) % bluetooth_piconet::SEQUENCE_LENGTH;
+	channel = d_piconet->hop(clock27);
+	if (channel >= d_low_channel && channel <= d_high_channel) {
+		//FIXME history() + noutput_items?
+		num_symbols = channel_symbols(channel, input_items, symbols, history());
+		if (num_symbols >= 72 ) {
+			latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
+			ac_index = bluetooth_packet::sniff_ac(symbols, latest_ac);
+			if(ac_index > -1) {
+				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[ac_index], num_symbols - ac_index);
+				if(packet->get_LAP() == d_LAP) {
+					printf("clock 0x%07x, channel %d: ", clock27, channel);
+					packet->set_UAP(d_piconet->get_UAP());
+					packet->set_clock(clock27);
+					packet->decode_header();
+					packet->print();
+				}
+			}
+		}
+	}
 }
