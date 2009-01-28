@@ -89,9 +89,12 @@ int bluetooth_hopper::work (int noutput_items,
 				/* continue working on CLK1-27 */
 				/* we need timing information from an additional packet, so run through UAP_from_header() again */
 				d_have_clock6 = d_piconet->UAP_from_header(packet, interval, d_channel);
-				//FIXME what if !d_have_clock6?
-				num_candidates = d_piconet->winnow();
-				printf("%d CLK1-27 candidates remaining\n", num_candidates);
+				if (!d_have_clock6) {
+					reset();
+				} else {
+					num_candidates = d_piconet->winnow();
+					printf("%d CLK1-27 candidates remaining\n", num_candidates);
+				}
 			}
 			d_previous_packet_time = current_time;
 			/* CLK1-27 results */
@@ -101,11 +104,7 @@ int bluetooth_hopper::work (int noutput_items,
 				exit(0);
 			} else if(num_candidates == 0) {
 				/* fail! */
-				printf("Failed to acquire clock. starting over . . .\n\n");
-				/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
-				//FIXME maybe ought to just reset the existing piconet
-				d_piconet = bluetooth_make_piconet(d_LAP);
-				d_have_clock6 = false;
+				reset();
 			}
 		}
 		consumed += 126;
@@ -114,4 +113,13 @@ int bluetooth_hopper::work (int noutput_items,
 
 	// Tell runtime system how many output items we produced.
 	return consumed;
+}
+
+/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
+void bluetooth_hopper::reset()
+{
+	printf("Failed to acquire clock. starting over . . .\n\n");
+	//FIXME maybe ought to just reset the existing piconet
+	d_piconet = bluetooth_make_piconet(d_LAP);
+	d_have_clock6 = false;
 }

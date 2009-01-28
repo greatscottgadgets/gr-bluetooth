@@ -74,6 +74,9 @@ private:
 	/* follow a piconet's hopping sequence and look for packets on the appropriate channel for each time slot */
 	void hopalong(gr_vector_const_void_star &input_items, char *symbols, int current_slot);
 
+	/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
+	void reset();
+
 public:
 	/* destructor */
 	~bluetooth_multi_hopper();

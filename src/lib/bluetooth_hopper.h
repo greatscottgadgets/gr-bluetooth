@@ -57,6 +57,9 @@ private:
 	/* the piconet we are monitoring */
 	bluetooth_piconet_sptr d_piconet;
 
+	/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
+	void reset();
+
 public:
   ~bluetooth_hopper ();	// public destructor
 
