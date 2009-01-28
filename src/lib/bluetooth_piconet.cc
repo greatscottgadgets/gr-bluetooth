@@ -97,7 +97,7 @@ void bluetooth_piconet::precalc()
 /* do precalculation that requires the address */
 void bluetooth_piconet::address_precalc(int address)
 {
-	/* precalculate some of hop()'s variables */
+	/* precalculate some of single_hop()/gen_hop()'s variables */
 	d_a1 = (address >> 23) & 0x1f;
 	d_b = (address >> 19) & 0x0f;
 	d_c1 = ((address >> 4) & 0x10) +
@@ -198,7 +198,7 @@ void bluetooth_piconet::gen_hops()
 
 /* determine channel for a particular hop */
 /* replaced with gen_hops() for a complete sequence but could still come in handy */
-char bluetooth_piconet::hop(int clock)
+char bluetooth_piconet::single_hop(int clock)
 {
 	int a, c, d, f, x, y1, y2;
 
@@ -215,6 +215,12 @@ char bluetooth_piconet::hop(int clock)
 
 	/* hop selection */
 	return(d_bank[(fast_perm(((x + a) % 32) ^ d_b, (y1 * 0x1f) ^ c, d) + d_e + f + y2) % CHANNELS]);
+}
+
+/* look up channel for a particular hop */
+char bluetooth_piconet::hop(int clock)
+{
+	return d_sequence[clock];
 }
 
 /* create list of initial candidate clock values (hops with same channel as first observed hop) */
@@ -270,6 +276,12 @@ uint32_t bluetooth_piconet::get_clock()
 {
 	/* this is completely bogus unless d_num_candidates == 1 */
 	return d_clock_candidates[0];
+}
+
+/* UAP */
+uint8_t bluetooth_piconet::get_UAP()
+{
+	return d_UAP;
 }
 
 /* use packet headers to determine UAP */

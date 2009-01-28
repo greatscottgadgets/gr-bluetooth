@@ -172,7 +172,6 @@ class my_top_block(gr.top_block):
 						dst = bluetooth.UAP(int(options.lap, 16))
 					else:
 						# determine UAP and clock
-						# FIXME analyze multiple channels together, not separately
 						dst = bluetooth.hopper(int(options.lap, 16), options.channel)
 				else:
 					# sniffer mode

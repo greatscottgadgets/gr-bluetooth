@@ -40,9 +40,6 @@ private:
 	/* allow bluetooth_make_piconet to access the private constructor. */
 	friend bluetooth_piconet_sptr bluetooth_make_piconet(uint32_t LAP);
 
-	/* number of hops in the hopping sequence (i.e. number of possible values of CLK1-27) */
-	static const int SEQUENCE_LENGTH = 134217728;
-
 	/* number of channels in use */
 	static const int CHANNELS = 79;
 
@@ -123,7 +120,7 @@ private:
 
 	/* determine channel for a particular hop */
 	/* replaced with gen_hops() for a complete sequence but could still come in handy */
-	char hop(int clock);
+	char single_hop(int clock);
 
 	/* create list of initial candidate clock values (hops with same channel as first observed hop) */
 	int init_candidates(char channel, int known_clock_bits);
@@ -135,6 +132,9 @@ public:
 
 	/* destructor */
 	~bluetooth_piconet();
+
+	/* number of hops in the hopping sequence (i.e. number of possible values of CLK1-27) */
+	static const int SEQUENCE_LENGTH = 134217728;
 
 	/* initialize the hop reversal process */
 	/* returns number of initial candidates for CLK1-27 */
@@ -149,8 +149,14 @@ public:
 	/* CLK1-27 */
 	uint32_t get_clock();
 
+	/* UAP */
+	uint8_t get_UAP();
+
 	/* use packet headers to determine UAP */
 	bool UAP_from_header(bluetooth_packet_sptr packet, int interval, int channel);
+
+	/* look up channel for a particular hop */
+	char hop(int clock);
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

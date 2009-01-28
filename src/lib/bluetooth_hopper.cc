@@ -75,7 +75,7 @@ int bluetooth_hopper::work (int noutput_items,
 			/* number of time slots elapsed since previous packet */
 			interval = (difference + 312) / 625;
 			if(!d_have_clock6) {
-				/* working on CLK1-6/UAP discoery */
+				/* working on CLK1-6/UAP discovery */
 				d_have_clock6 = d_piconet->UAP_from_header(packet, interval, d_channel);
 				if(d_have_clock6) {
 					/* got CLK1-6/UAP, start working on CLK1-27 */
