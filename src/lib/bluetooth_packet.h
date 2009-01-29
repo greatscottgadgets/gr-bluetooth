@@ -121,6 +121,8 @@ private:
 	/* CLK1-27 of master */
 	uint32_t d_clock;
 
+	uint8_t d_lower_clock;
+
 	/* type-specific CRC checks */
 	//FIXME probably ought to use d_symbols, d_length
 	int fhs(char *stream, int clock, uint8_t UAP, int size);
@@ -183,8 +185,14 @@ public:
 	/* decode the packet header */
 	void decode_header();
 
+	/* decode the packet header */
+	void decode_payload();
+
 	/* print packet information */
 	void print();
+
+	/* format payload for tun interface */
+	char *tun_format();
 
 	/* return the packet's LAP */
 	uint32_t get_LAP();
