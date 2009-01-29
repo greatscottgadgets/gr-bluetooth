@@ -29,6 +29,8 @@ class my_top_block(gr.top_block):
 						help="comma separated list of ddc frequencies (default=0)")
 		parser.add_option("-d", "--decim", type="int", default=32,
 						help="set fgpa decimation rate to DECIM (default=32)") 
+		parser.add_option("-e", "--interface", type="string", default="eth0",
+						help="use specified Ethernet interface for USRP2 [default=%default]")
 		parser.add_option("-f", "--freq", type="eng_float", default=0,
 						help="set USRP frequency to FREQ", metavar="FREQ")
 		parser.add_option("-g", "--gain", type="eng_float", default=None,
@@ -37,6 +39,8 @@ class my_top_block(gr.top_block):
 						help="use named input file instead of USRP")
 		parser.add_option("-l", "--lap", type="string", default=None,
 						help="LAP of the master device")
+		parser.add_option("-m", "--mac-addr", type="string", default="",
+						help="use USRP2 at specified MAC address [default=None]")
 		parser.add_option("-n", "--channel", type="int", default=None,
 						help="channel number for hop reversal (0-78) (default=None)") 
 		parser.add_option("-r", "--sample-rate", type="eng_float", default=None,
@@ -86,11 +90,20 @@ class my_top_block(gr.top_block):
 		# select input source
 		if options.input_file is None:
 			# input from USRP or USRP2
-			from gnuradio import usrp
 			if options.usrp2:
-				# FIXME, but not right away
-				raise NotImplementedError
+				from gnuradio import usrp2
+				src = usrp2.source_32fc(options.interface, options.mac_addr)
+				print "Using RX board id 0x%04X" % (src.daughterboard_id(),)
+				r = src.set_center_freq(options.freq)
+				if r == None:
+					raise SystemExit, "Failed to set USRP2 frequency"
+				if options.gain is None:
+					# if no gain was specified, use the mid-point in dB
+					g = src.gain_range()
+					options.gain = float(g[0]+g[1])/2
+				src.set_gain(options.gain)
 			else:
+				from gnuradio import usrp
 				src = usrp.source_c(decim_rate=options.decim)
 				subdev = usrp.selected_subdev(src, options.rx_subdev_spec)
 				print "Using RX board %s" % (subdev.side_and_name())
