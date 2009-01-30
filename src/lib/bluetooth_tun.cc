@@ -89,7 +89,7 @@ bluetooth_tun::work (int noutput_items,
 		data[4] = (LAP & 0xff00) >> 8;
 		data[5] = LAP & 0xff; 
 // 		write_interface(d_tunfd, (unsigned char *) &in[retval], noutput_items - retval, d_ether_addr);
-		write_interface(d_tunfd, data + 3, 3, 0, LAP);
+		write_interface(d_tunfd, data + 3, 3, 0, LAP, HCI_H1);
 		consumed = retval + 72;
 	}
 	d_cumulative_count += consumed;

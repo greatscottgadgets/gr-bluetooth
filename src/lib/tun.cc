@@ -97,10 +97,10 @@ static inline int min(int a, int b) {
 }
 
 static const unsigned int DEFAULT_MTU = 1500;
-static const unsigned short ether_type = 0xfed7; // magic number, in case we need it for a wireshark filter
+//static const unsigned short ether_type = 0xFFFE; // magic number, in case we need it for a wireshark filter
 
 int write_interface(int fd, unsigned char *data, unsigned int data_len,
-   uint64_t src_addr, uint64_t dst_addr) {
+   uint64_t src_addr, uint64_t dst_addr, unsigned short ether_type) {
 
 	unsigned char frame[DEFAULT_MTU]; // XXX buffer overflow?
 	struct ethhdr eh;
