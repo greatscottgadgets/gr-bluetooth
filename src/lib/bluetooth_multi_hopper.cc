@@ -156,11 +156,14 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, ch
 			ac_index = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(ac_index > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[ac_index], num_symbols - ac_index);
+				packet->set_clock(clock27);
+				packet->set_UAP(d_piconet->get_UAP());
 				if(packet->get_LAP() == d_LAP) {
 					printf("clock 0x%07x, channel %d: ", clock27, channel);
 					packet->set_UAP(d_piconet->get_UAP());
 					packet->set_clock(clock27);
 					packet->decode_header();
+					packet->decode_payload();
 					packet->print();
 				}
 			}

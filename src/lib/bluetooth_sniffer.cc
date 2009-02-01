@@ -76,6 +76,7 @@ bluetooth_sniffer::work (int noutput_items,
 		if(packet->get_LAP() == d_LAP) {
 			packet->set_UAP(d_UAP);
 			packet->decode_header();
+			packet->decode_payload();
 			packet->print();
 		}
 		consumed += 126;

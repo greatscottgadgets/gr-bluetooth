@@ -856,7 +856,21 @@ void bluetooth_packet::decode_header()
 
 	unfec13(stream, header, 18);
 
-	//FIXME only go through all this if !d_have_clock
+	if (d_have_clock) {
+		//FIXME use try_clock() or otherwise merge functions
+		unwhiten(header, unwhitened, d_clock, 18, 0);
+
+		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
+		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
+		unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
+
+		UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
+		if (UAP != d_UAP)
+			printf("bad HEC! ");
+		d_packet_type = air_to_host8(&unwhitened[3], 4);
+	}
+	
+	/* we don't have the clock, so we try every possible CLK1-6 value until we find the most likely LT_ADDR */
 	for(count = 0; count < 64; count++)
 	{
 		//FIXME use try_clock() or otherwise merge functions
@@ -872,15 +886,16 @@ void bluetooth_packet::decode_header()
 		if(UAP != d_UAP)
 			continue;
 
-		uint8_t ltadrs[8] = {0, 4, 2, 6, 1, 5, 3, 7};
-		ltadr = ltadrs[(unwhitened_air[0] & 0xe0) >> 5];
+		ltadr = air_to_host8(unwhitened, 3);
 
 		//FIXME assuming that the lt_addr can only be 1
 		if(1 != ltadr)
 			continue;
 
 		d_packet_type = air_to_host8(&unwhitened[3], 4);
+		break;
 	}
+	//FIXME if we get to here without setting d_packet_type, we are in trouble
 }
 
 void bluetooth_packet::decode_payload()
@@ -957,6 +972,7 @@ void bluetooth_packet::decode_payload()
 /* print packet information */
 void bluetooth_packet::print()
 {
+	//FIXME probably ought to check that this stuff has been set
 	cout << TYPE_NAMES[d_packet_type] << endl;
 	if(d_payload_header_length > 0) {
 		printf("  LLID: %d\n", d_payload_llid);
