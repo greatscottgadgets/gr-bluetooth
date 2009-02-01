@@ -79,7 +79,6 @@ bluetooth_multi_LAP::work(int noutput_items,
 			retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(retval > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
-				//FIXME verify that boost cleans up after the local variable expires
 				printf("GOT PACKET on channel %d, LAP = %06x at time slot %d\n",
 					channel, (int) packet->get_LAP(), (int) (d_cumulative_count / d_samples_per_slot));
 			}

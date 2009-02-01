@@ -79,7 +79,6 @@ bluetooth_tun::work (int noutput_items,
 		consumed = noutput_items;
 	} else {
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items - retval);
-		//FIXME verify that boost cleans up after the local variable expires
 		timeval tim;
 		gettimeofday(&tim, NULL);
 		printf("GOT PACKET on %d , LAP = %06x at sample %d, wall time: %d.%06d\n", d_x, packet->get_LAP(), d_cumulative_count + retval, tim.tv_sec, tim.tv_usec);
