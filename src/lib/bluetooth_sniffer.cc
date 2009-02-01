@@ -72,7 +72,7 @@ bluetooth_sniffer::work (int noutput_items,
 		consumed = noutput_items;
 	} else {
 		consumed = retval;
-		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
+		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items + history() - retval);
 		if(packet->get_LAP() == d_LAP) {
 			packet->set_UAP(d_UAP);
 			packet->decode_header();

@@ -67,7 +67,7 @@ int bluetooth_hopper::work (int noutput_items,
 		consumed = noutput_items;
 	} else {
 		consumed = retval;
-		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], 3125 + noutput_items - retval);
+		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items + history() - retval);
 		if(packet->get_LAP() == d_LAP) {
 			current_time = d_cumulative_count + consumed;
 			/* number of samples elapsed since previous packet */
