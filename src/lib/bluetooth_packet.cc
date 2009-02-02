@@ -709,8 +709,8 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int type, int siz
 	if(crc == check) {
 		d_payload_crc = crc;
 		d_payload_header_length = header_bytes;
-		printf("CRC checks out\n");
-		return 10;
+		d_payload = payload;
+		return 1;
 	}
 
 	return 0;

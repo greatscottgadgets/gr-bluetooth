@@ -177,10 +177,8 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, ch
 					int payload_length = packet->get_payload_length();
 					if(payload_length) {
 						char *data = packet->tun_format();
-						printf("Got to tun_format() - length: %d\n", payload_length);
 						int addr = (packet->get_UAP() << 24) | packet->get_LAP();
 						write_interface(d_tunfd, (unsigned char *)data, payload_length, 0, addr, HCI_H1);
-						printf("Successfuly written to tun\n");
 					}
 				}
 			}
