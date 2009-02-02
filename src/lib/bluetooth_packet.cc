@@ -709,6 +709,7 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int type, int siz
 	if(crc == check) {
 		d_payload_crc = crc;
 		d_payload_header_length = header_bytes;
+		printf("CRC checks out\n");
 		return 10;
 	}
 
@@ -811,7 +812,8 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 			d_payload_crc = crc;
 			d_payload_header_length = 0;
 			d_payload_length = count + 2;
-			return 10;
+			d_payload = payload;
+			return 1;
 		}
 	}
 	return 0;
@@ -833,22 +835,22 @@ int bluetooth_packet::HV(char *stream, int clock, uint8_t UAP, int type, int siz
 			unfec13(stream, corrected, 240);
 			if(NULL == stream)
 				return 0;
-			d_payload_length = 80;
+			d_payload_length = 10;
 			break;
 
 		case 6:/* HV2 */
 			corrected = unfec23(stream, 240);
 			if(NULL == stream)
 				return 0;
-			d_payload_length = 160;
+			d_payload_length = 20;
 			break;
 		case 7:/* HV3 */
-			d_payload_length = 240;
+			d_payload_length = 30;
 			corrected = stream;
 			break;
 	}
-	char payload[d_payload_length];
-	unwhiten(corrected, payload, clock, d_payload_length, 18);
+	char payload[d_payload_length*8];
+	unwhiten(corrected, payload, clock, d_payload_length*8, 18);
 
 	d_payload = payload;
 	return 0;
@@ -1021,7 +1023,13 @@ void bluetooth_packet::print()
 
 char *bluetooth_packet::tun_format()
 {
-	return d_payload;
+	char *tun_format = (char *) malloc(d_payload_length);
+	int i;
+
+	for(i=0;i<d_payload_length;i++)
+		tun_format[i] = (char) air_to_host8(&d_payload[i*8], 8);
+
+	return tun_format;
 }
 
 int bluetooth_packet::get_payload_length()
