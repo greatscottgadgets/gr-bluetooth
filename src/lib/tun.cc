@@ -1,18 +1,6 @@
 // Taken from the gssm project (http://www.thre.at/gsm)
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <string.h>
-#include <libgen.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <linux/if_tun.h>
-#include <linux/if.h>
-#include <linux/if_ether.h>
-#include <arpa/inet.h>
+#include "tun.h"
 
 int mktun(const char *chan_name, unsigned char *ether_addr) {
 

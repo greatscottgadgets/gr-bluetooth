@@ -55,6 +55,15 @@ bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center
 	set_symbol_history(3125);
 	d_piconet = bluetooth_make_piconet(d_LAP);
 	printf("lowest channel: %d, highest channel %d\n", d_low_channel, d_high_channel);
+
+	/* Tun interface */
+	chan_name = "gr-bluetooth";
+
+	if((d_tunfd = mktun(chan_name, d_ether_addr)) == -1) {
+		fprintf(stderr, "warning: was not able to open TUN device, "
+		   "disabling Wireshark interface\n");
+		// throw std::runtime_error("cannot open TUN device");
+	}
 }
 
 //virtual destructor.
@@ -165,6 +174,13 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, ch
 					packet->decode_header();
 					packet->decode_payload();
 					packet->print();
+					int payload_length = packet->get_payload_length();
+					if(payload_length) {
+						char *data = packet->tun_format();
+						printf("Got to tun_format()\n");
+						write_interface(d_tunfd, (unsigned char *)data, payload_length, 0, d_LAP, HCI_H1);
+						printf("Successfuly written to tun\n");
+					}
 				}
 			}
 		}

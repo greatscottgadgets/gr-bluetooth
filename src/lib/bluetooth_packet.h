@@ -106,6 +106,11 @@ private:
 	 */
 	int d_payload_length;
 
+	/* The actual payload data in host format
+	 * Ready for passing to wireshark
+	 */
+	char *d_payload;
+
 	/* CRC of packet payload */
 	uint16_t d_payload_crc;
 
@@ -129,6 +134,7 @@ private:
 	int DM(char *stream, int clock, uint8_t UAP, int type, int size);
 	int DH(char *stream, int clock, uint8_t UAP, int type, int size);
 	int EV(char *stream, int clock, uint8_t UAP, int type, int size);
+	int HV(char *stream, int clock, uint8_t UAP, int type, int size);
 
 	/* decode payload header, return value indicates success */
 	bool decode_payload_header(char *stream, int clock, int header_bytes, int size, bool fec);
@@ -214,6 +220,9 @@ public:
 
 	/* set the packet's clock (CLK1-27) */
 	void set_clock(uint32_t clock);
+
+	/* Retrieve the length of the payload data */
+	int get_payload_length();
 
 	/* try a clock value (CLK1-6) to unwhiten packet header,
 	 * sets resultant d_packet_type and d_UAP, returns UAP.

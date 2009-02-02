@@ -24,6 +24,7 @@
 
 #include "bluetooth_multi_block.h"
 #include "bluetooth_piconet.h"
+#include "tun.h"
 
 class bluetooth_multi_hopper;
 typedef boost::shared_ptr<bluetooth_multi_hopper> bluetooth_multi_hopper_sptr;
@@ -76,6 +77,13 @@ private:
 
 	/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
 	void reset();
+
+	/* Tun stuff */
+	int			d_tunfd;	// TUN fd
+	char			*chan_name;  // TUN interface name
+	unsigned char		d_ether_addr[ETH_ALEN];
+static const unsigned short HCI_H1 = 0xFFFD;
+static const unsigned short HCI_H4 = 0xFFFE;
 
 public:
 	/* destructor */

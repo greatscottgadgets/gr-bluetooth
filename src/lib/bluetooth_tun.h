@@ -55,6 +55,9 @@ private:
   int			d_tunfd;	// TUN fd
   char			chan_name[20];  // TUN interface name
   unsigned char		d_ether_addr[ETH_ALEN];
+static const unsigned short HCI_H1 = 0xFFFD;
+static const unsigned short HCI_H4 = 0xFFFE;
+
 public:
   ~bluetooth_tun ();	// public destructor
 

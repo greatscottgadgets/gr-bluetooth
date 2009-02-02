@@ -104,6 +104,7 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	d_have_UAP = false;
 	d_have_clock = false;
 	d_payload_header_length = -1;
+	d_payload_length = 0;
 }
 
 /* search a symbol stream to find a packet, return index */
@@ -816,6 +817,42 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 	return 0;
 }
 
+/* HV packet type payload parser */
+int bluetooth_packet::HV(char *stream, int clock, uint8_t UAP, int type, int size)
+{
+	char *corrected;
+	if(size < 240) {
+		d_payload_length = 0;
+		return 1; //FIXME should throw exception
+	}
+
+	switch (type)
+	{
+		case 5:/* HV1 */
+			corrected = (char *) malloc(80);
+			unfec13(stream, corrected, 240);
+			if(NULL == stream)
+				return 0;
+			d_payload_length = 80;
+			break;
+
+		case 6:/* HV2 */
+			corrected = unfec23(stream, 240);
+			if(NULL == stream)
+				return 0;
+			d_payload_length = 160;
+			break;
+		case 7:/* HV3 */
+			d_payload_length = 240;
+			corrected = stream;
+			break;
+	}
+	char payload[d_payload_length];
+	unwhiten(corrected, payload, clock, d_payload_length, 18);
+
+	d_payload = payload;
+	return 0;
+}
 /* try a clock value (CLK1-6) to unwhiten packet header,
  * sets resultant d_packet_type and d_UAP, returns UAP.
  */
@@ -926,15 +963,16 @@ void bluetooth_packet::decode_payload()
 				DH(stream, clock, d_UAP, d_packet_type, size);
 				break;
 			case 5: /* HV1 */
-				/* don't know how to decode */
+				HV(stream, clock, d_UAP, d_packet_type, size);
 				break;
 			case 6: /* HV2 */
-				/* assuming HV2 but could be 2-EV3 */
-				/* don't know how to decode */
+				HV(stream, clock, d_UAP, d_packet_type, size);
 				break;
 			case 7: /* EV3 */
 				/* assuming EV3 but could be HV3 or 3-EV3 */
-				EV(stream, clock, d_UAP, d_packet_type, size);
+				if(!EV(stream, clock, d_UAP, d_packet_type, size)) {
+					HV(stream, clock, d_UAP, d_packet_type, size);
+				}
 				break;
 			case 8: /* DV */
 				/* assuming DV but could be 3-DH1 */
@@ -983,5 +1021,10 @@ void bluetooth_packet::print()
 
 char *bluetooth_packet::tun_format()
 {
-	return d_symbols;
+	return d_payload;
+}
+
+int bluetooth_packet::get_payload_length()
+{
+	return d_payload_length;
 }
