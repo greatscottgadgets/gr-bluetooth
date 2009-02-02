@@ -83,12 +83,12 @@ private:
  */
 GR_SWIG_BLOCK_MAGIC(bluetooth,multi_hopper);
 
-bluetooth_multi_hopper_sptr bluetooth_make_multi_hopper (double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased);
+bluetooth_multi_hopper_sptr bluetooth_make_multi_hopper (double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun);
 
 class bluetooth_multi_hopper : public gr_sync_block
 {
 private:
-  bluetooth_multi_hopper (double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased);
+  bluetooth_multi_hopper (double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun);
 };
 
 /*

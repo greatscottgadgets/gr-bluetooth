@@ -55,6 +55,8 @@ class my_top_block(gr.top_block):
 						help="power squelch threshold in dB (default=None)")
 		parser.add_option("-u", "--uap", type="string", default=None,
 						help="UAP of the master device")
+		parser.add_option("-w","--wireshark", action="store_true", default=False,
+						help="direct output to a tun interface")
 		parser.add_option("-2","--usrp2", action="store_true", default=False,
 						help="use USRP2 (or file originating from USRP2) instead of USRP")
 
@@ -148,7 +150,10 @@ class my_top_block(gr.top_block):
 			if options.uap is None:
 				if options.hop:
 					# determine UAP and then master clock from hopping sequence
-					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, 0, int(options.lap, 16), options.aliased)
+				    if options.wireshark:
+					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, 0, int(options.lap, 16), options.aliased, True)
+				    else:
+					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, 0, int(options.lap, 16), options.aliased, False)
 				else:
 					# determine UAP from frames matching the user-specified LAP
 					dst = bluetooth.multi_UAP(options.sample_rate, options.freq, 0, int(options.lap, 16))

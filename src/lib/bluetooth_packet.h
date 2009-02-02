@@ -123,6 +123,7 @@ private:
 	/* do we know the clock (master CLK1-27)? */
 	bool d_have_clock;
 
+	bool d_have_payload;
 	/* CLK1-27 of master */
 	uint32_t d_clock;
 
@@ -214,6 +215,9 @@ public:
 
 	/* set the packet's whitened flag */
 	void set_whitened(bool whitened);
+
+	/* have we decoded the payload yet? */
+	bool got_payload();
 
 	/* return the packet's clock (CLK1-27) */
 	uint32_t get_clock();

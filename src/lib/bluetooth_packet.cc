@@ -103,6 +103,7 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	d_whitened = true;
 	d_have_UAP = false;
 	d_have_clock = false;
+	d_have_payload = false;
 	d_payload_header_length = -1;
 	d_payload_length = 0;
 }
@@ -946,67 +947,68 @@ void bluetooth_packet::decode_payload()
 	clock = d_lower_clock;
 
 	char *stream = d_symbols + 126; // AC + header
-		switch(d_packet_type)
-		{
-			case 0: /* NULL */
-				/* no payload to decode */
-				break;
-			case 1: /* POLL */
-				/* no payload to decode */
-				break;
-			case 2: /* FHS */
-				fhs(stream, clock, d_UAP, size);
-				break;
-			case 3: /* DM1 */
-				DM(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 4: /* DH1 */
-				/* assuming DH1 but could be 2-DH1 */
-				DH(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 5: /* HV1 */
+	switch(d_packet_type)
+	{
+		case 0: /* NULL */
+			/* no payload to decode */
+			break;
+		case 1: /* POLL */
+			/* no payload to decode */
+			break;
+		case 2: /* FHS */
+			fhs(stream, clock, d_UAP, size);
+			break;
+		case 3: /* DM1 */
+			DM(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 4: /* DH1 */
+			/* assuming DH1 but could be 2-DH1 */
+			DH(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 5: /* HV1 */
+			HV(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 6: /* HV2 */
+			HV(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 7: /* EV3 */
+			/* assuming EV3 but could be HV3 or 3-EV3 */
+			if(!EV(stream, clock, d_UAP, d_packet_type, size)) {
 				HV(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 6: /* HV2 */
-				HV(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 7: /* EV3 */
-				/* assuming EV3 but could be HV3 or 3-EV3 */
-				if(!EV(stream, clock, d_UAP, d_packet_type, size)) {
-					HV(stream, clock, d_UAP, d_packet_type, size);
-				}
-				break;
-			case 8: /* DV */
-				/* assuming DV but could be 3-DH1 */
-				DM(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 9: /* AUX1 */
-				/* don't know how to decode */
-				break;
-			case 10: /* DM3 */
-				/* assuming DM3 but could be 2-DH3 */
-				DM(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 11: /* DH3 */
-				/* assuming DH3 but could be 3-DH3 */
-				DH(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 12: /* EV4 */
-				/* assuming EV4 but could be 2-EV5 */
-				EV(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 13: /* EV5 */
-				/* assuming EV5 but could be 3-EV5 */
-				EV(stream, clock, d_UAP, d_packet_type, size);
-			case 14: /* DM5 */
-				/* assuming DM5 but could be 2-DH5 */
-				DM(stream, clock, d_UAP, d_packet_type, size);
-				break;
-			case 15: /* DH5 */
-				/* assuming DH5 but could be 3-DH5 */
-				DH(stream, clock, d_UAP, d_packet_type, size);
-				break;
-		}
+			}
+			break;
+		case 8: /* DV */
+			/* assuming DV but could be 3-DH1 */
+			DM(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 9: /* AUX1 */
+			/* don't know how to decode */
+			break;
+		case 10: /* DM3 */
+			/* assuming DM3 but could be 2-DH3 */
+			DM(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 11: /* DH3 */
+			/* assuming DH3 but could be 3-DH3 */
+			DH(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 12: /* EV4 */
+			/* assuming EV4 but could be 2-EV5 */
+			EV(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 13: /* EV5 */
+			/* assuming EV5 but could be 3-EV5 */
+			EV(stream, clock, d_UAP, d_packet_type, size);
+		case 14: /* DM5 */
+			/* assuming DM5 but could be 2-DH5 */
+			DM(stream, clock, d_UAP, d_packet_type, size);
+			break;
+		case 15: /* DH5 */
+			/* assuming DH5 but could be 3-DH5 */
+			DH(stream, clock, d_UAP, d_packet_type, size);
+			break;
+	}
+	d_have_payload = true;
 }
 
 /* print packet information */
@@ -1030,6 +1032,11 @@ char *bluetooth_packet::tun_format()
 		tun_format[i] = (char) air_to_host8(&d_payload[i*8], 8);
 
 	return tun_format;
+}
+
+bool bluetooth_packet::got_payload()
+{
+	return d_have_payload;
 }
 
 int bluetooth_packet::get_payload_length()
