@@ -834,14 +834,14 @@ int bluetooth_packet::HV(char *stream, int clock, uint8_t UAP, int type, int siz
 		case 5:/* HV1 */
 			corrected = (char *) malloc(80);
 			unfec13(stream, corrected, 240);
-			if(NULL == stream)
+			if(NULL == corrected)
 				return 0;
 			d_payload_length = 10;
 			break;
 
 		case 6:/* HV2 */
 			corrected = unfec23(stream, 240);
-			if(NULL == stream)
+			if(NULL == corrected)
 				return 0;
 			d_payload_length = 20;
 			break;
@@ -1042,4 +1042,9 @@ bool bluetooth_packet::got_payload()
 int bluetooth_packet::get_payload_length()
 {
 	return d_payload_length;
+}
+
+int bluetooth_packet::get_type()
+{
+	return d_packet_type;
 }

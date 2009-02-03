@@ -228,6 +228,8 @@ public:
 	/* Retrieve the length of the payload data */
 	int get_payload_length();
 
+	int get_type();
+
 	/* try a clock value (CLK1-6) to unwhiten packet header,
 	 * sets resultant d_packet_type and d_UAP, returns UAP.
 	 */
