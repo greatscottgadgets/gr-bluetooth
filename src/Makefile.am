@@ -19,6 +19,6 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-SUBDIRS = lib mktun
+SUBDIRS = lib mktun python
 
-DIST_SUBDIRS = lib mktun
+DIST_SUBDIRS = lib mktun python

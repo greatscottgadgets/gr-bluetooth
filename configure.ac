@@ -95,6 +95,7 @@ AC_CONFIG_FILES([\
 	  src/Makefile \
 	  src/lib/Makefile \
 	  src/mktun/Makefile \
+	  src/python/Makefile \
 	])
 
 
