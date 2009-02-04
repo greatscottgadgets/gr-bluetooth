@@ -102,7 +102,7 @@ grinclude_HEADERS =			\
 	bluetooth_multi_hopper.h	\
 	bluetooth_sniffer.h		\
 	bluetooth_tun.h		\
-	tun.cc
+	tun.h
 
 
 # These swig headers get installed in ${prefix}/include/gnuradio/swig
