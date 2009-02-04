@@ -1,4 +1,5 @@
 // Taken from the gssm project (http://www.thre.at/gsm)
+// Any license you like
 
 #include "tun.h"
 

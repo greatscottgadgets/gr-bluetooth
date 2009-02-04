@@ -1,3 +1,6 @@
+// Taken from the gssm project (http://www.thre.at/gsm)
+// Any license you like
+
 #ifndef INCLUDED_TUN_H
 #define INCLUDED_TUN_H
 
@@ -15,7 +18,6 @@
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 
-// Taken from the gssm project (http://www.thre.at/gsm)
 
 int mktun(const char *, unsigned char *);
 int write_interface(int, unsigned char *, unsigned int, uint64_t, uint64_t, unsigned short);

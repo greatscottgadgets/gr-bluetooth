@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+# Copyright 2008, 2009 Dominic Spill, Michael Ossmann
 """
 Bluetooth monitoring utility.
 Receives samples from USRP, file (as created by usrp_rx_cfile.py), or standard input.
