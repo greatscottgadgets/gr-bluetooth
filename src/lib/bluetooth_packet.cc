@@ -543,7 +543,12 @@ int bluetooth_packet::UAP_from_hec(uint8_t *packet)
 /* check if the packet's CRC is correct for a given clock (CLK1-6) */
 int bluetooth_packet::crc_check(int clock)
 {
-	/* return value of 1 represents inconclusive result (default) */
+	/*
+	 * return value of 1 represents inconclusive result (default)
+	 * return value > 1 represents positive result (e.g. CRC match)
+	 * return value of 0 represents negative result (e.g. CRC failure without
+	 * the possibility that we have assumed the wrong logical transport)
+	 */
 	int retval = 1;
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
@@ -711,7 +716,7 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int type, int siz
 		d_payload_crc = crc;
 		d_payload_header_length = header_bytes;
 		d_payload = payload;
-		return 1;
+		return 10;
 	}
 
 	return 0;
@@ -814,7 +819,7 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 			d_payload_header_length = 0;
 			d_payload_length = count + 2;
 			d_payload = payload;
-			return 1;
+			return 10;
 		}
 	}
 	return 0;
