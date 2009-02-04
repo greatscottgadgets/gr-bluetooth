@@ -24,7 +24,7 @@ include $(top_srcdir)/Makefile.common
 
 EXTRA_DIST = btrx.py multibtrx.py
 
-noinst_SCRIPTS =                \
+bin_SCRIPTS =                \
         btrx.py			\
 	multibtrx.py
 

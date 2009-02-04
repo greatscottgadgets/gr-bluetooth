@@ -1,6 +1,8 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2004 Free Software Foundation, Inc.
+ * Copyright 2008, 2009 Dominic Spill, Michael Ossmann                                                                                            
+ * Copyright 2007 Dominic Spill                                                                                                                   
+ * Copyright 2005, 2006 Free Software Foundation, Inc.
  * 
  * This file is part of GNU Radio
  * 
