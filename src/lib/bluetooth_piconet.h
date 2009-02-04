@@ -49,6 +49,9 @@ private:
 	/* maximum number of hops to remember */
 	static const int MAX_PATTERN_LENGTH = 100;
 
+	/* true if using a particular aliased receiver implementation */
+	bool d_aliased;
+
 	/* lower address part (of master's BD_ADDR) */
 	uint32_t d_LAP;
 
@@ -106,7 +109,7 @@ private:
 
 
 	/* do all the precalculation that can be done before knowing the address */
-	void precalc(bool aliased);
+	void precalc();
 
 	/* do precalculation that requires the address */
 	void address_precalc(int address);
@@ -160,6 +163,9 @@ public:
 
 	/* look up channel for a particular hop */
 	char hop(int clock);
+
+	/* return the observable channel (26-50) for a given channel (0-78) */
+	char aliased_channel(char channel);
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

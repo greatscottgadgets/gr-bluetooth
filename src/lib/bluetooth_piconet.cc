@@ -73,28 +73,25 @@ int bluetooth_piconet::init_hop_reversal(bool aliased)
 	/* this holds the entire hopping sequence */
 	d_sequence = (char*) malloc(SEQUENCE_LENGTH);
 
-	precalc(aliased);
+	precalc();
 	address_precalc(((d_UAP<<24) | d_LAP) & 0xfffffff);
 	gen_hops();
 	d_num_candidates = init_candidates(d_pattern_channels[0], d_clock6);
 	d_winnowed = 0;
 	d_hop_reversal_inited = true;
+	d_aliased = aliased;
 
 	return d_num_candidates;
 }
 
 /* do all the precalculation that can be done before knowing the address */
-void bluetooth_piconet::precalc(bool aliased)
+void bluetooth_piconet::precalc()
 {
 	int i;
 	int z, p_high, p_low;
 
 	/* populate frequency register bank*/
 	for (i = 0; i < CHANNELS; i++)
-		if(aliased)
-			/* for a specific aliasing receiver implementation */
-			d_bank[i] = ((((i * 2) % CHANNELS) + 24) % ALIASED_CHANNELS) + 26;
-		else
 			d_bank[i] = ((i * 2) % CHANNELS);
 	/* actual frequency is 2402 + d_bank[i] MHz */
 
@@ -239,12 +236,16 @@ int bluetooth_piconet::init_candidates(char channel, int known_clock_bits)
 {
 	int i;
 	int count = 0; /* total number of candidates */
+	char observable_channel; /* accounts for aliasing if necessary */
 
 	/* only try clock values that match our known bits */
 	for (i = known_clock_bits; i < SEQUENCE_LENGTH; i += 0x40) {
-		if (d_sequence[i] == channel) {
+		if (d_aliased)
+			observable_channel = aliased_channel(d_sequence[i]);
+		else
+			observable_channel = d_sequence[i];
+		if (observable_channel == channel)
 			d_clock_candidates[count++] = i;
-		}
 		//FIXME ought to throw exception if count gets too big
 	}
 	return count;
@@ -255,10 +256,15 @@ int bluetooth_piconet::winnow(int offset, char channel)
 {
 	int i;
 	int new_count = 0; /* number of candidates after winnowing */
+	char observable_channel; /* accounts for aliasing if necessary */
 
 	/* check every candidate */
 	for (i = 0; i < d_num_candidates; i++) {
-		if (d_sequence[(d_clock_candidates[i] + offset) % SEQUENCE_LENGTH] == channel) {
+		if (d_aliased)
+			observable_channel = aliased_channel(d_sequence[(d_clock_candidates[i] + offset) % SEQUENCE_LENGTH]);
+		else
+			observable_channel = d_sequence[(d_clock_candidates[i] + offset) % SEQUENCE_LENGTH];
+		if (observable_channel == channel) {
 			/* this candidate matches the latest hop */
 			/* blow away old list of candidates with new one */
 			/* safe because new_count can never be greater than i */
@@ -385,4 +391,10 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet, int interv
 		return true;
 	}
 	return false;
+}
+
+/* return the observable channel (26-50) for a given channel (0-78) */
+char bluetooth_piconet::aliased_channel(char channel)
+{
+		return ((channel + 24) % ALIASED_CHANNELS) + 26;
 }

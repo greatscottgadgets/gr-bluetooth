@@ -158,11 +158,16 @@ bluetooth_multi_hopper::work(int noutput_items,
 void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, char *symbols, int current_slot)
 {
 	int ac_index, channel, num_symbols, latest_ac;
+	char observable_channel;
 	uint32_t clock27 = (current_slot + d_clock_offset) % bluetooth_piconet::SEQUENCE_LENGTH;
 	channel = d_piconet->hop(clock27);
-	if (channel >= d_low_channel && channel <= d_high_channel) {
+	if (d_aliased)
+		observable_channel = d_piconet->aliased_channel(channel);
+	else
+		observable_channel = channel;
+	if (observable_channel >= d_low_channel && observable_channel <= d_high_channel) {
 		//FIXME history() + noutput_items?
-		num_symbols = channel_symbols(channel, input_items, symbols, history());
+		num_symbols = channel_symbols(observable_channel, input_items, symbols, history());
 		if (num_symbols >= 72 ) {
 			latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
 			ac_index = bluetooth_packet::sniff_ac(symbols, latest_ac);
@@ -171,7 +176,7 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, ch
 				packet->set_clock(clock27);
 				packet->set_UAP(d_piconet->get_UAP());
 				if(packet->get_LAP() == d_LAP) {
-					printf("clock 0x%07x, channel %d: ", clock27, channel);
+					printf("clock 0x%07x, channel %2d: ", clock27, channel);
 					packet->set_UAP(d_piconet->get_UAP());
 					packet->set_clock(clock27);
 					packet->decode_header();

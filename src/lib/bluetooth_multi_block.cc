@@ -70,7 +70,6 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	double cutoff_freq = 500000;
 	double transition_width = 500000;
 	d_channel_filter = gr_firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr_firdes::WIN_HANN);
-	printf("filter taps: %d\n", (int) d_channel_filter.size());
 	/* d_channel_filter.size() will be the history requirement of ddc */
 	samples_required += (d_channel_filter.size() - 1);
 
