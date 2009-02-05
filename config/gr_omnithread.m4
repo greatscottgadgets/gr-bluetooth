@@ -36,7 +36,7 @@ AC_DEFUN([GR_OMNITHREAD],
         ot_nt="yes"
 	AC_DEFINE(OMNITHREAD_NT,[1],[Define to 1 to enable NT thread])
       ],
-      [AC_MSG_FAILURE([GNU Radio requires POSIX threads.  pthreads not found.])]
+      [AC_MSG_FAILURE([gr-bluetooth requires POSIX threads.  pthreads not found.])]
     )
     AC_MSG_RESULT(yes)
   ])
