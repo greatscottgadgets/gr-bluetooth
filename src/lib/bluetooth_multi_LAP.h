@@ -32,7 +32,7 @@ typedef boost::shared_ptr<bluetooth_multi_LAP> bluetooth_multi_LAP_sptr;
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_multi_LAP.
  */
-bluetooth_multi_LAP_sptr bluetooth_make_multi_LAP(double sample_rate, double center_freq, int squelch_threshold);
+bluetooth_multi_LAP_sptr bluetooth_make_multi_LAP(double sample_rate, double center_freq, double squelch_threshold);
 
 /*!
  * \brief Sniff Bluetooth packets.
@@ -43,10 +43,10 @@ class bluetooth_multi_LAP : public bluetooth_multi_block
 private:
 	// The friend declaration allows bluetooth_make_multi_LAP to
 	// access the private constructor.
-	friend bluetooth_multi_LAP_sptr bluetooth_make_multi_LAP(double sample_rate, double center_freq, int squelch_threshold);
+	friend bluetooth_multi_LAP_sptr bluetooth_make_multi_LAP(double sample_rate, double center_freq, double squelch_threshold);
 
 	/* constructor */
-	bluetooth_multi_LAP(double sample_rate, double center_freq, int squelch_threshold);
+	bluetooth_multi_LAP(double sample_rate, double center_freq, double squelch_threshold);
 
 public:
 	/* destructor */

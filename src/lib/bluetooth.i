@@ -55,12 +55,12 @@ private:
  */
 GR_SWIG_BLOCK_MAGIC(bluetooth,multi_LAP);
 
-bluetooth_multi_LAP_sptr bluetooth_make_multi_LAP (double sample_rate, double center_freq, int squelch_threshold);
+bluetooth_multi_LAP_sptr bluetooth_make_multi_LAP (double sample_rate, double center_freq, double squelch_threshold);
 
 class bluetooth_multi_LAP : public gr_sync_block
 {
 private:
-  bluetooth_multi_LAP (double sample_rate, double center_freq, int squelch_threshold);
+  bluetooth_multi_LAP (double sample_rate, double center_freq, double squelch_threshold);
 };
 
 /*
@@ -69,12 +69,12 @@ private:
  */
 GR_SWIG_BLOCK_MAGIC(bluetooth,multi_UAP);
 
-bluetooth_multi_UAP_sptr bluetooth_make_multi_UAP (double sample_rate, double center_freq, int squelch_threshold, int LAP);
+bluetooth_multi_UAP_sptr bluetooth_make_multi_UAP (double sample_rate, double center_freq, double squelch_threshold, int LAP);
 
 class bluetooth_multi_UAP : public gr_sync_block
 {
 private:
-  bluetooth_multi_UAP (double sample_rate, double center_freq, int squelch_threshold, int LAP);
+  bluetooth_multi_UAP (double sample_rate, double center_freq, double squelch_threshold, int LAP);
 };
 
 /*
@@ -83,12 +83,12 @@ private:
  */
 GR_SWIG_BLOCK_MAGIC(bluetooth,multi_hopper);
 
-bluetooth_multi_hopper_sptr bluetooth_make_multi_hopper (double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun);
+bluetooth_multi_hopper_sptr bluetooth_make_multi_hopper (double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun);
 
 class bluetooth_multi_hopper : public gr_sync_block
 {
 private:
-  bluetooth_multi_hopper (double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun);
+  bluetooth_multi_hopper (double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun);
 };
 
 /*

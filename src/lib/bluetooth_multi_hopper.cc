@@ -39,13 +39,13 @@
  * a boost shared_ptr.  This is effectively the public constructor.
  */
 bluetooth_multi_hopper_sptr
-bluetooth_make_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun)
+bluetooth_make_multi_hopper(double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun)
 {
   return bluetooth_multi_hopper_sptr (new bluetooth_multi_hopper(sample_rate, center_freq, squelch_threshold, LAP, aliased, tun));
 }
 
 //private constructor
-bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun)
+bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun)
   : bluetooth_multi_block(sample_rate, center_freq, squelch_threshold)
 {
 	d_LAP = LAP;
@@ -99,7 +99,7 @@ bluetooth_multi_hopper::work(int noutput_items,
 	
 			if (num_symbols >= 72 )
 			{
-				//FIXME this will break with squelch, but we don't want to look beyond one slot for ACs:
+				/* don't look beyond one slot for ACs */
 				latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
 				retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 				if(retval > -1) {

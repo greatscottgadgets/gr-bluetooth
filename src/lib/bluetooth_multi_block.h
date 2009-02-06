@@ -41,7 +41,7 @@ class bluetooth_multi_block : public gr_sync_block
 {
 protected:
 	/* constructor */
-	bluetooth_multi_block(double sample_rate, double center_freq, int squelch_threshold);
+	bluetooth_multi_block(double sample_rate, double center_freq, double squelch_threshold);
 
 	/* symbols per second */
 	static const int SYMBOL_RATE = 1000000;
@@ -76,8 +76,8 @@ protected:
 	/* highest channel (0-78) we can decode */
 	int d_high_channel;
 
-	/* power squelch threshold in dB */
-	int d_squelch_threshold;
+	/* power squelch threshold normalized for comparison in channel_symbols() */
+	double d_squelch_threshold;
 
 	/* decimation rate of digital downconverter */
 	int d_ddc_decimation_rate;

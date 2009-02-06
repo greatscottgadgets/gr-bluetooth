@@ -38,7 +38,7 @@
 #include <gr_math.h>
 
 /* constructor */
-bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_freq, int squelch_threshold)
+bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_freq, double squelch_threshold)
   : gr_sync_block ("bluetooth multi block",
 	      gr_make_io_signature (1, 1, sizeof (gr_complex)),
 	      gr_make_io_signature (0, 0, 0))
@@ -47,7 +47,6 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	d_sample_rate = sample_rate;
 	d_center_freq = center_freq;
 	set_channels();
-	d_squelch_threshold = squelch_threshold;
 	/*
 	 * how many time slots we attempt to decode on each hop:
 	 * 1 for now, could be as many as 5 plus a little slop
@@ -58,14 +57,8 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	d_samples_per_slot = (int) SYMBOLS_PER_SLOT * d_samples_per_symbol;
 	int samples_required = (int) slots * d_samples_per_slot;
 
-	/* power squelch */
-	// maybe implement locally instead of using gr_pwr_squelch_cc
-	//double alpha = 0.01;
-	//int ramp = 0;
-	//bool gate = false;
-	//d_squelch = gr_make_pwr_squelch_cc(squelch_threshold, alpha, ramp, gate);
-	//printf("squelch hist: %d\n", d_squelch->history());
-	//samples_required += d_squelch->history();
+	/* power squelch: this is crude, but it works */
+	d_squelch_threshold = (double) std::pow(10.0, squelch_threshold/10) * d_samples_per_symbol * 72; 
 
 	/* channel filter coefficients */
 	double gain = 1;
@@ -157,7 +150,21 @@ void bluetooth_multi_block::slicer(const float *in, char *out, int noutput_items
 /* produce symbols stream for a particular channel pulled out of the raw samples */
 int bluetooth_multi_block::channel_symbols(int channel, gr_vector_const_void_star &in, char *out, int ninput_items)
 {
-	//FIXME add squelch 
+	/*
+	 * squelch: this is a simple check to see if there is enough power in the
+	 * first slot to bother looking for a packet.
+	 */
+	int i;
+	double pwr = 0; //total power for the time slot (sum of power of every sample)
+	gr_complex *raw_in = (gr_complex *) in[0];
+	int last_sq = d_samples_per_symbol * (SYMBOLS_PER_SLOT + 72);
+	if (ninput_items < last_sq)
+		last_sq = ninput_items;
+	for (i = 0; i < last_sq; i++)
+		pwr += (raw_in[i].real() * raw_in[i].real() + raw_in[i].imag() * raw_in[i].imag());
+	if (pwr < d_squelch_threshold)
+		/* not enough power, skip this slot */
+		return 0;
 
 	/* ddc */
 	double ddc_center_freq = channel_freq(channel);

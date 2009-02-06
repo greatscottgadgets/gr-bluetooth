@@ -34,7 +34,7 @@ typedef boost::shared_ptr<bluetooth_multi_hopper> bluetooth_multi_hopper_sptr;
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_multi_hopper.
  */
-bluetooth_multi_hopper_sptr bluetooth_make_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun);
+bluetooth_multi_hopper_sptr bluetooth_make_multi_hopper(double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun);
 
 /*!
  * \brief Sniff Bluetooth packets.
@@ -45,10 +45,10 @@ class bluetooth_multi_hopper : public bluetooth_multi_block
 private:
 	// The friend declaration allows bluetooth_make_multi_hopper to
 	// access the private constructor.
-	friend bluetooth_multi_hopper_sptr bluetooth_make_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun);
+	friend bluetooth_multi_hopper_sptr bluetooth_make_multi_hopper(double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun);
 
 	/* constructor */
-	bluetooth_multi_hopper(double sample_rate, double center_freq, int squelch_threshold, int LAP, bool aliased, bool tun);
+	bluetooth_multi_hopper(double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun);
 
 	/* do we have CLK1-6? */
 	bool d_have_clock6;

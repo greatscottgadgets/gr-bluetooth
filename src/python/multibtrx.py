@@ -51,7 +51,7 @@ class my_top_block(gr.top_block):
 						help="sample rate of input (default: use DECIM)")
 		parser.add_option("-s", "--input-shorts", action="store_true", default=False,
 						help="input interleaved shorts instead of complex floats")
-		parser.add_option("-t", "--squelch", type="eng_float", default=None,
+		parser.add_option("-t", "--squelch", type="eng_float", default=-1000,
 						help="power squelch threshold in dB (default=None)")
 		parser.add_option("-u", "--uap", type="string", default=None,
 						help="UAP of the master device")
@@ -145,18 +145,18 @@ class my_top_block(gr.top_block):
 		# bluetooth decoding
 		if options.lap is None:
 			# print out LAP for every frame detected
-			dst = bluetooth.multi_LAP(options.sample_rate, options.freq, 0)
+			dst = bluetooth.multi_LAP(options.sample_rate, options.freq, options.squelch)
 		else:
 			if options.uap is None:
 				if options.hop:
 					# determine UAP and then master clock from hopping sequence
 				    if options.wireshark:
-					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, 0, int(options.lap, 16), options.aliased, True)
+					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, options.squelch, int(options.lap, 16), options.aliased, True)
 				    else:
-					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, 0, int(options.lap, 16), options.aliased, False)
+					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, options.squelch, int(options.lap, 16), options.aliased, False)
 				else:
 					# determine UAP from frames matching the user-specified LAP
-					dst = bluetooth.multi_UAP(options.sample_rate, options.freq, 0, int(options.lap, 16))
+					dst = bluetooth.multi_UAP(options.sample_rate, options.freq, options.squelch, int(options.lap, 16))
 			else:
 				raise SystemExit, "not implemented"
 	

@@ -39,13 +39,13 @@
  * a boost shared_ptr.  This is effectively the public constructor.
  */
 bluetooth_multi_LAP_sptr
-bluetooth_make_multi_LAP(double sample_rate, double center_freq, int squelch_threshold)
+bluetooth_make_multi_LAP(double sample_rate, double center_freq, double squelch_threshold)
 {
   return bluetooth_multi_LAP_sptr (new bluetooth_multi_LAP(sample_rate, center_freq, squelch_threshold));
 }
 
 //private constructor
-bluetooth_multi_LAP::bluetooth_multi_LAP(double sample_rate, double center_freq, int squelch_threshold)
+bluetooth_multi_LAP::bluetooth_multi_LAP(double sample_rate, double center_freq, double squelch_threshold)
   : bluetooth_multi_block(sample_rate, center_freq, squelch_threshold)
 {
 	set_symbol_history(72);
@@ -74,9 +74,13 @@ bluetooth_multi_LAP::work(int noutput_items,
 	{
 		int num_symbols = channel_symbols(channel, input_items, symbols, history());
 
+		/* completely skip this time slot if we didn't break squelch */
+		if (num_symbols == 0)
+			break;
+
 		if (num_symbols >= 72 )
 		{
-			//FIXME this will break with squelch, but we don't want to look beyond one slot for ACs:
+			/* don't look beyond one slot for ACs */
 			int latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
 			retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(retval > -1) {

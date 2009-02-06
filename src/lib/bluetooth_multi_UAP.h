@@ -33,7 +33,7 @@ typedef boost::shared_ptr<bluetooth_multi_UAP> bluetooth_multi_UAP_sptr;
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_multi_UAP.
  */
-bluetooth_multi_UAP_sptr bluetooth_make_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP);
+bluetooth_multi_UAP_sptr bluetooth_make_multi_UAP(double sample_rate, double center_freq, double squelch_threshold, int LAP);
 
 /*!
  * \brief Sniff Bluetooth packets.
@@ -44,10 +44,10 @@ class bluetooth_multi_UAP : public bluetooth_multi_block
 private:
 	// The friend declaration allows bluetooth_make_multi_UAP to
 	// access the private constructor.
-	friend bluetooth_multi_UAP_sptr bluetooth_make_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP);
+	friend bluetooth_multi_UAP_sptr bluetooth_make_multi_UAP(double sample_rate, double center_freq, double squelch_threshold, int LAP);
 
 	/* constructor */
-	bluetooth_multi_UAP(double sample_rate, double center_freq, int squelch_threshold, int LAP);
+	bluetooth_multi_UAP(double sample_rate, double center_freq, double squelch_threshold, int LAP);
 
     /* remember the time slot of the previous packet for interval computation */
 	int d_previous_slot;
