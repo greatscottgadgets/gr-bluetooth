@@ -68,26 +68,23 @@ bluetooth_multi_UAP::work(int noutput_items,
 	int retval, interval, current_slot, channel;
 	char symbols[history()]; //poor estimate but safe
 
-	//FIXME maybe limit to one channel for real-time performance
-	for (channel = d_low_channel; channel <= d_high_channel; channel++)
-	{
-		int num_symbols = channel_symbols(channel, input_items, symbols, history());
+	/* arbitrarily choosing the lowest available channel */
+	channel = d_low_channel;
+	int num_symbols = channel_symbols(channel, input_items, symbols, history());
 
-		if (num_symbols >= 72 )
-		{
-			/* don't look beyond one slot for ACs */
-			int latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
-			retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
-			if(retval > -1) {
-				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
-				if(packet->get_LAP() == d_LAP) {
-					current_slot = (int) (d_cumulative_count / d_samples_per_slot);
-					interval = current_slot - d_previous_slot;
-					if (d_piconet->UAP_from_header(packet, interval, channel))
-						exit(0);
-					d_previous_slot = current_slot;
-					break;
-				}
+	if (num_symbols >= 72 )
+	{
+		/* don't look beyond one slot for ACs */
+		int latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
+		retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
+		if(retval > -1) {
+			bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
+			if(packet->get_LAP() == d_LAP) {
+				current_slot = (int) (d_cumulative_count / d_samples_per_slot);
+				interval = current_slot - d_previous_slot;
+				if (d_piconet->UAP_from_header(packet, interval, channel))
+					exit(0);
+				d_previous_slot = current_slot;
 			}
 		}
 	}
