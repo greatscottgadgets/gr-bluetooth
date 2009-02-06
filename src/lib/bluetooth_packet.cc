@@ -373,7 +373,7 @@ bool bluetooth_packet::check_ac(char *stream, int LAP)
 		if(grdata[count] != stream[count])
 			biterrors++;
 			//FIXME do error correction instead of detection
-		if(biterrors>=10)
+		if(biterrors>=7)
 		{
 			free(grdata);
 			return false;
