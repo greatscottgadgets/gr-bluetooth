@@ -98,6 +98,7 @@ class my_top_block(gr.top_block):
 				from gnuradio import usrp2
 				src = usrp2.source_32fc(options.interface, options.mac_addr)
 				print "Using RX board id 0x%04X" % (src.daughterboard_id(),)
+				src.set_decim(options.decim)
 				r = src.set_center_freq(options.freq)
 				if r == None:
 					raise SystemExit, "Failed to set USRP2 frequency"
