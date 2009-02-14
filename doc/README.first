@@ -74,7 +74,12 @@ $ btrx.py -r 8M -i samples/keyboard1.cfile -c 1.5M -l 4831dd
 4. UAP/CLK1-6 discovery by time intervals:
 
 $ btrx.py -d 16 -i samples/headset2.cfile -l 24d952
+$ multibtrx.py -d 8 -i samples/headset1.cfile -f 2476.5M -l 24d952
 
 5. Clock (CLK1-27) discovery:
 
 $ btrx.py -d 16 -i samples/headset2.cfile -l 24d952 -n 74
+
+6. Clock (CLK1-27) discovery followed by hopping:
+
+$ multibtrx.py -d 8 -i samples/headset1.cfile -f 2476.5M -l 24d952 -p
