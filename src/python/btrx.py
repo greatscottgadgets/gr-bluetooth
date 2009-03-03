@@ -95,6 +95,9 @@ class my_top_block(gr.top_block):
 		else:
 			input_size = gr.sizeof_gr_complex
 
+		if options.bitstream:
+			input_size = gr.sizeof_char
+
 		# select input source
 		if options.input_file is None:
 			# input from USRP or USRP2
@@ -184,6 +187,7 @@ class my_top_block(gr.top_block):
 			else:
 				# Skip demod if using a bitstream (it's already demodulated)
 				demod = stage3
+				ddc_freq = 1
 
 			# bluetooth decoding
 			if options.lap is None:
