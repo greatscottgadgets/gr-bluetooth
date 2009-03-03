@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 # Copyright 2008, 2009 Dominic Spill, Michael Ossmann
 """
 Bluetooth monitoring utility.
@@ -25,6 +26,8 @@ class my_top_block(gr.top_block):
 						help="number of samples to collect [default=+inf]")
 		parser.add_option("-R", "--rx-subdev-spec", type="subdev", default=(0, 0),
 						help="select USRP Rx side A or B (default=A)")
+		parser.add_option("-b", "--bitstream", action="store_true", default=False,
+						help="input data from file is already demodulated\n(Not compatible with USRP use")
 		parser.add_option("-c", "--ddc", type="string", default="0",
 						help="comma separated list of ddc frequencies (default=0)")
 		parser.add_option("-d", "--decim", type="int", default=32,
@@ -60,6 +63,11 @@ class my_top_block(gr.top_block):
 		if len(args) != 0:
 			parser.print_help()
 			raise SystemExit, 1
+
+		if options.bitstream:
+			if options.input_file is None:
+				print "Error: bitstream processing requires file input\n"
+				raise SystemExit, 1
 
 		# Bluetooth operates at 1 million symbols per second
 		symbol_rate = 1e6
@@ -159,17 +167,23 @@ class my_top_block(gr.top_block):
 		# method should be possible for a large number of contiguous channels.
 		channel = 0
 		for ddc_option in options.ddc.split(","):
-			ddc_freq = int(eng_notation.str_to_num(ddc_option))
+			if options.bitstream is None:
+				ddc_freq = int(eng_notation.str_to_num(ddc_option))
 
-			# digital downconverter
-			# does three things:
-			# 1. converts frequency so channel of interest is centered at 0 Hz
-			# 2. filters out everything outside the channel
-			# 3. downsamples to 2 Msps (2 samples per symbol) or so
-			ddc = gr.freq_xlating_fir_filter_ccf(decimation_rate, channel_filter, -ddc_freq, options.sample_rate)
+				# digital downconverter
+				# does three things:
+				# 1. converts frequency so channel of interest is centered at 0 Hz
+				# 2. filters out everything outside the channel
+				# 3. downsamples to 2 Msps (2 samples per symbol) or so
+				ddc = gr.freq_xlating_fir_filter_ccf(decimation_rate, channel_filter, -ddc_freq, options.sample_rate)
 
-			# GMSK demodulate baseband to bits
-			demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=samples_per_symbol)
+				# GMSK demodulate baseband to bits
+				demod = blks2.gmsk_demod(mu=0.32, samples_per_symbol=samples_per_symbol)
+				self.connect(stage3, ddc)
+				self.connect(ddc, demod)
+			else:
+				# Skip demod if using a bitstream (it's already demodulated)
+				demod = stage3
 
 			# bluetooth decoding
 			if options.lap is None:
@@ -192,8 +206,6 @@ class my_top_block(gr.top_block):
 					dst = bluetooth.sniffer(int(options.lap, 16), int(options.uap, 16))
 		
 			# connect the blocks
-			self.connect(stage3, ddc)
-			self.connect(ddc, demod)
 			self.connect(demod, dst)
 
 if __name__ == '__main__':
