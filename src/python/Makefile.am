@@ -25,10 +25,11 @@
 include $(top_srcdir)/Makefile.common
 
 
-EXTRA_DIST = btrx.py multibtrx.py
+EXTRA_DIST = btrx.py multibtrx.py btrx-demod.py
 
 bin_SCRIPTS =                \
         btrx.py			\
-	multibtrx.py
+	multibtrx.py		\
+	btrx-demod.py
 
 CLEANFILES = *.pyc

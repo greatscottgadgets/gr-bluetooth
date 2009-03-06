@@ -26,7 +26,7 @@ class my_top_block(gr.top_block):
 						help="number of samples to collect [default=+inf]")
 		parser.add_option("-R", "--rx-subdev-spec", type="subdev", default=(0, 0),
 						help="select USRP Rx side A or B (default=A)")
-		parser.add_option("-b", "--bitstream", action="store_true", default=False,
+		parser.add_option("-b", "--bitstream", action="store_true", default=None,
 						help="input data from file is already demodulated\n(Not compatible with USRP use")
 		parser.add_option("-c", "--ddc", type="string", default="0",
 						help="comma separated list of ddc frequencies (default=0)")
