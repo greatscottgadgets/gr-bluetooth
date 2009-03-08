@@ -426,6 +426,7 @@ static void notify_event(BS *bs, int event)
 	struct btevent be;
 	struct piconet *p = bs->bs_current;
 	int rc;
+	uint32_t lap;
 
 	if (!bs->bs_ev_cb)
 		return;
@@ -433,7 +434,8 @@ static void notify_event(BS *bs, int event)
 	assert(p); /* XXX doesn't have to be true, but makes code simpler */
 
 	memset(&be, 0, sizeof(be));
-	memcpy(be.be_lap, &p->p_LAP, sizeof(be.be_lap));
+	lap = htobe32(p->p_LAP);
+	memcpy(be.be_lap, ((uint8_t*) &lap) + 1, sizeof(be.be_lap));
 	be.be_type   = event;
 	be.be_uap    = p->p_UAP;
 	be.be_rclock = p->p_clock;
@@ -1706,17 +1708,19 @@ static void advance_clock(BS *bs, size_t did)
 
 static size_t do_process(BS *bs, uint8_t *data, size_t len)
 {
-	size_t did = len;
+	size_t did, total;
 	uint8_t *p;
 	struct piconet *pi;
 
 	/* find a packet */
 	p = find_packet(bs, data, len);
-	if (!p)
-		goto __out;
+	if (!p) {
+		advance_clock(bs, len);
+		return len;
+	}
 
 	/* fixup clock */
-	did = p - data;
+	total = did = p - data;
 	advance_clock(bs, did);
 
 	assert(did >= 0 && did <= len);
@@ -1727,14 +1731,16 @@ static size_t do_process(BS *bs, uint8_t *data, size_t len)
 		pi->p_last_clock = bs->bs_clock;
 
 	/* process data */
-	p   = process_packet(bs, p, len - did);
-	did = p - data;
+	data   = p;
+	p      = process_packet(bs, data, len - did);
+	did    = p - data;
+	total += did;
 
 	/* fixup clock */
 	pi->p_last_clock = bs->bs_clock;
-__out:
 	advance_clock(bs, did);
-	return did;
+
+	return total;
 }
 
 int bs_process(BS *bs, RXINFO *rx, void *data, size_t len)

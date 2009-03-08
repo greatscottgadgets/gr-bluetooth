@@ -13,7 +13,7 @@ $(NAME).a: $(OBJS)
 	ranlib $(@)
 
 test: $(NAME).so test.o
-	$(CC) $(CFLAGS) -o $(@) test.o -L. -lbs
+	$(CC) $(CFLAGS) -o $(@) test.o $(NAME).a
 
 clean:
 	rm -f $(NAME).so $(NAME).a test *.o *.d

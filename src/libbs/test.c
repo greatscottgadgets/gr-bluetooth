@@ -11,10 +11,6 @@
 
 #include "bs.h"
 
-static struct conf {
-	char	*c_in;
-} _conf;
-
 static char *lap2str(uint8_t *lap)
 {
 	static char crap[24];
@@ -85,21 +81,20 @@ static int btev(struct btevent *be)
 	return 0;
 }
 
-static void pwn(void)
+static void pwn(BS *bs, char *fname)
 {
 	RXINFO rx;
 	void *data;
 	size_t len;
 	int fd;
 	struct stat st;
-
-	BS* bs = bs_new(btev, NULL);
-	if (!bs)
-		err(1, "bs_new()");
+	static int clock = 0;
+	int did;
 
 	memset(&rx, 0, sizeof(rx));
+	rx.rx_clock = clock;
 
-	fd = open(_conf.c_in, O_RDONLY);
+	fd = open(fname, O_RDONLY);
 	if (fd == -1)
 		err(1, "open()");
 
@@ -112,21 +107,19 @@ static void pwn(void)
 	if (data == MAP_FAILED)
 		err(1, "mmap()");
 
-	bs_process(bs, &rx, data, len);
+	did = bs_process(bs, &rx, data, len);
+	clock += did;
 
 	close(fd);
 
 	if (munmap(data, len) == -1)
 		err(1, "munmap()");
-
-	bs_delete(bs);
 }
 
 static void usage(char *prog)
 {
-	printf("Usage: %s <opts>\n"
+	printf("Usage: %s [opts] <files>\n"
 	       "-h\thelp\n"
-	       "-i\t<input file>\n"
 	       , prog);
 	exit(0);
 }
@@ -134,13 +127,14 @@ static void usage(char *prog)
 int main(int argc, char *argv[])
 {
 	int ch;
+	BS* bs;
 
-	while ((ch = getopt(argc, argv, "hi:")) != -1) {
+	bs = bs_new(btev, NULL);
+	if (!bs)
+		err(1, "bs_new()");
+
+	while ((ch = getopt(argc, argv, "h")) != -1) {
 		switch (ch) {
-		case 'i':
-			_conf.c_in = optarg;
-			break;
-
 		case 'h':
 		default:
 			usage(argv[0]);
@@ -148,6 +142,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	pwn();
+	for (; optind < argc; optind++)
+		pwn(bs, argv[optind]);
+
+	bs_delete(bs);
+
 	exit(0);
 }
