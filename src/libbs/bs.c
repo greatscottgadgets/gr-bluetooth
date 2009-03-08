@@ -45,9 +45,9 @@ struct piconet {
         /* number of time slots between first packet and previous packet */
         int 		p_previous_clock_offset;
 
-	int		p_last_clock;
-	int		p_clock;
-	int		p_clock_offset;
+	btclock_t	p_last_clock;
+	btclock_t	p_clock;
+	btclock_t	p_clock_offset;
 
         /* CLK1-27 candidates */
         uint32_t	*p_clock_candidates;
@@ -101,7 +101,7 @@ struct bs_t {
          */
         int		bs_payload_length;
 	uint8_t		bs_payload[MAX_PAYLOAD];
-	int		bs_clock;
+	btclock_t	bs_clock;
 	struct bthdr	bs_hdr;
 	void		*bs_raw;
 	int		bs_rlen;
@@ -481,7 +481,7 @@ static void do_load_piconet(BS *bs, uint32_t lap, int notify)
 		p->p_LAP   = lap;
 		p->p_next  = bs->bs_piconets.p_next;
 		p->p_UAP   = -1;
-		p->p_clock = -1;
+		p->p_clock = (btclock_t) -1;
 		bs->bs_piconets.p_next = p;
 		bs->bs_current = p;
 
@@ -497,7 +497,7 @@ static void load_piconet(BS *bs, uint32_t lap)
 	do_load_piconet(bs, lap, 1);
 }
 
-static void piconet_set_clock(BS *bs, struct piconet *p, int clock)
+static void piconet_set_clock(BS *bs, struct piconet *p, btclock_t clock)
 {
 	p->p_clock	  = clock;
 	p->p_clock_offset = p->p_clock - bs->bs_clock;
@@ -516,7 +516,7 @@ void bs_set_piconet(BS *bs, struct piconet_info *pi)
 	if (pi->pi_uap != -1)
 		p->p_UAP = pi->pi_uap;
 
-	if (pi->pi_clock != -1)
+	if (pi->pi_clock != (btclock_t) -1)
 		piconet_set_clock(bs, p, pi->pi_clock);
 }
 
@@ -1394,7 +1394,7 @@ static void do_uap_clock(BS *bs, uint8_t *data, size_t len)
 	int rc;
 	int num_candidates;
 
-	if (p->p_clock != -1)
+	if (p->p_clock != (btclock_t) -1)
 		return;
 
 	/* number of samples elapsed since previous packet */
@@ -1428,7 +1428,7 @@ static void do_uap_clock(BS *bs, uint8_t *data, size_t len)
 		piconet_set_clock(bs, p, piconet_clock(p));
 		notify_event(bs, EVENT_CLOCK);
 
-		assert(p->p_clock != -1);
+		assert(p->p_clock != (btclock_t) -1);
 	}
 }
 
@@ -1447,7 +1447,7 @@ static void decode_header(BS *bs, uint8_t *data, size_t len)
 
         unfec13(stream, header, 18);
 
-        if (p->p_clock != -1) {
+        if (p->p_clock != (btclock_t) -1) {
                 //FIXME use try_clock() or otherwise merge functions
                 unwhiten(header, unwhitened, p->p_clock, 18, 0);
                 
@@ -1653,7 +1653,7 @@ static uint8_t *process_packet(BS *bs, uint8_t *data, size_t len)
 	 */
 
 	/* XXX is this correct? */
-	if (p->p_clock != -1) {
+	if (p->p_clock != (btclock_t) -1) {
 		p->p_clock = (bs->bs_clock + p->p_clock_offset)
 			     % SEQUENCE_LENGTH;
 	}

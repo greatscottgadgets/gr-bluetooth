@@ -8,6 +8,8 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <stdint.h>
+#include <arpa/inet.h>
+#include <assert.h>
 
 #include "bs.h"
 
@@ -43,13 +45,13 @@ static void btev_uap(struct btevent *be)
 
 static void btev_clock(struct btevent *be)
 {
-	printf("[EVENT CLOCK] %s remote %x local %x\n",
+	printf("[EVENT CLOCK] %s remote %llx local %llx\n",
 	       mac2str(be), be->be_rclock, be->be_lclock);
 }
 
 static void btev_packet(struct btevent *be)
 {
-	printf("[EVENT PACKET] %s remote %x local %x\n",
+	printf("[EVENT PACKET] %s remote %llx local %llx\n",
 	       mac2str(be), be->be_rclock, be->be_lclock);
 }
 
@@ -88,11 +90,9 @@ static void pwn(BS *bs, char *fname)
 	size_t len;
 	int fd;
 	struct stat st;
-	static int clock = 0;
+	static btclock_t clock = 0;
 	int did;
-
-	memset(&rx, 0, sizeof(rx));
-	rx.rx_clock = clock;
+	uint8_t *p;
 
 	fd = open(fname, O_RDONLY);
 	if (fd == -1)
@@ -103,11 +103,26 @@ static void pwn(BS *bs, char *fname)
 
 	len = st.st_size;
 
-	data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
+	p = data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (data == MAP_FAILED)
 		err(1, "mmap()");
 
-	did = bs_process(bs, &rx, data, len);
+	if (*p == 0x02) {
+		uint32_t *clk = (uint32_t *) (p + 1);
+
+		p = (uint8_t*) (clk + 1);
+
+		clock = ntohl(*clk);
+		clock *= 2;
+	}
+
+	assert(clock >= 0);
+
+	memset(&rx, 0, sizeof(rx));
+	rx.rx_clock = clock;
+	rx.rx_chan  = 1;
+
+	did = bs_process(bs, &rx, p, len);
 	clock += did;
 
 	close(fd);

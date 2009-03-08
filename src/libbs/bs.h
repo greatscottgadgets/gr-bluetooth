@@ -25,12 +25,14 @@ struct bthdr {
 			bh_addr:3;
 } __attribute__ ((__packed__));
 
+typedef uint64_t btclock_t;
+
 struct btevent {
 	uint8_t		be_type;
 	uint8_t		be_uap;
 	uint8_t		be_lap[3];
-	uint32_t	be_rclock; /* piconet clock */
-	uint32_t	be_lclock; /* local clock */
+	btclock_t	be_rclock; /* piconet clock */
+	btclock_t	be_lclock; /* local clock */
 	uint32_t	be_flags;
 	struct bthdr	be_hdr;
 	uint32_t	be_len;
@@ -42,14 +44,14 @@ struct btevent {
 
 /* -1 if unknown */
 struct piconet_info {
-	uint8_t	pi_lap[3];
-	int	pi_uap;
-	int	pi_clock;
+	uint8_t		pi_lap[3];
+	int		pi_uap;
+	btclock_t	pi_clock;
 };
 
 typedef struct rxinfo_t {
 	int		rx_chan;
-	int		rx_clock;
+	btclock_t	rx_clock;
 	uint32_t	rx_flags;
 } RXINFO;
 
