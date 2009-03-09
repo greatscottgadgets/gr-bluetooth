@@ -1025,31 +1025,26 @@ static int crc_check(BS* bs, uint8_t *data, int d_length, int clock)
 /* extract UAP by reversing the HEC computation */
 static int UAP_from_hec(uint8_t *packet)
 {                
-        char byte;
-        int count; 
-        uint8_t hec;
-                      
-        hec = *(packet + 2);
-        byte = *(packet + 1);
-                      
-        for(count = 0; count < 10; count++)
-        {             
-                if(2==count)
-                        byte = *packet;
-                      
-                /*Bit 1*/
-                hec ^= ((hec & 0x01)<<1);
-                /*Bit 2*/
-                hec ^= ((hec & 0x01)<<2);
-                /*Bit 5*/
-                hec ^= ((hec & 0x01)<<5);
-                /*Bit 7*/
-                hec ^= ((hec & 0x01)<<7);
+	char byte;
+	int count;
+	uint8_t hec;
 
-                hec = (hec >> 1) | (((hec & 0x01) ^ (byte & 0x01)) << 7);
-                byte >>= 1;
-        }
-        return hec;
+	hec = *(packet + 2);
+	byte = *(packet + 1);
+
+	for(count = 0; count < 10; count++)
+	{
+		if(2==count)
+			byte = *packet;
+
+		/* 0xa6 is xor'd if LSB is 1, else 0x00 (which does nothing) */
+		if(hec & 0x01)
+			hec ^= 0xa6;
+
+		hec = (hec >> 1) | (((hec & 0x01) ^ (byte & 0x01)) << 7);
+		byte >>= 1;
+	}
+	return hec;
 }
 
 /* try a clock value (CLK1-6) to unwhiten packet header,
