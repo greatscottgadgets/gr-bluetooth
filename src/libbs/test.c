@@ -18,7 +18,7 @@ static char *lap2str(uint8_t *lap)
 	static char crap[24];
 
 	snprintf(crap, sizeof(crap), "%.2X:%.2X:%.2X",
-		 lap[2], lap[1], lap[1]);
+		 lap[2], lap[1], lap[0]);
 
 	return crap;
 }
