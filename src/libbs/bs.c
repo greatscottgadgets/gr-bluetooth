@@ -567,7 +567,7 @@ static void unwhiten(uint8_t* input, uint8_t* output, int clock, int length,
 
         for(count = 0; count < length; count++)
         {       
-                /* unwhiten if d_unwhitened, otherwise just copy input to output */
+                /* unwhiten if whitened, otherwise just copy input to output */
                 output[count] = (1) ? input[count] ^ WHITENING_DATA[index] : input[count];
                 index += 1;
                 index %= 127;
@@ -712,7 +712,7 @@ static int decode_payload_header(BS *bs, uint8_t *stream, int clock,
         uint8_t *corrected;
         /* payload header, one bit per char */
         /* the packet may have a payload header of 0, 1, or 2 bytes, reserving 2 */
-        uint8_t d_payload_header[16];
+        uint8_t pldhdr[16];
 
         if(header_bytes == 2)
         {       
@@ -722,13 +722,13 @@ static int decode_payload_header(BS *bs, uint8_t *stream, int clock,
                         corrected = unfec23(stream, 16);
                         if(NULL == corrected)
                                 return 0;
-                        unwhiten(corrected, d_payload_header, clock, 16, 18);
+                        unwhiten(corrected, pldhdr, clock, 16, 18);
                         free(corrected);
                 } else {
-                        unwhiten(stream, d_payload_header, clock, 16, 18);
+                        unwhiten(stream, pldhdr, clock, 16, 18);
                 }
                 /* payload length is payload body length + 2 bytes payload header + 2 bytes CRC */
-                bs->bs_payload_length = air_to_host16(&d_payload_header[3], 10) + 4;
+                bs->bs_payload_length = air_to_host16(&pldhdr[3], 10) + 4;
         } else {
                 if(size < 8)
                         return 0; //FIXME should throw exception
@@ -736,13 +736,13 @@ static int decode_payload_header(BS *bs, uint8_t *stream, int clock,
                         corrected = unfec23(stream, 8);
                         if(NULL == corrected)
                                 return 0;
-                        unwhiten(corrected, d_payload_header, clock, 8, 18);
+                        unwhiten(corrected, pldhdr, clock, 8, 18);
                         free(corrected);
                 } else {
-                        unwhiten(stream, d_payload_header, clock, 8, 18);
+                        unwhiten(stream, pldhdr, clock, 8, 18);
                 }
                 /* payload length is payload body length + 1 byte payload header + 2 bytes CRC */
-                bs->bs_payload_length = air_to_host8(&d_payload_header[3], 5) + 3;
+                bs->bs_payload_length = air_to_host8(&pldhdr[3], 5) + 3;
         }
 #if 0
         d_payload_llid = air_to_host8(&d_payload_header[0], 2);
@@ -974,7 +974,7 @@ static int DM(BS *bs, uint8_t *stream, int clock, uint8_t UAP, int type, int siz
 }
 
 /* check if the packet's CRC is correct for a given clock (CLK1-6) */
-static int crc_check(BS* bs, uint8_t *data, int d_length, int clock)
+static int crc_check(BS* bs, uint8_t *data, int length, int clock)
 {      
         /*
          * return value of 1 represents inconclusive result (default)
@@ -985,39 +985,39 @@ static int crc_check(BS* bs, uint8_t *data, int d_length, int clock)
         int retval = 1;
         /* skip the access code and packet header */
         uint8_t *stream = data + 126;
-	int d_UAP = bs->bs_UAP;
-	int d_packet_type = bs->bs_packet_type;
+	int UAP = bs->bs_UAP;
+	int packet_type = bs->bs_packet_type;
 
-	d_length -= 126; /* XXX check negative, or leave it to lower layers? */
+	length -= 126; /* XXX check negative, or leave it to lower layers? */
        
         switch (bs->bs_packet_type) {       
                 case 2:/* FHS packets are sent with a UAP of 0x00 in the HEC */
-                        retval = fhs(bs, stream, clock, d_UAP, d_length);
+                        retval = fhs(bs, stream, clock, UAP, length);
                         break;
                 
                 case 8:/* DV */
                 case 3:/* DM1 */
                 case 10:/* DM3 */
                 case 14:/* DM5 */
-                        retval = DM(bs, stream, clock, d_UAP, d_packet_type, d_length);
+                        retval = DM(bs, stream, clock, UAP, packet_type, length);
                         break;
                 
                 case 4:/* DH1 */
                 case 11:/* DH3 */
                 case 15:/* DH5 */
-                        retval = DH(bs, stream, clock, d_UAP, d_packet_type, d_length);
+                        retval = DH(bs, stream, clock, UAP, packet_type, length);
                         break;
                 
                 case 7:/* EV3 */
                 case 12:/* EV4 */
                 case 13:/* EV5 */
                         /* Unknown length, need to cycle through it until CRC matches */
-                        retval = EV(bs, stream, clock, d_UAP, d_packet_type, d_length);
+                        retval = EV(bs, stream, clock, UAP, packet_type, length);
                         break;
         }
         /* never return a zero result unless this ia a FHS or DM1 */
         /* any other type could have actually been something else */
-        if(retval == 0 && (d_packet_type < 2 || d_packet_type > 3))
+        if(retval == 0 && (packet_type < 2 || packet_type > 3))
                 return 1;
         return retval;
 }
@@ -1047,8 +1047,8 @@ static int UAP_from_hec(uint8_t *packet)
 	return hec;
 }
 
-/* try a clock value (CLK1-6) to unwhiten packet header,
- * sets resultant d_packet_type and d_UAP, returns UAP.
+/* try a clock value (CLK1-6) to unwhiten packet header;
+ * sets resultant bs_UAP, bs_packet_type, and bs_lower_clock; returns UAP.
  */
 static uint8_t try_clock(BS *bs, uint8_t *data, int clock)
 {       
@@ -1213,7 +1213,7 @@ static void precalc(BS *bs)
         /* populate frequency register bank*/
         for (i = 0; i < CHANNELS; i++)
                         p->p_bank[i] = ((i * 2) % CHANNELS);
-        /* actual frequency is 2402 + d_bank[i] MHz */
+        /* actual frequency is 2402 + p_bank[i] MHz */
 
         /* populate perm_table for all possible inputs */
         for (z = 0; z < 0x20; z++)
@@ -1359,7 +1359,7 @@ static int winnow(struct piconet *p, int offset, char channel)
 /* CLK1-27 */
 static uint32_t piconet_clock(struct piconet *p)
 {
-        /* this is completely bogus unless d_num_candidates == 1 */
+        /* this is completely bogus unless p_num_candidates == 1 */
 	assert(p->p_num_candidates == 1);
         return p->p_clock_candidates[0];
 }
@@ -1470,7 +1470,7 @@ static void decode_header(BS *bs, uint8_t *data, size_t len)
 
                 UAP = UAP_from_hec(unwhitened_air);
 
-                //FIXME throw exception if !d_have_UAP
+                //FIXME throw exception if we don't know the UAP
                 if(UAP != p->p_UAP)
                         continue;
 
@@ -1482,7 +1482,7 @@ static void decode_header(BS *bs, uint8_t *data, size_t len)
 
 		goto __out;
         }
-        //FIXME if we get to here without setting d_packet_type, we are in trouble
+        //FIXME if we get to here without setting bs_packet_type, we are in trouble
 	assert(!"fuck");
 	abort();
 
@@ -1542,10 +1542,10 @@ static int HV(BS *bs, uint8_t *stream, int clock, uint8_t UAP, int type, int siz
 static void decode_payload(BS *bs, uint8_t *data, size_t len)
 {                      
         int size, clock;
-	int d_UAP = bs->bs_current->p_UAP;
-	int d_packet_type = bs->bs_packet_type;
+	int UAP = bs->bs_current->p_UAP;
+	int packet_type = bs->bs_packet_type;
 
-	assert(d_UAP != -1);                      
+	assert(UAP != -1);                      
  
         /* number of symbols remaining after access code and packet header */
         size = len - 126;
@@ -1567,56 +1567,56 @@ static void decode_payload(BS *bs, uint8_t *data, size_t len)
 			/* XXX these are handled badly.  UAP has to be 0?  Also,
 			 * what's their length?
 			 */
-                        fhs(bs, stream, clock, d_UAP, size);
+                        fhs(bs, stream, clock, UAP, size);
                         break;
                 case 3: /* DM1 */
-                        DM(bs, stream, clock, d_UAP, d_packet_type, size);
+                        DM(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 4: /* DH1 */
                         /* assuming DH1 but could be 2-DH1 */
-                        DH(bs, stream, clock, d_UAP, d_packet_type, size);
+                        DH(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 5: /* HV1 */
-                        HV(bs, stream, clock, d_UAP, d_packet_type, size);
+                        HV(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 6: /* HV2 */
-                        HV(bs, stream, clock, d_UAP, d_packet_type, size);
+                        HV(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 7: /* EV3 */
                         /* assuming EV3 but could be HV3 or 3-EV3 */
-                        if(!EV(bs, stream, clock, d_UAP, d_packet_type, size)) {
-                                HV(bs, stream, clock, d_UAP, d_packet_type, size);
+                        if(!EV(bs, stream, clock, UAP, packet_type, size)) {
+                                HV(bs, stream, clock, UAP, packet_type, size);
                         }
                         break;
                 case 8: /* DV */
                         /* assuming DV but could be 3-DH1 */
-                        DM(bs, stream, clock, d_UAP, d_packet_type, size);
+                        DM(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 9: /* AUX1 */
                         /* don't know how to decode */
                         break;
                 case 10: /* DM3 */
                         /* assuming DM3 but could be 2-DH3 */
-                        DM(bs, stream, clock, d_UAP, d_packet_type, size);
+                        DM(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 11: /* DH3 */
                         /* assuming DH3 but could be 3-DH3 */
-                        DH(bs, stream, clock, d_UAP, d_packet_type, size);
+                        DH(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 12: /* EV4 */
                         /* assuming EV4 but could be 2-EV5 */
-                        EV(bs, stream, clock, d_UAP, d_packet_type, size);
+                        EV(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 13: /* EV5 */
                         /* assuming EV5 but could be 3-EV5 */
-                        EV(bs, stream, clock, d_UAP, d_packet_type, size);
+                        EV(bs, stream, clock, UAP, packet_type, size);
                 case 14: /* DM5 */
                         /* assuming DM5 but could be 2-DH5 */
-                        DM(bs, stream, clock, d_UAP, d_packet_type, size);
+                        DM(bs, stream, clock, UAP, packet_type, size);
                         break;
                 case 15: /* DH5 */
                         /* assuming DH5 but could be 3-DH5 */
-                        DH(bs, stream, clock, d_UAP, d_packet_type, size);
+                        DH(bs, stream, clock, UAP, packet_type, size);
                         break;
         }
 }

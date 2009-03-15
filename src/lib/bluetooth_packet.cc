@@ -435,7 +435,7 @@ void bluetooth_packet::unwhiten(char* input, char* output, int clock, int length
 
 	for(count = 0; count < length; count++)
 	{
-		/* unwhiten if d_unwhitened, otherwise just copy input to output */
+		/* unwhiten if d_whitened, otherwise just copy input to output */
 		output[count] = (d_whitened) ? input[count] ^ WHITENING_DATA[index] : input[count];
 		index += 1;
 		index %= 127;
