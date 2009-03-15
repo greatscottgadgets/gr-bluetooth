@@ -426,7 +426,6 @@ static void notify_event(BS *bs, int event)
 	struct btevent be;
 	struct piconet *p = bs->bs_current;
 	int rc;
-	uint32_t lap;
 
 	if (!bs->bs_ev_cb)
 		return;
@@ -434,8 +433,7 @@ static void notify_event(BS *bs, int event)
 	assert(p); /* XXX doesn't have to be true, but makes code simpler */
 
 	memset(&be, 0, sizeof(be));
-	lap = htobe32(p->p_LAP);
-	memcpy(be.be_lap, ((uint8_t*) &lap) + 1, sizeof(be.be_lap));
+	memcpy(be.be_lap, &p->p_LAP, sizeof(be.be_lap));
 	be.be_type   = event;
 	be.be_uap    = p->p_UAP;
 	be.be_rclock = p->p_clock;
