@@ -90,7 +90,7 @@ static void pwn(BS *bs, char *fname)
 	size_t len;
 	int fd;
 	struct stat st;
-	static btclock_t clock = 0;
+	static btclock_t clock = 0; /* local clock, counts microseconds */
 	int did;
 	uint8_t *p;
 

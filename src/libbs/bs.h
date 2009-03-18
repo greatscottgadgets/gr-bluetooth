@@ -9,7 +9,7 @@ extern "C" {
 
 /* XXX when to notify about hopping sequence? */
 enum {
-	EVENT_LAP	= 1,
+	EVENT_LAP	= 1,	/* first observation of a new LAP */
 	EVENT_UAP,
 	EVENT_CLOCK,
 	EVENT_PACKET, /* XXX send past packets too */
@@ -31,8 +31,8 @@ struct btevent {
 	uint8_t		be_type;
 	uint8_t		be_uap;
 	uint8_t		be_lap[3];
-	btclock_t	be_rclock; /* piconet clock */
-	btclock_t	be_lclock; /* local clock */
+	btclock_t	be_rclock; /* piconet CLK1-27, counts time slots (1600/s) */
+	btclock_t	be_lclock; /* local clock, counts microseconds */
 	uint32_t	be_flags;
 	struct bthdr	be_hdr;
 	uint32_t	be_len;
@@ -46,18 +46,18 @@ struct btevent {
 struct piconet_info {
 	uint8_t		pi_lap[3];
 	int		pi_uap;
-	btclock_t	pi_clock;
+	btclock_t	pi_clock; /* piconet CLK1-27, counts time slots (1600/s) */
 };
 
 typedef struct rxinfo_t {
 	int		rx_chan;
-	btclock_t	rx_clock;
+	btclock_t	rx_clock; /* local clock, counts microseconds */
 	uint32_t	rx_flags;
 } RXINFO;
 
 typedef struct bs_t BS;
 
-typedef int (*evcb_t)(struct btevent *be);
+typedef int (*evcb_t)(struct btevent *be);	/* event callback */
 
 BS	*bs_new(evcb_t cb, void *priv);
 void	bs_delete(BS *bs);

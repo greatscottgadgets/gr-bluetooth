@@ -45,8 +45,16 @@ struct piconet {
         /* number of time slots between first packet and previous packet */
         int 		p_previous_clock_offset;
 
+	/* local clock (in microseconds) at time of first packet */
+	btclock_t	p_first_clock;
+
+	/* local clock (in microseconds) at time of previous packet */
 	btclock_t	p_last_clock;
+
+	/* piconet CLK1-27, counts time slots (1600/s) */
 	btclock_t	p_clock;
+
+	/* local clock value when remote CLK1-27 was 0 */
 	btclock_t	p_clock_offset;
 
         /* CLK1-27 candidates */
@@ -90,6 +98,8 @@ struct bs_t {
 
         /* packet type */
         int		bs_packet_type;
+
+	/* piconet CLK1-6 */
         uint8_t		bs_lower_clock;
 
         /* payload length: the total length of the asynchronous data.
@@ -101,7 +111,10 @@ struct bs_t {
          */
         int		bs_payload_length;
 	uint8_t		bs_payload[MAX_PAYLOAD];
+
+	/* local clock, counts microseconds */
 	btclock_t	bs_clock;
+
 	struct bthdr	bs_hdr;
 	void		*bs_raw;
 	int		bs_rlen;
@@ -495,10 +508,11 @@ static void load_piconet(BS *bs, uint32_t lap)
 	do_load_piconet(bs, lap, 1);
 }
 
-static void piconet_set_clock(BS *bs, struct piconet *p, btclock_t clock)
+static void piconet_set_clock(struct piconet *p, btclock_t clock)
 {
+	assert(clock < SEQUENCE_LENGTH);
 	p->p_clock	  = clock;
-	p->p_clock_offset = p->p_clock - bs->bs_clock;
+	p->p_clock_offset = p->p_first_clock - (p->p_clock * 625);
 }
 
 void bs_set_piconet(BS *bs, struct piconet_info *pi)
@@ -515,7 +529,7 @@ void bs_set_piconet(BS *bs, struct piconet_info *pi)
 		p->p_UAP = pi->pi_uap;
 
 	if (pi->pi_clock != (btclock_t) -1)
-		piconet_set_clock(bs, p, pi->pi_clock);
+		piconet_set_clock(p, pi->pi_clock);
 }
 
 static void *find_packet(BS *bs, void *data, size_t len)
@@ -1066,7 +1080,7 @@ static uint8_t try_clock(BS *bs, uint8_t *data, int clock)
 
         bs->bs_UAP = UAP_from_hec(unwhitened_air);
         bs->bs_packet_type = air_to_host8((uint8_t*) &unwhitened[3], 4);
-        bs->bs_lower_clock = clock & 0xff;
+        bs->bs_lower_clock = clock & 0x3f;
 
         return bs->bs_UAP;
 }
@@ -1418,7 +1432,7 @@ static void do_uap_clock(BS *bs, uint8_t *data, size_t len)
 	if (num_candidates == 0)
 		reset_piconet(p);
 	else if (num_candidates == 1) {
-		piconet_set_clock(bs, p, piconet_clock(p));
+		piconet_set_clock(p, piconet_clock(p));
 		notify_event(bs, EVENT_CLOCK);
 
 		assert(p->p_clock != (btclock_t) -1);
@@ -1452,7 +1466,7 @@ static void decode_header(BS *bs, uint8_t *data, size_t len)
                 if (UAP != p->p_UAP)
                         printf("bad HEC! ");
 
-		count = p->p_clock & 0xff;
+		count = p->p_clock & 0x3f;
 		goto __out;
         }
 
@@ -1486,7 +1500,7 @@ static void decode_header(BS *bs, uint8_t *data, size_t len)
 
 __out:
 	bs->bs_packet_type = air_to_host8(&unwhitened[3], 4);
-	bs->bs_lower_clock = count & 0xff;
+	bs->bs_lower_clock = count & 0x3f;
 
 	/* XXX copy header */
 	bs->bs_hdr.bh_addr = air_to_host8(unwhitened, 3);
@@ -1645,9 +1659,8 @@ static uint8_t *process_packet(BS *bs, uint8_t *data, size_t len)
 	 * for that.  If we have the clock though, it makes our lives easier.
 	 */
 
-	/* XXX is this correct? */
 	if (p->p_clock != (btclock_t) -1) {
-		p->p_clock = (bs->bs_clock + p->p_clock_offset)
+		p->p_clock = ((bs->bs_clock - p->p_clock_offset + 312) / 625)
 			     % SEQUENCE_LENGTH;
 	}
 
@@ -1731,6 +1744,8 @@ static size_t do_process(BS *bs, uint8_t *data, size_t len)
 
 	/* fixup clock */
 	pi->p_last_clock = bs->bs_clock;
+	if(!pi->p_first_clock)
+		pi->p_first_clock = bs->bs_clock;
 	advance_clock(bs, did);
 
 	return total;
@@ -1744,7 +1759,7 @@ int bs_process(BS *bs, RXINFO *rx, void *data, size_t len)
 	bs->bs_rx = rx;
 
 	/* XXX can be called multiple times, when sniffing all chans */
-	assert(rx->rx_clock >= bs->bs_clock); /* XXX handle wrap */
+	assert(rx->rx_clock >= bs->bs_clock);
 	bs->bs_clock = rx->rx_clock;
 
 	/* XXX buffer data so we capture shit across call boundaries */
