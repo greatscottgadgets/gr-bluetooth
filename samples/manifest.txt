@@ -1,3 +1,9 @@
+channel37.dem:
+
+	One channel demodulated.  Headset and cell phone during call.
+	Extracted from noalias2.sfile (too big for svn).
+	Example usage: btrx.py -bi samples/channel37.dem
+
 headset1.cfile:
 
 	8 MHz bandwidth (8 Msps) centered at 2476.5 MHz.  Headset and cell phone during call.
