@@ -30,7 +30,7 @@ clock_recovery.patch:
 usrp2_alias.patch:
 
 	This is a USRP2 FPGA patch to enable intentional aliasing.  It is a quick
-	hack that probably only works ws intended ith a decimation rate of 4.  The
+	hack that probably only works as intended with a decimation rate of 4.  The
 	patch is against svn revision 10194, a beta USRP2 release.  For FPGA
 	development environment information see:
 	http://gnuradio.org/trac/wiki/USRP2GenFAQ
