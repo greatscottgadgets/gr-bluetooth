@@ -1,0 +1,6 @@
+CommandLine
+/home/dominicgs/CS/FPGA/Xilinx/10.1/ISE/bin/lin/unwrapped/ngdbuild -ise /home/dominicgs/CS/Bluetooth/gnuradio/trunk/usrp2/fpga/top/u2_fpga/u2_fpga.ise -intstyle ise -dd _ngo -sd ../../coregen/ -nt timestamp -i -p xc3s1500-fg456-5 MAC_top.ngc MAC_top.ngd
+s
+FormatString
+ngdbuild [-p <partname>] {-sd <source_dir>} {-l <library>} [-ur <rules_file[.urf]>] [-dd <output_dir>] [-r] [-a] [-u] [-nt timestamp|on|off] [-uc <ucf_file[.ucf]>] [-aul] [-bm <bmm_file[.bmm]>] [-i] [-modular initial|module|assemble] [-intstyle ise|xflow|silent] [-quiet] [-verbose] [-active <active_module_name>] [-pimpath <pimpath>] {-use_pim <pim_module_name>} [-insert_keep_hierarchy] [--forcengd] {--n <ngl_file>} {--sl <library>} [--global_opt] [--script <tcl_file>] [--incremental] [--csttrans] <design_name> [<ngd_file[.ngd]>]
+s

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<document OS="lin" product="ISE" version="10.1">
+
+  <!--The data in this file is primarily intended for consumption by Xilinx tools.
+    The structure and the elements are likely to change over the next few releases.
+    This means code written to parse this file will need to be revisited each subsequent release.-->
+
+  <application stringID="NgdBuild" timeStamp="Sun Mar 22 08:13:59 2009">
+    <task stringID="NGDBUILD_REPORT">
+      <section stringID="NGDBUILD_DESIGN_SUMMARY">
+        <item dataType="int" stringID="NGDBUILD_NUM_ERRORS" value="392"/>
+        <item dataType="int" stringID="NGDBUILD_FILTERED_WARNINGS" value="0"/>
+        <item dataType="int" stringID="NGDBUILD_NUM_WARNINGS" value="5"/>
+        <item dataType="int" stringID="NGDBUILD_FILTERED_INFOS" value="0"/>
+        <item dataType="int" stringID="NGDBUILD_NUM_INFOS" value="0"/>
+      </section>
+      <section stringID="NGDBUILD_CORE_SUMMARY">
+        <item COUNT="1" stringID="NGDBUILD_CORE" value="fifo_generator_v4_3, Xilinx CORE Generator 10.1.02"/>
+        <section stringID="NGDBUILD_CORE_GENERATION_SUMMARY">
+          <section stringID="NGDBUILD_CORE_INSTANCES">
+            <scope stringID="NGDBUILD_CORE_INSTANCE" value="fifo_xlnx_2Kx36_2clk">
+              <item stringID="NGDBUILD_CORE_INFO" type="fifo_generator_v4_3" value="fifo_xlnx_2Kx36_2clk"/>
+              <item c_common_clock="0" c_data_count_width="11" c_din_width="36" c_dout_rst_val="0" c_dout_width="36" c_full_flags_rst_val="1" c_has_almost_empty="0" c_has_almost_full="0" c_has_data_count="0" c_has_int_clk="0" c_has_overflow="0" c_has_rd_data_count="1" c_has_rst="1" c_has_srst="0" c_has_underflow="0" c_has_valid="0" c_has_wr_ack="0" c_has_wr_data_count="1" c_implementation_type="2" c_memory_type="1" c_msgon_val="1" c_overflow_low="0" c_preload_latency="0" c_preload_regs="1" c_prim_fifo_type="2kx18" c_prog_empty_thresh_assert_val="4" c_prog_empty_thresh_negate_val="5" c_prog_empty_type="0" c_prog_full_thresh_assert_val="2047" c_prog_full_thresh_negate_val="2046" c_prog_full_type="0" c_rd_data_count_width="11" c_rd_depth="2048" c_rd_freq="1" c_rd_pntr_width="11" c_underflow_low="0" c_use_dout_rst="0" c_use_ecc="0" c_use_embedded_reg="0" c_use_fwft_data_count="0" c_valid_low="0" c_wr_ack_low="0" c_wr_data_count_width="11" c_wr_depth="2048" c_wr_freq="1" c_wr_pntr_width="11" component_name="fifo_xlnx_2Kx36_2clk" stringID="NGDBUILD_CORE_PARAMETERS" value="fifo_xlnx_2Kx36_2clk"/>
+            </scope>
+          </section>
+        </section>
+      </section>
+    </task>
+  </application>
+
+</document>
