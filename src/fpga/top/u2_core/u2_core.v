@@ -605,21 +605,23 @@ module u2_core
       .sample(sample_rx), .run(run_rx_d1), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
 
-   tx_control #(.FIFOSIZE(10)) tx_control
-     (.clk(dsp_clk), .rst(dsp_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .master_time(master_time),.underrun(underrun),
-      .rd_dat_i(rd1_dat), .rd_sop_i(rd1_sop), .rd_eop_i(rd1_eop),
-      .rd_read_o(rd1_read), .rd_done_o(rd1_done), .rd_error_o(rd1_error),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
-      .fifo_occupied(dsp_tx_occ),.fifo_full(dsp_tx_full),.fifo_empty(dsp_tx_empty),
-      .debug(debug_txc) );
+// We don't need tx because we only need to RX for now (frees up space on the fpga)
+
+//    tx_control #(.FIFOSIZE(10)) tx_control
+//      (.clk(dsp_clk), .rst(dsp_rst),
+//       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+//       .master_time(master_time),.underrun(underrun),
+//       .rd_dat_i(rd1_dat), .rd_sop_i(rd1_sop), .rd_eop_i(rd1_eop),
+//       .rd_read_o(rd1_read), .rd_done_o(rd1_done), .rd_error_o(rd1_error),
+//       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
+//       .fifo_occupied(dsp_tx_occ),.fifo_full(dsp_tx_full),.fifo_empty(dsp_tx_empty),
+//       .debug(debug_txc) );
    
-   dsp_core_tx dsp_core_tx
-     (.clk(dsp_clk),.rst(dsp_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .dac_a(dac_a),.dac_b(dac_b),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx), .debug(debug_tx_dsp) );
+//    dsp_core_tx dsp_core_tx
+//      (.clk(dsp_clk),.rst(dsp_rst),
+//       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+//       .dac_a(dac_a),.dac_b(dac_b),
+//       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx), .debug(debug_tx_dsp) );
 
    assign dsp_rst = wb_rst;
 
