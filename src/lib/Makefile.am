@@ -60,7 +60,7 @@ ourpython_PYTHON =			\
 ourlib_LTLIBRARIES = _bluetooth.la
 
 # These are the source files that go into the shared library
-_bluetooth_la_SOURCES = 			\
+_bluetooth_la_SOURCES = 		\
 	bluetooth.cc			\
 	bluetooth_piconet.cc		\
 	bluetooth_packet.cc		\
@@ -69,12 +69,13 @@ _bluetooth_la_SOURCES = 			\
 	bluetooth_hopper.cc		\
 	bluetooth_block.cc		\
 	bluetooth_multi_block.cc	\
-	bluetooth_multi_LAP.cc	\
-	bluetooth_multi_UAP.cc	\
+	bluetooth_multi_LAP.cc		\
+	bluetooth_multi_UAP.cc		\
 	bluetooth_multi_hopper.cc	\
 	bluetooth_sniffer.cc		\
 	bluetooth_tun.cc		\
-	tun.cc
+	tun.cc				\
+	bluetooth_dongle_source.cc
 
 # magic flags
 _bluetooth_la_LDFLAGS = $(NO_UNDEFINED) -module -avoid-version
@@ -97,12 +98,13 @@ grinclude_HEADERS =			\
 	bluetooth_hopper.h		\
 	bluetooth_block.h		\
 	bluetooth_multi_block.h		\
-	bluetooth_multi_LAP.h	\
-	bluetooth_multi_UAP.h	\
+	bluetooth_multi_LAP.h		\
+	bluetooth_multi_UAP.h		\
 	bluetooth_multi_hopper.h	\
 	bluetooth_sniffer.h		\
-	bluetooth_tun.h		\
-	tun.h
+	bluetooth_tun.h			\
+	tun.h				\
+	bluetooth_dongle_source.h
 
 
 # These swig headers get installed in ${prefix}/include/gnuradio/swig

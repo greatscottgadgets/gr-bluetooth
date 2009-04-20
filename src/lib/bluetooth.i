@@ -132,3 +132,17 @@ class bluetooth_tun : public gr_sync_block
 private:
   bluetooth_tun (int x, int channel);
 };
+
+/*
+ * Dongle source module to receive data from a dongle.
+ */
+GR_SWIG_BLOCK_MAGIC(bluetooth,dongle_source);
+
+bluetooth_dongle_source_sptr bluetooth_make_dongle_source (int device);
+
+class bluetooth_dongle_source : public gr_sync_block
+{
+private:
+  bluetooth_dongle_source (int device);
+};
+
