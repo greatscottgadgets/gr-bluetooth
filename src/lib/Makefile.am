@@ -75,7 +75,7 @@ _bluetooth_la_SOURCES = 		\
 	bluetooth_sniffer.cc		\
 	bluetooth_tun.cc		\
 	tun.cc				\
-	bluetooth_dongle_source.cc
+	bluetooth_bluecore_source.cc
 
 # magic flags
 _bluetooth_la_LDFLAGS = $(NO_UNDEFINED) -module -avoid-version

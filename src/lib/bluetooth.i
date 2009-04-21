@@ -16,6 +16,7 @@
 #include "bluetooth_hopper.h"
 #include "bluetooth_block.h"
 #include "bluetooth_tun.h"
+#include "bluetooth_dongle_source.h"
 #include <stdexcept>
 %}
 
@@ -134,15 +135,15 @@ private:
 };
 
 /*
- * Dongle source module to receive data from a dongle.
+ * Dongle source module to receive data from a bluecore.
  */
-GR_SWIG_BLOCK_MAGIC(bluetooth,dongle_source);
+GR_SWIG_BLOCK_MAGIC(bluetooth,bluecore_source);
 
-bluetooth_dongle_source_sptr bluetooth_make_dongle_source (int device);
+bluetooth_bluecore_source_sptr bluetooth_make_bluecore_source (int device);
 
-class bluetooth_dongle_source : public gr_sync_block
+class bluetooth_bluecore_source : public gr_sync_block
 {
 private:
-  bluetooth_dongle_source (int device);
+  bluetooth_bluecore_source (int device);
 };
 
