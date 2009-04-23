@@ -16,7 +16,7 @@
 #include "bluetooth_hopper.h"
 #include "bluetooth_block.h"
 #include "bluetooth_tun.h"
-#include "bluetooth_dongle_source.h"
+#include "bluetooth_bluecore_source.h"
 #include <stdexcept>
 %}
 
