@@ -24,11 +24,11 @@
 #include "config.h"
 #endif
 
-#include <bluetooth_dongle_source.h>
+#include <bluetooth_bluecore_source.h>
 #include <gr_io_signature.h>
 
 
-bluetooth_dongle_source::bluetooth_dongle_source (int device)
+bluetooth_bluecore_source::bluetooth_bluecore_source (char* device)
   : gr_sync_block ("file_source",
 		   gr_make_io_signature (0, 0, 0),
 		   gr_make_io_signature (1, 1, itemsize)))
@@ -42,14 +42,16 @@ bluetooth_dongle_source::bluetooth_dongle_source (int device)
 }
 
 // public constructor that returns a shared_ptr
-bluetooth_dongle_source_sptr
-gr_make_file_source (int device)
+// FIXME: static?
+bluetooth_bluecore_source_sptr
+gr_make_file_source (char* device)
 {
-  return bluetooth_dongle_source_sptr (new bluetooth_dongle_source (device));
+  return bluetooth_bluecore_source_sptr (new bluetooth_bluecore_source (device));
 }
 
-bluetooth_dongle_source::~bluetooth_dongle_source ()
+bluetooth_bluecore_source::~bluetooth_bluecore_source ()
 {
+  
   /* TODO
    * Close the device if you need to
    * Don't expect this to be run, there's little chance that scripts end properly
@@ -57,7 +59,7 @@ bluetooth_dongle_source::~bluetooth_dongle_source ()
 }
 
 int 
-bluetooth_dongle_source::work (int noutput_items,
+bluetooth_bluecore_source::work (int noutput_items,
 		      gr_vector_const_void_star &input_items,
 		      gr_vector_void_star &output_items)
 {
