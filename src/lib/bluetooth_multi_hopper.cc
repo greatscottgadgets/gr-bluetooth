@@ -186,11 +186,11 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, ch
 					packet->print();
 					if(d_tun) {
 						if(packet->got_payload()) {
-							int payload_length = packet->get_payload_length();
+							/* include 3 bytes for packet header */
+							int length = packet->get_payload_length() + 3;
 							char *data = packet->tun_format();
 							int addr = (packet->get_UAP() << 24) | packet->get_LAP();
-							int ether_type = ETHER_TYPE | packet->get_type();
-							write_interface(d_tunfd, (unsigned char *)data, payload_length, 0, addr, ether_type);
+							write_interface(d_tunfd, (unsigned char *)data, length, 0, addr, ETHER_TYPE);
 						}
 					}
 				}

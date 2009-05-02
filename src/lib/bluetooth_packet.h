@@ -99,7 +99,7 @@ private:
 	/* flow field of payload header (1 bit) */
 	uint8_t d_payload_flow;
 
-	/* payload length: the total length of the asynchronous data.
+	/* payload length: the total length of the asynchronous data in bytes.
 	 * This does not include the length of synchronous data, such as the voice
 	 * field of a DV packet.
 	 * If there is a payload header, this payload length is payload body length

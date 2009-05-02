@@ -910,7 +910,9 @@ void bluetooth_packet::decode_header()
 		if (UAP != d_UAP)
 			printf("bad HEC! ");
 		d_packet_type = air_to_host8(&unwhitened[3], 4);
+		unwhiten(header, d_packet_header, d_clock, 18, 0); //FIXME redundant
 	}
+	//FIXME why continue if we now have a good HEC?
 	
 	/* we don't have the clock, so we try every possible CLK1-6 value until we find the most likely LT_ADDR */
 	for(count = 0; count < 64; count++)
@@ -1027,11 +1029,21 @@ void bluetooth_packet::print()
 
 char *bluetooth_packet::tun_format()
 {
-	char *tun_format = (char *) malloc(d_payload_length);
+	/* include 3 bytes for packet header */
+	int length = 3 + d_payload_length;
+	char *tun_format = (char *) malloc(length);
 	int i;
 
+	/* packet header modified to fit byte boundaries */
+	/* lt_addr and type */
+	tun_format[0] = (char) air_to_host8(&d_packet_header[0], 7);
+	/* flags */
+	tun_format[1] = (char) air_to_host8(&d_packet_header[7], 3);
+	/* HEC */
+	tun_format[2] = (char) air_to_host8(&d_packet_header[10], 8);
+
 	for(i=0;i<d_payload_length;i++)
-		tun_format[i] = (char) air_to_host8(&d_payload[i*8], 8);
+		tun_format[i+3] = (char) air_to_host8(&d_payload[i*8], 8);
 
 	return tun_format;
 }
