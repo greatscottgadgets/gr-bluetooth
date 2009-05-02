@@ -100,9 +100,9 @@ slice(float x)
 /* M&M clock recovery, adapted from gr_clock_recovery_mm_ff */
 int bluetooth_multi_block::mm_cr(const float *in, int ninput_items, float *out, int noutput_items)
 {
-	int   ii = 0;             // input index
-	int   oo = 0;             // output index
-	int   ni = ninput_items - d_interp->ntaps(); // don't use more input than this
+	unsigned int ii = 0; /* input index */
+	unsigned int oo = 0; /* output index */
+	unsigned int ni = ninput_items - d_interp->ntaps(); /* max input */
 	float mm_val;
 
 	while (oo < noutput_items && ii < ni)
@@ -119,6 +119,8 @@ int bluetooth_multi_block::mm_cr(const float *in, int ninput_items, float *out, 
 		ii += (int) floor(d_mu);
 		d_mu -= floor(d_mu);
 		oo++;
+		//FIXME debugging:
+		if (ii > 32768) printf("%d, %d, %d, %d\n", oo, noutput_items, ii, ni);
 	}
 
 	/* return number of output items produced */
