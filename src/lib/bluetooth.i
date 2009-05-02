@@ -137,6 +137,7 @@ private:
 /*
  * Dongle source module to receive data from a bluecore.
  */
+/*
 GR_SWIG_BLOCK_MAGIC(bluetooth,bluecore_source);
 
 bluetooth_bluecore_source_sptr bluetooth_make_bluecore_source (int device);
@@ -146,4 +147,4 @@ class bluetooth_bluecore_source : public gr_sync_block
 private:
   bluetooth_bluecore_source (int device);
 };
-
+*/
