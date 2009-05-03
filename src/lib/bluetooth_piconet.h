@@ -54,6 +54,12 @@ private:
 	/* true if using a particular aliased receiver implementation */
 	bool d_aliased;
 
+	/* using adaptive frequency hopping (AFH) */
+	bool d_afh;
+
+	/* observed pattern that looks like AFH */
+	bool d_looks_like_afh;
+
 	/* lower address part (of master's BD_ADDR) */
 	uint32_t d_LAP;
 
@@ -168,6 +174,9 @@ public:
 
 	/* return the observable channel (26-50) for a given channel (0-78) */
 	char aliased_channel(char channel);
+
+	/* reset UAP/clock discovery */
+	void reset();
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

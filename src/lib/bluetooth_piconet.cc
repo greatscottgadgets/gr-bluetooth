@@ -48,6 +48,8 @@ bluetooth_piconet::bluetooth_piconet(uint32_t LAP)
 	d_previous_clock_offset = 0;
 	d_packets_observed = 0;
 	d_hop_reversal_inited = false;
+	d_afh = false;
+	d_looks_like_afh = false;
 }
 
 /* destructor */
@@ -194,10 +196,15 @@ void bluetooth_piconet::gen_hops()
 						perm_in = ((x + a) % 32) ^ d_b;
 						/* y1 (clock bit 1) = 0, y2 = 0 */
 						perm_out = fast_perm(perm_in, c, d);
-						d_sequence[index++] = d_bank[(perm_out + d_e + f) % CHANNELS];
-						/* y1 (clock bit 1) = 1, y2 = 32 */
-						perm_out = fast_perm(perm_in, c_flipped, d);
-						d_sequence[index++] = d_bank[(perm_out + d_e + f + 32) % CHANNELS];
+						d_sequence[index] = d_bank[(perm_out + d_e + f) % CHANNELS];
+						if (d_afh) {
+							d_sequence[index + 1] = d_sequence[index];
+						} else {
+							/* y1 (clock bit 1) = 1, y2 = 32 */
+							perm_out = fast_perm(perm_in, c_flipped, d);
+							d_sequence[index + 1] = d_bank[(perm_out + d_e + f + 32) % CHANNELS];
+						}
+						index += 2;
 					}
 					f += 16;
 				}
@@ -283,9 +290,28 @@ int bluetooth_piconet::winnow(int offset, char channel)
 int bluetooth_piconet::winnow()
 {
 	int new_count = d_num_candidates;
+	int index, last_index;
+	uint8_t channel, last_channel;
 
-	for (; d_winnowed < d_packets_observed; d_winnowed++)
-		new_count = winnow(d_pattern_indices[d_winnowed], d_pattern_channels[d_winnowed]);
+	for (; d_winnowed < d_packets_observed; d_winnowed++) {
+		index = d_pattern_indices[d_winnowed];
+		channel = d_pattern_channels[d_winnowed];
+		new_count = winnow(index, channel);
+
+		if (d_packets_observed > 0) {
+			last_index = d_pattern_indices[d_winnowed - 1];
+			last_channel = d_pattern_channels[d_winnowed - 1];
+			/*
+			 * Two packets in a row on the same channel should only
+			 * happen if adaptive frequency hopping is in use.
+			 * There can be false positives, though, especially if
+			 * there is aliasing.
+			 */
+			if (!d_looks_like_afh && (index == last_index + 1)
+					&& (channel == last_channel))
+				d_looks_like_afh = true;
+		}
+	}
 	
 	return new_count;
 }
@@ -399,4 +425,24 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet, int interv
 char bluetooth_piconet::aliased_channel(char channel)
 {
 		return ((channel + 24) % ALIASED_CHANNELS) + 26;
+}
+
+/* reset UAP/clock discovery */
+void bluetooth_piconet::reset()
+{
+	if(d_hop_reversal_inited) {
+		free(d_clock_candidates);
+		free(d_sequence);
+	}
+	d_got_first_packet = false;
+	d_previous_clock_offset = 0;
+	d_packets_observed = 0;
+	d_hop_reversal_inited = false;
+
+	/*
+	 * If we have recently observed two packets in a row, try AFH next
+	 * time.  If not, don't.
+	 */
+	d_afh = d_looks_like_afh;
+	d_looks_like_afh = false;
 }

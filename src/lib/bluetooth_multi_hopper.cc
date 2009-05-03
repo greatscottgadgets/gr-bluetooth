@@ -148,7 +148,7 @@ bluetooth_multi_hopper::work(int noutput_items,
 	}
 	d_cumulative_count += (int) d_samples_per_slot;
 
-    /* 
+    	/* 
 	 * The runtime system wants to know how many output items we produced, assuming that this is equal
 	 * to the number of input items consumed.  We tell it that we produced/consumed one time slot of
 	 * input items so that our next run starts one slot later.
@@ -203,8 +203,7 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, ch
 void bluetooth_multi_hopper::reset()
 {
 	printf("Failed to acquire clock. starting over . . .\n\n");
-	//FIXME maybe ought to just reset the existing piconet
-	d_piconet = bluetooth_make_piconet(d_LAP);
+	d_piconet->reset();
 	d_first_packet_slot = -1;
 	d_have_clock6 = false;
 }
