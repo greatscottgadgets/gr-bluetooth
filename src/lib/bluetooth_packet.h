@@ -110,8 +110,11 @@ private:
 
 	/* The actual payload data in host format
 	 * Ready for passing to wireshark
+	 * 2744 is the maximum length, but most packets are shorter.
+	 * Dynamic allocation would probably be better in the long run but is
+	 * problematic in the short run.
 	 */
-	char *d_payload;
+	char d_payload[2744];
 
 	/* CRC of packet payload */
 	uint16_t d_payload_crc;
