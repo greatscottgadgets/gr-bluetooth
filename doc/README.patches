@@ -34,3 +34,12 @@ usrp2_alias.patch:
 	patch is against svn revision 10194, a beta USRP2 release.  For FPGA
 	development environment information see:
 	http://gnuradio.org/trac/wiki/USRP2GenFAQ
+
+wireshark-1.0.7-btbb.patch:
+
+	This patch adds the Bluetooth baseband dissector plugin to a Wireshark
+	1.0.7 source tree.  In addition to the patch, you need to copy (or
+	check out in place) gr-bluetooth/wireshark/plugins/btbb under the
+	wireshark-1.0.7/plugins directory.  The patch doesn't work with
+	Wireshark svn, but it isn't hard to manually edit an svn tree as
+	required with this patch as your guide.
