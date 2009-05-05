@@ -50,6 +50,16 @@ static int hf_btbb_pldflow = -1;
 static int hf_btbb_length = -1;
 static int hf_btbb_pldbody = -1;
 static int hf_btbb_crc = -1;
+static int hf_btbb_fhs_parity = -1;
+static int hf_btbb_fhs_lap = -1;
+static int hf_btbb_fhs_eir = -1;
+static int hf_btbb_fhs_sr = -1;
+static int hf_btbb_fhs_uap = -1;
+static int hf_btbb_fhs_nap = -1;
+static int hf_btbb_fhs_class = -1;
+static int hf_btbb_fhs_ltaddr = -1;
+static int hf_btbb_fhs_clk = -1;
+static int hf_btbb_fhs_psmode = -1;
 
 /* field values */
 static const value_string packet_types[] = {
@@ -71,6 +81,20 @@ static const value_string packet_types[] = {
 	{ 0xe, "DM5/2-DH5" },
 	{ 0xf, "DH5/3-DH5" },
 	{ 0, NULL }
+};
+
+static const value_string sr_modes[] = {
+	{ 0x0, "R0" },
+	{ 0x1, "R1" },
+	{ 0x2, "R2" },
+	{ 0x3, "Reserved" },
+	{ 0, NULL }
+};
+
+static const range_string ps_modes[] = {
+	{ 0x0, 0x0, "Mandatory scan mode" },
+	{ 0x1, 0x7, "Reserved" },
+	{ 0, 0, NULL }
 };
 
 /* initialize the subtree pointers */
@@ -106,6 +130,51 @@ dissect_payload_header1(proto_tree *tree, tvbuff_t *tvb, int offset)
 
 	/* payload length */
 	return tvb_get_guint8(tvb, offset) >> 3;
+}
+
+void
+dissect_fhs(proto_tree *tree, tvbuff_t *tvb, int offset)
+{
+	int len;
+	proto_item *fhs_item;
+	proto_tree *fhs_tree;
+
+	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) == 20);
+
+	fhs_item = proto_tree_add_item(tree, hf_btbb_payload, tvb, offset, -1, FALSE);
+	fhs_tree = proto_item_add_subtree(fhs_item, ett_btbb_payload);
+
+	/* FIXME bit order probably wrong */
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_parity, tvb, offset, 5, FALSE);
+	offset += 4;
+
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_lap, tvb, offset, 4, FALSE);
+	offset += 3;
+
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_eir, tvb, offset, 1, FALSE);
+	/* skipping 1 undefined bit */
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_sr, tvb, offset, 1, FALSE);
+	/* skipping 2 reserved bits */
+	offset += 1;
+
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_uap, tvb, offset, 1, FALSE);
+	offset += 1;
+
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_nap, tvb, offset, 2, FALSE);
+	offset += 2;
+
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_class, tvb, offset, 3, FALSE);
+	offset += 3;
+
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_ltaddr, tvb, offset, 1, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_clk, tvb, offset, 4, FALSE);
+	offset += 3;
+
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_psmode, tvb, offset, 1, FALSE);
+	offset += 1;
+
+	proto_tree_add_item(fhs_tree, hf_btbb_crc, tvb, offset, 2, FALSE);
+	offset += 2;
 }
 
 void
@@ -234,7 +303,7 @@ proto_register_btbb(void)
 		},
 		{ &hf_btbb_type,
 			{ "TYPE", "btbb.type",
-			FT_UINT8, BASE_HEX, RVALS(packet_types), 0x78,
+			FT_UINT8, BASE_HEX, VALS(packet_types), 0x78,
 			"Packet Type", HFILL }
 		},
 		{ &hf_btbb_flags,
@@ -273,7 +342,7 @@ proto_register_btbb(void)
 			"Logical Link ID", HFILL }
 		},
 		{ &hf_btbb_pldflow,
-			{ "Flow", "btbb.llid",
+			{ "Flow", "btbb.flow",
 			FT_BOOLEAN, BASE_NONE, NULL, 0x04,
 			"Payload Flow indication", HFILL }
 		},
@@ -296,6 +365,56 @@ proto_register_btbb(void)
 			{ "CRC", "btbb.crc",
 			FT_UINT16, BASE_HEX, NULL, 0x0,
 			"Payload CRC", HFILL }
+		},
+		{ &hf_btbb_fhs_parity,
+			{ "Parity", "btbb.parity",
+			FT_UINT64, BASE_HEX, NULL, 0xffffffffc0000000,
+			"LAP parity", HFILL }
+		},
+		{ &hf_btbb_fhs_lap,
+			{ "LAP", "btbb.lap",
+			FT_UINT24, BASE_HEX, NULL, 0x3fffffc0,
+			"Lower Address Part", HFILL }
+		},
+		{ &hf_btbb_fhs_eir,
+			{ "EIR", "btbb.eir",
+			FT_BOOLEAN, BASE_NONE, NULL, 0x20,
+			"Extended Inquiry Response packet may follow", HFILL }
+		},
+		{ &hf_btbb_fhs_sr,
+			{ "SR", "btbb.sr",
+			FT_UINT8, BASE_HEX, VALS(sr_modes), 0x0c,
+			"Scan Repetition", HFILL }
+		},
+		{ &hf_btbb_fhs_uap,
+			{ "UAP", "btbb.uap",
+			FT_UINT8, BASE_HEX, NULL, 0x0,
+			"Upper Address Part", HFILL }
+		},
+		{ &hf_btbb_fhs_nap,
+			{ "NAP", "btbb.nap",
+			FT_UINT16, BASE_HEX, NULL, 0x0,
+			"Non-Significant Address Part", HFILL }
+		},
+		{ &hf_btbb_fhs_class, /* FIXME break out further */
+			{ "Class of Device", "btbb.class",
+			FT_UINT24, BASE_HEX, NULL, 0x0,
+			"Class of Device", HFILL }
+		},
+		{ &hf_btbb_fhs_ltaddr,
+			{ "LT_ADDR", "btbb.lt_addr",
+			FT_UINT8, BASE_HEX, NULL, 0xe0,
+			"Logical Transport Address", HFILL }
+		},
+		{ &hf_btbb_fhs_clk,
+			{ "CLK", "btbb.clk",
+			FT_UINT32, BASE_HEX, NULL, 0x1ffffff8,
+			"Clock bits 2 through 27", HFILL }
+		},
+		{ &hf_btbb_fhs_psmode,
+			{ "Page Scan Mode", "btbb.psmode",
+			FT_UINT8, BASE_HEX, RVALS(ps_modes), 0x07,
+			"Page Scan Mode", HFILL }
 		},
 	};
 
