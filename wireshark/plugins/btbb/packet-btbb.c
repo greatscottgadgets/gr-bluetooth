@@ -44,6 +44,12 @@ static int hf_btbb_arqn = -1;
 static int hf_btbb_seqn = -1;
 static int hf_btbb_hec = -1;
 static int hf_btbb_payload = -1;
+static int hf_btbb_pldhdr = -1;
+static int hf_btbb_llid = -1;
+static int hf_btbb_pldflow = -1;
+static int hf_btbb_length = -1;
+static int hf_btbb_pldbody = -1;
+static int hf_btbb_crc = -1;
 
 /* field values */
 static const value_string packet_types[] = {
@@ -72,6 +78,7 @@ static gint ett_btbb = -1;
 static gint ett_btbb_pkthdr = -1;
 static gint ett_btbb_flags = -1;
 static gint ett_btbb_payload = -1;
+static gint ett_btbb_pldhdr = -1;
 
 /* packet header flags */
 static const int *flag_fields[] = {
@@ -80,6 +87,50 @@ static const int *flag_fields[] = {
 	&hf_btbb_seqn,
 	NULL
 };
+
+/* one byte payload header */
+int
+dissect_payload_header1(proto_tree *tree, tvbuff_t *tvb, int offset)
+{
+	proto_item *hdr_item;
+	proto_tree *hdr_tree;
+
+	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 1);
+
+	hdr_item = proto_tree_add_item(tree, hf_btbb_pldhdr, tvb, offset, -1, FALSE);
+	hdr_tree = proto_item_add_subtree(hdr_item, ett_btbb_pldhdr);
+
+	proto_tree_add_item(hdr_tree, hf_btbb_llid, tvb, offset, 1, FALSE);
+	proto_tree_add_item(hdr_tree, hf_btbb_pldflow, tvb, offset, 1, FALSE);
+	proto_tree_add_item(hdr_tree, hf_btbb_length, tvb, offset, 1, FALSE);
+
+	/* payload length */
+	return tvb_get_guint8(tvb, offset) >> 3;
+}
+
+void
+dissect_dm1(proto_tree *tree, tvbuff_t *tvb, int offset)
+{
+	int len;
+	proto_item *dm1_item;
+	proto_tree *dm1_tree;
+
+	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 3);
+
+	dm1_item = proto_tree_add_item(tree, hf_btbb_payload, tvb, offset, -1, FALSE);
+	dm1_tree = proto_item_add_subtree(dm1_item, ett_btbb_payload);
+
+	len = dissect_payload_header1(dm1_tree, tvb, offset);
+	offset += 1;
+
+	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) == len + 2);
+
+	proto_tree_add_item(dm1_tree, hf_btbb_pldbody, tvb, offset, len, FALSE);
+	offset += len;
+
+	proto_tree_add_item(dm1_tree, hf_btbb_crc, tvb, offset, 2, FALSE);
+	offset += 2;
+}
 
 /* dissect a packet */
 static int
@@ -136,7 +187,11 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		case 0x1: /* POLL */
 			break;
 		case 0x2: /* FHS */
+			pld_item = proto_tree_add_item(btbb_tree, hf_btbb_payload, tvb, offset, -1, FALSE);
+			break;
 		case 0x3: /* DM1 */
+			dissect_dm1(btbb_tree, tvb, offset);
+			break;
 		case 0x4: /* DH1/2-DH1 */
 		case 0x5: /* HV1 */
 		case 0x6: /* HV2/2-EV3 */
@@ -212,6 +267,36 @@ proto_register_btbb(void)
 			FT_NONE, BASE_NONE, NULL, 0x0,
 			"Payload", HFILL }
 		},
+		{ &hf_btbb_llid,
+			{ "LLID", "btbb.llid",
+			FT_UINT8, BASE_HEX, NULL, 0x03,
+			"Logical Link ID", HFILL }
+		},
+		{ &hf_btbb_pldflow,
+			{ "Flow", "btbb.llid",
+			FT_BOOLEAN, BASE_NONE, NULL, 0x04,
+			"Payload Flow indication", HFILL }
+		},
+		{ &hf_btbb_length,
+			{ "Length", "btbb.length",
+			FT_UINT8, BASE_DEC, NULL, 0xf8,
+			"Payload Length", HFILL }
+		},
+		{ &hf_btbb_pldhdr,
+			{ "Payload Header", "btbb.pldhdr",
+			FT_NONE, BASE_NONE, NULL, 0x0,
+			"Payload Header", HFILL }
+		},
+		{ &hf_btbb_pldbody,
+			{ "Payload Body", "btbb.pldbody",
+			FT_BYTES, BASE_HEX, NULL, 0x0,
+			"Payload Body", HFILL }
+		},
+		{ &hf_btbb_crc,
+			{ "CRC", "btbb.crc",
+			FT_UINT16, BASE_HEX, NULL, 0x0,
+			"Payload CRC", HFILL }
+		},
 	};
 
 	/* protocol subtree arrays */
@@ -220,6 +305,7 @@ proto_register_btbb(void)
 		&ett_btbb_pkthdr,
 		&ett_btbb_flags,
 		&ett_btbb_payload,
+		&ett_btbb_pldhdr,
 	};
 
 	/* register the protocol name and description */
