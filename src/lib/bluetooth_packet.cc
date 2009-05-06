@@ -513,28 +513,18 @@ void bluetooth_packet::set_whitened(bool whitened)
 }
 
 /* extract UAP by reversing the HEC computation */
-int bluetooth_packet::UAP_from_hec(uint8_t *packet)
+int bluetooth_packet::UAP_from_hec(uint16_t data, uint8_t hec)
 {
-	char byte;
-	int count;
-	uint8_t hec;
+        int i;
 
-	hec = *(packet + 2);
-	byte = *(packet + 1);
+        for (i = 9; i >= 0; i--) {
+                /* 0x65 is xor'd if MSB is 1, else 0x00 (which does nothing) */
+                if (hec & 0x80)
+                        hec ^= 0x65;
 
-	for(count = 0; count < 10; count++)
-	{
-		if(2==count)
-			byte = *packet;
-
-		/* 0xa6 is xor'd if LSB is 1, else 0x00 (which does nothing) */
-		if(hec & 0x01)
-			hec ^= 0xa6;
-
-		hec = (hec >> 1) | (((hec & 0x01) ^ (byte & 0x01)) << 7);
-		byte >>= 1;
-	}
-	return hec;
+                hec = (hec << 1) | ((hec >> 7) ^ (data >> i) & 0x01);
+        }
+        return reverse(hec);
 }
 
 /* check if the packet's CRC is correct for a given clock (CLK1-6) */
@@ -868,12 +858,9 @@ uint8_t bluetooth_packet::try_clock(int clock)
 
 	unfec13(stream, header, 18);
 	unwhiten(header, unwhitened, clock, 18, 0);
-
-	unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
-	unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
-	unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
-
-	d_UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
+	uint16_t hdr_data = air_to_host16(unwhitened, 10);
+	uint8_t hec = air_to_host8(&unwhitened[10], 8);
+	d_UAP = bluetooth_packet::UAP_from_hec(hdr_data, hec);
 	d_packet_type = air_to_host8(&unwhitened[3], 4);
 	d_lower_clock = clock & 0xff;
 
@@ -895,14 +882,10 @@ void bluetooth_packet::decode_header()
 	unfec13(stream, header, 18);
 
 	if (d_have_clock) {
-		//FIXME use try_clock() or otherwise merge functions
 		unwhiten(header, unwhitened, d_clock, 18, 0);
-
-		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
-		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
-		unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
-
-		UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
+		uint16_t hdr_data = air_to_host16(unwhitened, 10);
+		uint8_t hec = air_to_host8(&unwhitened[10], 8);
+		UAP = bluetooth_packet::UAP_from_hec(hdr_data, hec);
 		if (UAP != d_UAP)
 			printf("bad HEC! ");
 		d_packet_type = air_to_host8(&unwhitened[3], 4);
@@ -913,14 +896,10 @@ void bluetooth_packet::decode_header()
 	/* we don't have the clock, so we try every possible CLK1-6 value until we find the most likely LT_ADDR */
 	for(count = 0; count < 64; count++)
 	{
-		//FIXME use try_clock() or otherwise merge functions
 		unwhiten(header, unwhitened, count, 18, 0);
-
-		unwhitened_air[0] = unwhitened[0] << 7 | unwhitened[1] << 6 | unwhitened[2] << 5 | unwhitened[3] << 4 | unwhitened[4] << 3 | unwhitened[5] << 2 | unwhitened[6] << 1 | unwhitened[7];
-		unwhitened_air[1] = unwhitened[8] << 1 | unwhitened[9];
-		unwhitened_air[2] = unwhitened[10] << 7 | unwhitened[11] << 6 | unwhitened[12] << 5 | unwhitened[13] << 4 | unwhitened[14] << 3 | unwhitened[15] << 2 | unwhitened[16] << 1 | unwhitened[17];
-
-		UAP = bluetooth_packet::UAP_from_hec(unwhitened_air);
+		uint16_t hdr_data = air_to_host16(unwhitened, 10);
+		uint8_t hec = air_to_host8(&unwhitened[10], 8);
+		UAP = bluetooth_packet::UAP_from_hec(hdr_data, hec);
 
 		//FIXME throw exception if !d_have_UAP
 		if(UAP != d_UAP)

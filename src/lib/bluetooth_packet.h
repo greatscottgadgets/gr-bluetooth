@@ -189,7 +189,7 @@ public:
 	static uint16_t crcgen(char *payload, int length, int UAP);
 
 	/* extract UAP by reversing the HEC computation */
-	static int UAP_from_hec(uint8_t *packet);
+	static int UAP_from_hec(uint16_t data, uint8_t hec);
 
 	/* check if the packet's CRC is correct for a given clock (CLK1-6) */
 	int crc_check(int clock);
