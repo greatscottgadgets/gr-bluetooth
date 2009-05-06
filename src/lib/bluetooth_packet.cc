@@ -831,14 +831,14 @@ int bluetooth_packet::HV(char *stream, int clock, uint8_t UAP, int type, int siz
 			corrected = (char *) malloc(80);
 			if(NULL == corrected)
 				return 0;
-			unfec13(stream, corrected, 240);
+			unfec13(stream, corrected, 80);
 			d_payload_length = 10;
 			unwhiten(corrected, d_payload, clock, d_payload_length*8, 18);
 			free(corrected);
 			break;
 
 		case 6:/* HV2 */
-			corrected = unfec23(stream, 240);
+			corrected = unfec23(stream, 160);
 			if(NULL == corrected)
 				return 0;
 			d_payload_length = 20;

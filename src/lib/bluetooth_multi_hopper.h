@@ -56,13 +56,13 @@ private:
 	/* do we have CLK1-27? */
 	bool d_have_clock27;
 
-    /* remember the time slot of the first packet */
+	/* remember the time slot of the first packet */
 	int d_first_packet_slot;
 
-    /* remember the time slot of the previous packet for interval computation */
+	/* remember the time slot of the previous packet for interval computation */
 	int d_previous_slot;
 
-    /* difference between local slot count and piconet master's CLK1-27 */
+	/* difference between local slot count and piconet master's CLK1-27 */
 	int d_clock_offset;
 
 	/* LAP of the target piconet */
