@@ -542,7 +542,7 @@ int bluetooth_packet::crc_check(int clock)
 
 	switch(d_packet_type)
 	{
-		case 2:/* FHS packets are sent with a UAP of 0x00 in the HEC */
+		case 2:/* FHS */
 			retval = fhs(stream, clock, d_UAP, d_length);
 			break;
 
@@ -576,30 +576,40 @@ int bluetooth_packet::crc_check(int clock)
 int bluetooth_packet::fhs(char *stream, int clock, uint8_t UAP, int size)
 {
 	char *corrected;
-	uint8_t fhsuap;
-	uint32_t fhslap;
+	uint16_t crc, check;
 
-	/* FHS packets are sent with a UAP of 0x00 in the HEC */
-	if(UAP != 0)
-		return 0;
+	d_payload_length = 20;
 
-	if(size < 225)
+	if (size < d_payload_length * 12)
 		return 1; //FIXME should throw exception
 
-	corrected = unfec23(stream, 144);
-	if(NULL == corrected)
+	corrected = unfec23(stream, d_payload_length * 8);
+	if (NULL == corrected)
 		return 0;
-	unwhiten(corrected, d_payload, clock, 144, 18);
-	free(corrected);
 
-	fhsuap = air_to_host8(&d_payload[64], 8);
-	fhslap = air_to_host32(&d_payload[34], 24);
-	d_payload_length = 144;
-
-	if((fhsuap == UAP) && (fhslap == d_LAP))
+	/* try to unwhiten with known clock bits */
+	unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
+	crc = crcgen(d_payload, (d_payload_length - 2) * 8, UAP);
+	check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
+	if (crc == check) {
+		free(corrected);
 		return 1000;
-	else
-		return 0;
+	}
+
+	/* try all 32 possible X-input values instead */
+	for (clock = 32; clock < 64; clock++) {
+		unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
+		crc = crcgen(d_payload, (d_payload_length - 2) * 8, UAP);
+		check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
+		if (crc == check) {
+			free(corrected);
+			return 1000;
+		}
+	}
+
+	/* failed to unwhiten */
+	free(corrected);
+	return 0;
 }
 
 /* decode payload header, return value indicates success */
@@ -874,44 +884,43 @@ void bluetooth_packet::decode_header()
 	char *stream = d_symbols + 72;
 	/* 18 bit packet header */
 	char header[18];
-	char unwhitened[18];
-	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
 	uint8_t UAP, ltadr;
 	int count;
 
 	unfec13(stream, header, 18);
 
 	if (d_have_clock) {
-		unwhiten(header, unwhitened, d_clock, 18, 0);
-		uint16_t hdr_data = air_to_host16(unwhitened, 10);
-		uint8_t hec = air_to_host8(&unwhitened[10], 8);
+		unwhiten(header, d_packet_header, d_clock, 18, 0);
+		uint16_t hdr_data = air_to_host16(d_packet_header, 10);
+		uint8_t hec = air_to_host8(&d_packet_header[10], 8);
 		UAP = bluetooth_packet::UAP_from_hec(hdr_data, hec);
-		if (UAP != d_UAP)
+		if (UAP == d_UAP) {
+			d_packet_type = air_to_host8(&d_packet_header[3], 4);
+			return;
+		} else {
 			printf("bad HEC! ");
-		d_packet_type = air_to_host8(&unwhitened[3], 4);
-		unwhiten(header, d_packet_header, d_clock, 18, 0); //FIXME redundant
+		}
 	}
-	//FIXME why continue if we now have a good HEC?
 	
 	/* we don't have the clock, so we try every possible CLK1-6 value until we find the most likely LT_ADDR */
 	for(count = 0; count < 64; count++)
 	{
-		unwhiten(header, unwhitened, count, 18, 0);
-		uint16_t hdr_data = air_to_host16(unwhitened, 10);
-		uint8_t hec = air_to_host8(&unwhitened[10], 8);
+		unwhiten(header, d_packet_header, count, 18, 0);
+		uint16_t hdr_data = air_to_host16(d_packet_header, 10);
+		uint8_t hec = air_to_host8(&d_packet_header[10], 8);
 		UAP = bluetooth_packet::UAP_from_hec(hdr_data, hec);
 
 		//FIXME throw exception if !d_have_UAP
 		if(UAP != d_UAP)
 			continue;
 
-		ltadr = air_to_host8(unwhitened, 3);
+		ltadr = air_to_host8(d_packet_header, 3);
 
 		//FIXME assuming that the lt_addr can only be 1
 		if(1 != ltadr)
 			continue;
 
-		d_packet_type = air_to_host8(&unwhitened[3], 4);
+		d_packet_type = air_to_host8(&d_packet_header[3], 4);
 		break;
 	}
 	//FIXME if we get to here without setting d_packet_type, we are in trouble
