@@ -121,12 +121,12 @@ dissect_payload_header1(proto_tree *tree, tvbuff_t *tvb, int offset)
 
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 1);
 
-	hdr_item = proto_tree_add_item(tree, hf_btbb_pldhdr, tvb, offset, -1, FALSE);
+	hdr_item = proto_tree_add_item(tree, hf_btbb_pldhdr, tvb, offset, -1, TRUE);
 	hdr_tree = proto_item_add_subtree(hdr_item, ett_btbb_pldhdr);
 
-	proto_tree_add_item(hdr_tree, hf_btbb_llid, tvb, offset, 1, FALSE);
-	proto_tree_add_item(hdr_tree, hf_btbb_pldflow, tvb, offset, 1, FALSE);
-	proto_tree_add_item(hdr_tree, hf_btbb_length, tvb, offset, 1, FALSE);
+	proto_tree_add_item(hdr_tree, hf_btbb_llid, tvb, offset, 1, TRUE);
+	proto_tree_add_item(hdr_tree, hf_btbb_pldflow, tvb, offset, 1, TRUE);
+	proto_tree_add_item(hdr_tree, hf_btbb_length, tvb, offset, 1, TRUE);
 
 	/* payload length */
 	return tvb_get_guint8(tvb, offset) >> 3;
@@ -135,45 +135,43 @@ dissect_payload_header1(proto_tree *tree, tvbuff_t *tvb, int offset)
 void
 dissect_fhs(proto_tree *tree, tvbuff_t *tvb, int offset)
 {
-	int len;
 	proto_item *fhs_item;
 	proto_tree *fhs_tree;
 
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) == 20);
 
-	fhs_item = proto_tree_add_item(tree, hf_btbb_payload, tvb, offset, -1, FALSE);
+	fhs_item = proto_tree_add_item(tree, hf_btbb_payload, tvb, offset, -1, TRUE);
 	fhs_tree = proto_item_add_subtree(fhs_item, ett_btbb_payload);
 
-	/* FIXME bit order probably wrong */
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_parity, tvb, offset, 5, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_parity, tvb, offset, 5, TRUE);
 	offset += 4;
 
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_lap, tvb, offset, 4, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_lap, tvb, offset, 4, TRUE);
 	offset += 3;
 
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_eir, tvb, offset, 1, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_eir, tvb, offset, 1, TRUE);
 	/* skipping 1 undefined bit */
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_sr, tvb, offset, 1, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_sr, tvb, offset, 1, TRUE);
 	/* skipping 2 reserved bits */
 	offset += 1;
 
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_uap, tvb, offset, 1, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_uap, tvb, offset, 1, TRUE);
 	offset += 1;
 
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_nap, tvb, offset, 2, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_nap, tvb, offset, 2, TRUE);
 	offset += 2;
 
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_class, tvb, offset, 3, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_class, tvb, offset, 3, TRUE);
 	offset += 3;
 
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_ltaddr, tvb, offset, 1, FALSE);
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_clk, tvb, offset, 4, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_ltaddr, tvb, offset, 1, TRUE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_clk, tvb, offset, 4, TRUE);
 	offset += 3;
 
-	proto_tree_add_item(fhs_tree, hf_btbb_fhs_psmode, tvb, offset, 1, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_fhs_psmode, tvb, offset, 1, TRUE);
 	offset += 1;
 
-	proto_tree_add_item(fhs_tree, hf_btbb_crc, tvb, offset, 2, FALSE);
+	proto_tree_add_item(fhs_tree, hf_btbb_crc, tvb, offset, 2, TRUE);
 	offset += 2;
 }
 
@@ -186,7 +184,7 @@ dissect_dm1(proto_tree *tree, tvbuff_t *tvb, int offset)
 
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 3);
 
-	dm1_item = proto_tree_add_item(tree, hf_btbb_payload, tvb, offset, -1, FALSE);
+	dm1_item = proto_tree_add_item(tree, hf_btbb_payload, tvb, offset, -1, TRUE);
 	dm1_tree = proto_item_add_subtree(dm1_item, ett_btbb_payload);
 
 	len = dissect_payload_header1(dm1_tree, tvb, offset);
@@ -194,10 +192,10 @@ dissect_dm1(proto_tree *tree, tvbuff_t *tvb, int offset)
 
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) == len + 2);
 
-	proto_tree_add_item(dm1_tree, hf_btbb_pldbody, tvb, offset, len, FALSE);
+	proto_tree_add_item(dm1_tree, hf_btbb_pldbody, tvb, offset, len, TRUE);
 	offset += len;
 
-	proto_tree_add_item(dm1_tree, hf_btbb_crc, tvb, offset, 2, FALSE);
+	proto_tree_add_item(dm1_tree, hf_btbb_crc, tvb, offset, 2, TRUE);
 	offset += 2;
 }
 
@@ -233,21 +231,21 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	if (tree) {
 
 		/* create display subtree for the protocol */
-		btbb_item = proto_tree_add_item(tree, proto_btbb, tvb, 0, -1, FALSE);
-		btbb_tree = proto_item_add_subtree(btbb_item, ett_btbb);
 		offset = 0;
+		btbb_item = proto_tree_add_item(tree, proto_btbb, tvb, offset, -1, TRUE);
+		btbb_tree = proto_item_add_subtree(btbb_item, ett_btbb);
 
 		/* packet header */
-		pkthdr_item = proto_tree_add_item(btbb_tree, hf_btbb_pkthdr, tvb, offset, 3, FALSE);
+		pkthdr_item = proto_tree_add_item(btbb_tree, hf_btbb_pkthdr, tvb, offset, 3, TRUE);
 		pkthdr_tree = proto_item_add_subtree(pkthdr_item, ett_btbb_pkthdr);
 
-		proto_tree_add_item(pkthdr_tree, hf_btbb_ltaddr, tvb, offset, 1, FALSE);
-		proto_tree_add_item(pkthdr_tree, hf_btbb_type, tvb, offset, 1, FALSE);
+		proto_tree_add_item(pkthdr_tree, hf_btbb_ltaddr, tvb, offset, 1, TRUE);
+		proto_tree_add_item(pkthdr_tree, hf_btbb_type, tvb, offset, 1, TRUE);
 		offset += 1;
 		proto_tree_add_bitmask(pkthdr_tree, tvb, offset, hf_btbb_flags,
-			ett_btbb_flags, flag_fields, FALSE);
+			ett_btbb_flags, flag_fields, TRUE);
 		offset += 1;
-		proto_tree_add_item(pkthdr_tree, hf_btbb_hec, tvb, offset, 1, FALSE);
+		proto_tree_add_item(pkthdr_tree, hf_btbb_hec, tvb, offset, 1, TRUE);
 		offset += 1;
 
 		/* payload */
@@ -256,7 +254,7 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		case 0x1: /* POLL */
 			break;
 		case 0x2: /* FHS */
-			pld_item = proto_tree_add_item(btbb_tree, hf_btbb_payload, tvb, offset, -1, FALSE);
+			dissect_fhs(btbb_tree, tvb, offset);
 			break;
 		case 0x3: /* DM1 */
 			dissect_dm1(btbb_tree, tvb, offset);
@@ -273,7 +271,7 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		case 0xd: /* EV5/3-EV5 */
 		case 0xe: /* DM5/2-DH5 */
 		case 0xf: /* DH5/3-DH5 */
-			pld_item = proto_tree_add_item(btbb_tree, hf_btbb_payload, tvb, offset, -1, FALSE);
+			pld_item = proto_tree_add_item(btbb_tree, hf_btbb_payload, tvb, offset, -1, TRUE);
 			break;
 		default:
 			break;
@@ -368,22 +366,23 @@ proto_register_btbb(void)
 		},
 		{ &hf_btbb_fhs_parity,
 			{ "Parity", "btbb.parity",
-			FT_UINT64, BASE_HEX, NULL, 0xffffffffc0000000,
+			/* FIXME not sure why this mask doesn't have an effect.  bug? */
+			FT_UINT64, BASE_HEX, NULL, 0x00000003ffffffff,
 			"LAP parity", HFILL }
 		},
 		{ &hf_btbb_fhs_lap,
 			{ "LAP", "btbb.lap",
-			FT_UINT24, BASE_HEX, NULL, 0x3fffffc0,
+			FT_UINT24, BASE_HEX, NULL, 0x03fffffc,
 			"Lower Address Part", HFILL }
 		},
 		{ &hf_btbb_fhs_eir,
 			{ "EIR", "btbb.eir",
-			FT_BOOLEAN, BASE_NONE, NULL, 0x20,
+			FT_BOOLEAN, BASE_NONE, NULL, 0x04,
 			"Extended Inquiry Response packet may follow", HFILL }
 		},
 		{ &hf_btbb_fhs_sr,
 			{ "SR", "btbb.sr",
-			FT_UINT8, BASE_HEX, VALS(sr_modes), 0x0c,
+			FT_UINT8, BASE_HEX, VALS(sr_modes), 0x30,
 			"Scan Repetition", HFILL }
 		},
 		{ &hf_btbb_fhs_uap,
@@ -403,7 +402,7 @@ proto_register_btbb(void)
 		},
 		{ &hf_btbb_fhs_ltaddr,
 			{ "LT_ADDR", "btbb.lt_addr",
-			FT_UINT8, BASE_HEX, NULL, 0xe0,
+			FT_UINT8, BASE_HEX, NULL, 0x07,
 			"Logical Transport Address", HFILL }
 		},
 		{ &hf_btbb_fhs_clk,
@@ -413,7 +412,7 @@ proto_register_btbb(void)
 		},
 		{ &hf_btbb_fhs_psmode,
 			{ "Page Scan Mode", "btbb.psmode",
-			FT_UINT8, BASE_HEX, RVALS(ps_modes), 0x07,
+			FT_UINT8, BASE_HEX, RVALS(ps_modes), 0xe0,
 			"Page Scan Mode", HFILL }
 		},
 	};
