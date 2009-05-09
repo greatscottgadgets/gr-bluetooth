@@ -878,7 +878,7 @@ uint8_t bluetooth_packet::try_clock(int clock)
 }
 
 /* decode the packet header */
-void bluetooth_packet::decode_header()
+bool bluetooth_packet::decode_header()
 {
 	/* skip 72 bit access code */
 	char *stream = d_symbols + 72;
@@ -896,15 +896,14 @@ void bluetooth_packet::decode_header()
 		UAP = bluetooth_packet::UAP_from_hec(hdr_data, hec);
 		if (UAP == d_UAP) {
 			d_packet_type = air_to_host8(&d_packet_header[3], 4);
-			return;
+			return true;
 		} else {
 			printf("bad HEC! ");
 		}
 	}
 	
 	/* we don't have the clock, so we try every possible CLK1-6 value until we find the most likely LT_ADDR */
-	for(count = 0; count < 64; count++)
-	{
+	for(count = 0; count < 64; count++) {
 		unwhiten(header, d_packet_header, count, 18, 0);
 		uint16_t hdr_data = air_to_host16(d_packet_header, 10);
 		uint8_t hec = air_to_host8(&d_packet_header[10], 8);
@@ -917,13 +916,14 @@ void bluetooth_packet::decode_header()
 		ltadr = air_to_host8(d_packet_header, 3);
 
 		//FIXME assuming that the lt_addr can only be 1
-		if(1 != ltadr)
-			continue;
-
-		d_packet_type = air_to_host8(&d_packet_header[3], 4);
-		break;
+		if (1 == ltadr) {
+			d_packet_type = air_to_host8(&d_packet_header[3], 4);
+			printf("found lt_addr == 1 ");
+			return true;
+		}
 	}
-	//FIXME if we get to here without setting d_packet_type, we are in trouble
+	printf("failed to decoder header\n");
+	return false;
 }
 
 void bluetooth_packet::decode_payload()
@@ -997,6 +997,13 @@ void bluetooth_packet::decode_payload()
 			break;
 	}
 	d_have_payload = true;
+}
+
+/* decode the whole packet */
+void bluetooth_packet::decode()
+{
+	if (decode_header())
+		decode_payload();
 }
 
 /* print packet information */

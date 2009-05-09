@@ -195,10 +195,13 @@ public:
 	int crc_check(int clock);
 
 	/* decode the packet header */
-	void decode_header();
+	bool decode_header();
 
 	/* decode the packet header */
 	void decode_payload();
+
+	/* decode the whole packet */
+	void decode();
 
 	/* print packet information */
 	void print();
