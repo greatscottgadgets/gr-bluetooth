@@ -97,6 +97,14 @@ static const range_string ps_modes[] = {
 	{ 0, 0, NULL }
 };
 
+static const value_string llid_codes[] = {
+	{ 0x0, "undefined" },
+	{ 0x1, "Continuation fragment of an L2CAP message (ACL-U)" },
+	{ 0x2, "Start of an L2CAP message or no fragmentation (ACL-U)" },
+	{ 0x3, "LMP message (ACL-C)" },
+	{ 0, NULL }
+};
+
 /* initialize the subtree pointers */
 static gint ett_btbb = -1;
 static gint ett_btbb_pkthdr = -1;
@@ -336,7 +344,7 @@ proto_register_btbb(void)
 		},
 		{ &hf_btbb_llid,
 			{ "LLID", "btbb.llid",
-			FT_UINT8, BASE_HEX, NULL, 0x03,
+			FT_UINT8, BASE_HEX, VALS(llid_codes), 0x03,
 			"Logical Link ID", HFILL }
 		},
 		{ &hf_btbb_pldflow,
