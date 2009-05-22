@@ -922,7 +922,7 @@ bool bluetooth_packet::decode_header()
 			return true;
 		}
 	}
-	printf("failed to decoder header\n");
+	printf("failed to decode header\n");
 	return false;
 }
 
@@ -1009,12 +1009,13 @@ void bluetooth_packet::decode()
 /* print packet information */
 void bluetooth_packet::print()
 {
-	//FIXME probably ought to check that this stuff has been set
-	cout << TYPE_NAMES[d_packet_type] << endl;
-	if(d_payload_header_length > 0) {
-		printf("  LLID: %d\n", d_payload_llid);
-		printf("  flow: %d\n", d_payload_flow);
-		printf("  payload length: %d\n", d_payload_length);
+	if (d_have_payload) {
+		cout << TYPE_NAMES[d_packet_type] << endl;
+		if (d_payload_header_length > 0) {
+			printf("  LLID: %d\n", d_payload_llid);
+			printf("  flow: %d\n", d_payload_flow);
+			printf("  payload length: %d\n", d_payload_length);
+		}
 	}
 }
 
