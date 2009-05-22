@@ -28,7 +28,8 @@ PLUGIN_NAME = btbb
 
 # the dissector sources (without any helpers)
 DISSECTOR_SRC = \
-	packet-btbb.c
+	packet-btbb.c \
+	packet-btlmp.c
 
 # corresponding headers
 DISSECTOR_INCLUDES =

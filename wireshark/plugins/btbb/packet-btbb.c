@@ -112,6 +112,9 @@ static gint ett_btbb_flags = -1;
 static gint ett_btbb_payload = -1;
 static gint ett_btbb_pldhdr = -1;
 
+/* subdissectors */
+static dissector_handle_t btlmp_handle = NULL;
+
 /* packet header flags */
 static const int *flag_fields[] = {
 	&hf_btbb_flow,
@@ -129,7 +132,7 @@ dissect_payload_header1(proto_tree *tree, tvbuff_t *tvb, int offset)
 
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 1);
 
-	hdr_item = proto_tree_add_item(tree, hf_btbb_pldhdr, tvb, offset, -1, TRUE);
+	hdr_item = proto_tree_add_item(tree, hf_btbb_pldhdr, tvb, offset, 1, TRUE);
 	hdr_tree = proto_item_add_subtree(hdr_item, ett_btbb_pldhdr);
 
 	proto_tree_add_item(hdr_tree, hf_btbb_llid, tvb, offset, 1, TRUE);
@@ -184,9 +187,10 @@ dissect_fhs(proto_tree *tree, tvbuff_t *tvb, int offset)
 }
 
 void
-dissect_dm1(proto_tree *tree, tvbuff_t *tvb, int offset)
+dissect_dm1(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
-	int len;
+	int len;	/* payload length indicated by payload header */
+	int llid;	/* logical link id */
 	proto_item *dm1_item;
 	proto_tree *dm1_tree;
 
@@ -196,11 +200,17 @@ dissect_dm1(proto_tree *tree, tvbuff_t *tvb, int offset)
 	dm1_tree = proto_item_add_subtree(dm1_item, ett_btbb_payload);
 
 	len = dissect_payload_header1(dm1_tree, tvb, offset);
+	llid = tvb_get_guint8(tvb, offset) & 0x3;
 	offset += 1;
 
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) == len + 2);
 
-	proto_tree_add_item(dm1_tree, hf_btbb_pldbody, tvb, offset, len, TRUE);
+	if (llid == 3 && btlmp_handle) {
+		tvbuff_t *lmp_tvb = tvb_new_subset(tvb, offset, len, len);
+		call_dissector(btlmp_handle, lmp_tvb, pinfo, dm1_tree);
+	} else {
+		proto_tree_add_item(dm1_tree, hf_btbb_pldbody, tvb, offset, len, TRUE);
+	}
 	offset += len;
 
 	proto_tree_add_item(dm1_tree, hf_btbb_crc, tvb, offset, 2, TRUE);
@@ -265,7 +275,7 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			dissect_fhs(btbb_tree, tvb, offset);
 			break;
 		case 0x3: /* DM1 */
-			dissect_dm1(btbb_tree, tvb, offset);
+			dissect_dm1(btbb_tree, tvb, pinfo, offset);
 			break;
 		case 0x4: /* DH1/2-DH1 */
 		case 0x5: /* HV1 */
@@ -444,7 +454,6 @@ proto_register_btbb(void)
 	/* register the header fields and subtrees used */
 	proto_register_field_array(proto_btbb, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
-
 }
 
 void
@@ -458,6 +467,8 @@ proto_reg_handoff_btbb(void)
 		btbb_handle = new_create_dissector_handle(dissect_btbb, proto_btbb);
 		/* hijacking this ethertype */
 		dissector_add("ethertype", 0xFFF0, btbb_handle);
+
+		btlmp_handle = find_dissector("btlmp");
 
 		inited = TRUE;
 	}
