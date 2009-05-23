@@ -872,7 +872,6 @@ uint8_t bluetooth_packet::try_clock(int clock)
 	uint8_t hec = air_to_host8(&unwhitened[10], 8);
 	d_UAP = bluetooth_packet::UAP_from_hec(hdr_data, hec);
 	d_packet_type = air_to_host8(&unwhitened[3], 4);
-	d_lower_clock = clock & 0xff;
 
 	return d_UAP;
 }
@@ -932,7 +931,7 @@ void bluetooth_packet::decode_payload()
 
 	/* number of symbols remaining after access code and packet header */
 	size = d_length - 126;
-	clock = d_lower_clock;
+	clock = d_clock;
 
 	char *stream = d_symbols + 126; // AC + header
 	switch(d_packet_type)

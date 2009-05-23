@@ -93,7 +93,7 @@ bluetooth_multi_UAP::work(int noutput_items,
 	}
 	d_cumulative_count += (int) d_samples_per_slot;
 
-    /* 
+	/* 
 	 * The runtime system wants to know how many output items we produced, assuming that this is equal
 	 * to the number of input items consumed.  We tell it that we produced/consumed one time slot of
 	 * input items so that our next run starts one slot later.
