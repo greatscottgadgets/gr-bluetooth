@@ -50,6 +50,9 @@ private:
 	/* maximum number of symbols */
 	static const int MAX_SYMBOLS = 3125;
 
+	/* minimum header bit errors to indicate that this is an ID packet */
+	static const int ID_THRESHOLD = 5;
+
 	/* index into whitening data array */
 	static const uint8_t INDICES[64];
 
@@ -241,6 +244,9 @@ public:
 	 */
 	//FIXME should this be merged with set_clock()?
 	uint8_t try_clock(int clock);
+
+	/* check to see if the packet has a header */
+	bool header_present();
 
 	/* destructor */
 	~bluetooth_packet();

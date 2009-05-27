@@ -53,7 +53,7 @@ const string bluetooth_packet::TYPE_NAMES[] = {
 bluetooth_packet_sptr
 bluetooth_make_packet(char *stream, int length)
 {
-       return bluetooth_packet_sptr (new bluetooth_packet (stream, length));
+	return bluetooth_packet_sptr (new bluetooth_packet (stream, length));
 }
 
 /* constructor */
@@ -1019,4 +1019,44 @@ int bluetooth_packet::get_payload_length()
 int bluetooth_packet::get_type()
 {
 	return d_packet_type;
+}
+
+/* check to see if the packet has a header */
+bool bluetooth_packet::header_present()
+{
+	/* skip to last bit of sync word */
+	char *stream = d_symbols + 67;
+	int be = 0; /* bit errors */
+	char msb;   /* most significant (last) bit of sync word */
+	int a, b, c;
+
+	/* check that we have enough symbols */
+	if (d_length < 126)
+		return false;
+
+	/* check that the AC trailer is correct */
+	msb = stream[0];
+	be += stream[1] ^ !msb;
+	be += stream[2] ^ msb;
+	be += stream[3] ^ !msb;
+	be += stream[4] ^ msb;
+
+	/*
+	 * Each bit of the 18 bit header is repeated three times.  Without
+	 * checking the correctness of any particular bit, just count the
+	 * number of times three symbols in a row don't all agree.
+	 */
+	stream += 5;
+	for (a = 0; a < 54; a += 3) {
+		b = a + 1;
+		c = a + 2;
+		be += ((stream[a] ^ stream[b]) |
+			(stream[b] ^ stream[c]) | (stream[c] ^ stream[a]));
+	}
+
+	/*
+	 * Few bit errors indicates presence of a header.  Many bit errors
+	 * indicates no header is present (i.e. it is an ID packet).
+	 */
+	return (be < ID_THRESHOLD);
 }
