@@ -63,7 +63,7 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	/* channel filter coefficients */
 	double gain = 1;
 	double cutoff_freq = 500000;
-	double transition_width = 500000;
+	double transition_width = 300000;
 	d_channel_filter = gr_firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr_firdes::WIN_HANN);
 	/* d_channel_filter.size() will be the history requirement of ddc */
 	samples_required += (d_channel_filter.size() - 1);
@@ -73,7 +73,7 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	double channel_samples_per_symbol = d_samples_per_symbol / d_ddc_decimation_rate;
 
 	/* fm demodulator */
-	d_demod_sensitivity = M_PI_2 / channel_samples_per_symbol;
+	d_demod_gain = channel_samples_per_symbol / M_PI_2;
 
 	/* mm_cr variables */
 	d_gain_mu = 0.175;
@@ -81,9 +81,7 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	d_omega_relative_limit = 0.005;
 	d_omega = channel_samples_per_symbol;
 	d_gain_omega = .25 * d_gain_mu * d_gain_mu;
-	d_min_omega = d_omega*(1.0 - d_omega_relative_limit);
-	d_max_omega = d_omega*(1.0 + d_omega_relative_limit);
-	d_omega_mid = 0.5*(d_min_omega+d_max_omega);
+	d_omega_mid = d_omega;
 	d_interp = new gri_mmse_fir_interpolator();
 	d_last_sample = 0;
 	samples_required += d_ddc_decimation_rate * d_interp->ntaps();
@@ -136,7 +134,7 @@ void bluetooth_multi_block::demod(const gr_complex *in, float *out, int noutput_
 	for (i = 1; i < noutput_items; i++)
 	{
 		gr_complex product = in[i] * conj (in[i-1]);
-		out[i] = d_demod_sensitivity * gr_fast_atan2f(imag(product), real(product));
+		out[i] = d_demod_gain * gr_fast_atan2f(imag(product), real(product));
 	}
 }
 

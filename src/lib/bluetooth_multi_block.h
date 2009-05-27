@@ -88,16 +88,14 @@ protected:
 	float d_omega_relative_limit;	// used to compute min and max omega
 	float d_omega;			// nominal frequency
 	float d_gain_omega;		// gain for adjusting omega
-	float d_min_omega;		// minimum allowed omega 
 	float d_omega_mid;		// average omega
-	float d_max_omega;		// maximum allowed omega
 	float d_last_sample;
 
 	/* channel filter coefficients for digital downconverter */
 	std::vector<float> d_channel_filter;
 
 	/* quadrature frequency demodulator sensitivity */
-	float d_demod_sensitivity;
+	float d_demod_gain;
 
 	/* interpolator M&M clock recovery block */
 	gri_mmse_fir_interpolator *d_interp;
