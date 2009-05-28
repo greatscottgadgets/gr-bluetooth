@@ -175,23 +175,30 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, ch
 			ac_index = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(ac_index > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[ac_index], num_symbols - ac_index);
-				packet->set_clock(clock27);
-				packet->set_UAP(d_piconet->get_UAP());
 				if(packet->get_LAP() == d_LAP) {
 					printf("clock 0x%07x, channel %2d: ", clock27, channel);
-					packet->set_UAP(d_piconet->get_UAP());
-					packet->set_clock(clock27);
-					packet->decode();
-					if(packet->got_payload()) {
-						packet->print();
+					if (packet->header_present()) {
+						packet->set_UAP(d_piconet->get_UAP());
+						packet->set_clock(clock27);
+						packet->decode();
+						if(packet->got_payload()) {
+							packet->print();
+							if(d_tun) {
+								/* include 3 bytes for packet header */
+								int length = packet->get_payload_length() + 3;
+								char *data = packet->tun_format();
+								int addr = (packet->get_UAP() << 24) | packet->get_LAP();
+								write_interface(d_tunfd, (unsigned char *)data, length, 0, addr, ETHER_TYPE);
+							}
+						}
+					} else {
+						printf("ID\n");
 						if(d_tun) {
-							/* include 3 bytes for packet header */
-							int length = packet->get_payload_length() + 3;
-							char *data = packet->tun_format();
-							int addr = (packet->get_UAP() << 24) | packet->get_LAP();
-							write_interface(d_tunfd, (unsigned char *)data, length, 0, addr, ETHER_TYPE);
+							int addr = (d_piconet->get_UAP() << 24) | packet->get_LAP();
+							write_interface(d_tunfd, NULL, 0, 0, addr, ETHER_TYPE);
 						}
 					}
+
 				}
 			}
 		}
