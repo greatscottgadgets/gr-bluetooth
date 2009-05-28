@@ -80,7 +80,7 @@ bluetooth_multi_UAP::work(int noutput_items,
 			retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(retval > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
-				if(packet->get_LAP() == d_LAP) {
+				if (packet->get_LAP() == d_LAP && packet->header_present()) {
 					current_slot = (int) (d_cumulative_count / d_samples_per_slot);
 					interval = current_slot - d_previous_slot;
 					if (d_piconet->UAP_from_header(packet, interval, channel))

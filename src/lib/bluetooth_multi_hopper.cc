@@ -104,7 +104,7 @@ bluetooth_multi_hopper::work(int noutput_items,
 				retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 				if(retval > -1) {
 					bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
-					if(packet->get_LAP() == d_LAP) {
+					if (packet->get_LAP() == d_LAP && packet->header_present()) {
 						if(!d_have_clock6) {
 							/* working on CLK1-6/UAP discovery */
 							d_have_clock6 = d_piconet->UAP_from_header(packet, interval, channel);
