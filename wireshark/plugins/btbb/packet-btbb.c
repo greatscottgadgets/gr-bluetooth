@@ -225,10 +225,11 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	proto_tree *btbb_tree, *pkthdr_tree;
 	int offset;
 	guint8 type;
+	char *info;
 
-	/* sanity check: long enough */
-	if (tvb_length(tvb) < 3)
-		/* Not enough bytes: look for a different dissector */
+	/* sanity check: length */
+	if (tvb_length(tvb) > 0 && tvb_length(tvb) < 3)
+		/* bad length: look for a different dissector */
 		return 0;
 
 	/* maybe should verify HEC */
@@ -237,13 +238,17 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	if (check_col(pinfo->cinfo, COL_PROTOCOL))
 		col_set_str(pinfo->cinfo, COL_PROTOCOL, "Bluetooth");
 
-	/* clear the info column first just in case of type fetching failure. */
-	if (check_col(pinfo->cinfo, COL_INFO))
-		col_clear(pinfo->cinfo, COL_INFO);
+	if (tvb_length(tvb) == 0) {
+		info = "ID";
+	} else {
+		type = (tvb_get_guint8(tvb, 0) >> 3) & 0x0f;
+		info = match_strval(type, packet_types);
+	}
 
-	type = (tvb_get_guint8(tvb, 0) >> 3) & 0x0f;
-	if (check_col(pinfo->cinfo, COL_INFO))
-		col_add_str(pinfo->cinfo, COL_INFO, match_strval(type, packet_types));
+	if (check_col(pinfo->cinfo, COL_INFO)) {
+		col_clear(pinfo->cinfo, COL_INFO);
+		col_add_str(pinfo->cinfo, COL_INFO, info);
+	}
 
 	/* see if we are being asked for details */
 	if (tree) {
@@ -252,6 +257,10 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		offset = 0;
 		btbb_item = proto_tree_add_item(tree, proto_btbb, tvb, offset, -1, TRUE);
 		btbb_tree = proto_item_add_subtree(btbb_item, ett_btbb);
+
+		/* ID packets have no header, no payload */
+		if (tvb_length(tvb) == 0)
+			return 1;
 
 		/* packet header */
 		pkthdr_item = proto_tree_add_item(btbb_tree, hf_btbb_pkthdr, tvb, offset, 3, TRUE);
