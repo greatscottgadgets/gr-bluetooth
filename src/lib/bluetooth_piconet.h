@@ -103,8 +103,8 @@ private:
 	/* CLK1-6 candidates */
 	int d_clock6_candidates[64];
 
-	/* CLK1-6 */
-	uint8_t d_clock6;
+	/* CLK1-27 (sometimes only holds CLK1-6) */
+	uint32_t d_clock;
 
 	/* remember patterns of observed hops */
 	int d_pattern_indices[MAX_PATTERN_LENGTH];
@@ -114,7 +114,6 @@ private:
 	int d_previous_clock_offset;
 
 	bool d_hop_reversal_inited;
-
 
 	/* do all the precalculation that can be done before knowing the address */
 	void precalc();
@@ -139,6 +138,10 @@ private:
 	/* create list of initial candidate clock values (hops with same channel as first observed hop) */
 	int init_candidates(char channel, int known_clock_bits);
 
+	/* discovery status */
+	bool d_have_UAP;
+	bool d_have_clk6;
+	bool d_have_clk27;
 
 public:
 	/* constructors */
@@ -177,6 +180,16 @@ public:
 
 	/* reset UAP/clock discovery */
 	void reset();
+
+	/* discovery status */
+	bool have_UAP();
+	bool have_clk6();
+	bool have_clk27();
+
+	//FIXME temporary to get multi_sniffer working
+	uint32_t d_clk_offset;
+	uint32_t d_first_slot;
+	uint32_t d_prev_slot;
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

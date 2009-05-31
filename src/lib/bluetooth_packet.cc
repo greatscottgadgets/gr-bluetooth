@@ -831,7 +831,6 @@ uint8_t bluetooth_packet::try_clock(int clock)
 	/* 18 bit packet header */
 	char header[18];
 	char unwhitened[18];
-	uint8_t unwhitened_air[3]; // more than one bit per byte but in air order
 
 	unfec13(stream, header, 18);
 	unwhiten(header, unwhitened, clock, 18, 0);
@@ -850,8 +849,7 @@ bool bluetooth_packet::decode_header()
 	char *stream = d_symbols + 72;
 	/* 18 bit packet header */
 	char header[18];
-	uint8_t UAP, ltadr;
-	int count;
+	uint8_t UAP;
 
 	unfec13(stream, header, 18);
 
@@ -868,26 +866,6 @@ bool bluetooth_packet::decode_header()
 		}
 	}
 	
-	/* we don't have the clock, so we try every possible CLK1-6 value until we find the most likely LT_ADDR */
-	for(count = 0; count < 64; count++) {
-		unwhiten(header, d_packet_header, count, 18, 0);
-		uint16_t hdr_data = air_to_host16(d_packet_header, 10);
-		uint8_t hec = air_to_host8(&d_packet_header[10], 8);
-		UAP = bluetooth_packet::UAP_from_hec(hdr_data, hec);
-
-		//FIXME throw exception if !d_have_UAP
-		if(UAP != d_UAP)
-			continue;
-
-		ltadr = air_to_host8(d_packet_header, 3);
-
-		//FIXME assuming that the lt_addr can only be 1
-		if (1 == ltadr) {
-			d_packet_type = air_to_host8(&d_packet_header[3], 4);
-			printf("found lt_addr == 1 ");
-			return true;
-		}
-	}
 	printf("failed to decode header\n");
 	return false;
 }

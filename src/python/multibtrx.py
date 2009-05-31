@@ -5,7 +5,6 @@ Bluetooth monitoring utility.
 Receives samples from USRP, file (as created by usrp_rx_cfile.py), or standard input.
 If LAP is unspecified, LAP detection mode is enabled.
 If LAP is specified without UAP, UAP detection mode is enabled.
-If both LAP and UAP are specified, sniffing mode is enabled.
 """
 
 from gnuradio import gr, eng_notation, blks2
@@ -25,6 +24,8 @@ class my_top_block(gr.top_block):
 						help="number of samples to collect [default=+inf]")
 		parser.add_option("-R", "--rx-subdev-spec", type="subdev", default=(0, 0),
 						help="select USRP Rx side A or B (default=A)")
+		parser.add_option("-S", "--sniff", action="store_true", default=False,
+						help="all-piconet sniffer")
 		parser.add_option("-a", "--aliased", action="store_true", default=False,
 						help="using a particular aliasing receiver implementation")
 		parser.add_option("-c", "--ddc", type="string", default="0",
@@ -53,8 +54,6 @@ class my_top_block(gr.top_block):
 						help="input interleaved shorts instead of complex floats")
 		parser.add_option("-t", "--squelch", type="eng_float", default=-1000,
 						help="power squelch threshold in dB (default=None)")
-		parser.add_option("-u", "--uap", type="string", default=None,
-						help="UAP of the master device")
 		parser.add_option("-w","--wireshark", action="store_true", default=False,
 						help="direct output to a tun interface")
 		parser.add_option("-2","--usrp2", action="store_true", default=False,
@@ -144,23 +143,28 @@ class my_top_block(gr.top_block):
 			stage2 = stage1
 
 		# bluetooth decoding
-		if options.lap is None:
+		if options.sniff:
+			# decode all packets from all piconets on all channels,
+			# discovering UAPs and clocks as necessary
+			dst = bluetooth.multi_sniffer(options.sample_rate,
+					options.freq, options.squelch,
+					options.wireshark)
+		elif options.lap is None:
 			# print out LAP for every frame detected
-			dst = bluetooth.multi_LAP(options.sample_rate, options.freq, options.squelch)
+			dst = bluetooth.multi_LAP(options.sample_rate,
+					options.freq, options.squelch)
+		elif options.hop:
+			# determine UAP and then master clock from hopping sequence
+			dst = bluetooth.multi_hopper(options.sample_rate,
+					options.freq, options.squelch,
+					int(options.lap, 16), options.aliased,
+					options.wireshark)
 		else:
-			if options.uap is None:
-				if options.hop:
-					# determine UAP and then master clock from hopping sequence
-				    if options.wireshark:
-					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, options.squelch, int(options.lap, 16), options.aliased, True)
-				    else:
-					dst = bluetooth.multi_hopper(options.sample_rate, options.freq, options.squelch, int(options.lap, 16), options.aliased, False)
-				else:
-					# determine UAP from frames matching the user-specified LAP
-					dst = bluetooth.multi_UAP(options.sample_rate, options.freq, options.squelch, int(options.lap, 16))
-			else:
-				raise SystemExit, "not implemented"
-	
+			# determine UAP from frames matching the user-specified LAP
+			dst = bluetooth.multi_UAP(options.sample_rate,
+					options.freq, options.squelch,
+					int(options.lap, 16))
+
 		# connect the blocks
 		self.connect(stage2, dst)
 

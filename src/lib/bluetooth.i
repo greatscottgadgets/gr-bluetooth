@@ -12,6 +12,7 @@
 #include "bluetooth_multi_LAP.h"
 #include "bluetooth_multi_UAP.h"
 #include "bluetooth_multi_hopper.h"
+#include "bluetooth_multi_sniffer.h"
 #include "bluetooth_UAP.h"
 #include "bluetooth_hopper.h"
 #include "bluetooth_block.h"
@@ -90,6 +91,20 @@ class bluetooth_multi_hopper : public gr_sync_block
 {
 private:
   bluetooth_multi_hopper (double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun);
+};
+
+/*
+ * First arg is the package prefix.
+ * Second arg is the name of the class minus the prefix.
+ */
+GR_SWIG_BLOCK_MAGIC(bluetooth,multi_sniffer);
+
+bluetooth_multi_sniffer_sptr bluetooth_make_multi_sniffer (double sample_rate, double center_freq, double squelch_threshold, bool tun);
+
+class bluetooth_multi_sniffer : public gr_sync_block
+{
+private:
+  bluetooth_multi_sniffer (double sample_rate, double center_freq, double squelch_threshold, bool tun);
 };
 
 /*

@@ -50,6 +50,13 @@ bluetooth_piconet::bluetooth_piconet(uint32_t LAP)
 	d_hop_reversal_inited = false;
 	d_afh = false;
 	d_looks_like_afh = false;
+	d_have_UAP = false;
+	d_have_clk6 = false;
+	d_have_clk27 = false;
+
+	//FIXME temporary
+	d_first_slot = 0;
+	d_prev_slot = 0;
 }
 
 /* destructor */
@@ -80,9 +87,10 @@ int bluetooth_piconet::init_hop_reversal(bool aliased)
 	precalc();
 	address_precalc(((d_UAP<<24) | d_LAP) & 0xfffffff);
 	gen_hops();
-	d_num_candidates = init_candidates(d_pattern_channels[0], d_clock6);
+	d_num_candidates = init_candidates(d_pattern_channels[0], d_clock & 0x3f);
 	d_winnowed = 0;
 	d_hop_reversal_inited = true;
+	d_have_clk27 = false;
 	d_aliased = aliased;
 
 	return d_num_candidates;
@@ -281,8 +289,13 @@ int bluetooth_piconet::winnow(int offset, char channel)
 		}
 	}
 	d_num_candidates = new_count;
-	//FIXME maybe do something if new_count == 1
+
+	if (new_count == 1) {
+		d_clock = d_clock_candidates[0];
+		d_have_clk27 = true;
+	}
 	//FIXME maybe do something if new_count == 0
+
 	return new_count;
 }
 
@@ -319,14 +332,31 @@ int bluetooth_piconet::winnow()
 /* CLK1-27 */
 uint32_t bluetooth_piconet::get_clock()
 {
-	/* this is completely bogus unless d_num_candidates == 1 */
-	return d_clock_candidates[0];
+	/* caller should check have_clk6() and/or have_clk27() */
+	return d_clock;
 }
 
 /* UAP */
 uint8_t bluetooth_piconet::get_UAP()
 {
+	/* caller should check have_UAP() */
 	return d_UAP;
+}
+
+/* discovery status */
+bool bluetooth_piconet::have_UAP()
+{
+	return d_have_UAP;
+}
+
+bool bluetooth_piconet::have_clk6()
+{
+	return d_have_clk6;
+}
+
+bool bluetooth_piconet::have_clk27()
+{
+	return d_have_clk27;
 }
 
 /* use packet headers to determine UAP */
@@ -414,8 +444,10 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet, int interv
 	{
 		/* we only trust this result if two packets in a row agree on the winner */
 		printf("We have a winner! UAP = 0x%x found after %d total packets.\n", UAP, d_total_packets_observed);
-		d_clock6 = first_clock;
+		d_clock = first_clock;
 		d_UAP = UAP;
+		d_have_clk6 = true;
+		d_have_UAP = true;
 		return true;
 	}
 	return false;
@@ -438,6 +470,13 @@ void bluetooth_piconet::reset()
 	d_previous_clock_offset = 0;
 	d_packets_observed = 0;
 	d_hop_reversal_inited = false;
+	d_have_UAP = false;
+	d_have_clk6 = false;
+	d_have_clk27 = false;
+
+	//FIXME temporary
+	d_first_slot = 0;
+	d_prev_slot = 0;
 
 	/*
 	 * If we have recently observed two packets in a row, try AFH next

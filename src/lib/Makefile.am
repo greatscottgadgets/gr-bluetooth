@@ -72,6 +72,7 @@ _bluetooth_la_SOURCES = 		\
 	bluetooth_multi_LAP.cc		\
 	bluetooth_multi_UAP.cc		\
 	bluetooth_multi_hopper.cc	\
+	bluetooth_multi_sniffer.cc	\
 	bluetooth_sniffer.cc		\
 	bluetooth_tun.cc		\
 	tun.cc				\
@@ -101,6 +102,7 @@ grinclude_HEADERS =			\
 	bluetooth_multi_LAP.h		\
 	bluetooth_multi_UAP.h		\
 	bluetooth_multi_hopper.h	\
+	bluetooth_multi_sniffer.h	\
 	bluetooth_sniffer.h		\
 	bluetooth_tun.h			\
 	tun.h				\
