@@ -69,6 +69,8 @@ int bluetooth_piconet::init_hop_reversal(bool aliased)
 	int max_candidates;
 	uint32_t clock;
 
+	printf("\nCalculating complete hopping sequence.\n");
+
 	if(aliased)
 		max_candidates = (SEQUENCE_LENGTH / ALIASED_CHANNELS) / 32;
 	else
@@ -89,6 +91,8 @@ int bluetooth_piconet::init_hop_reversal(bool aliased)
 	d_hop_reversal_inited = true;
 	d_have_clk27 = false;
 	d_aliased = aliased;
+
+	printf("%d initial CLK1-27 candidates\n", d_num_candidates);
 
 	return d_num_candidates;
 }
@@ -291,8 +295,12 @@ int bluetooth_piconet::winnow(int offset, char channel)
 		d_clk_offset = (d_clock_candidates[0] - d_first_pkt_time)
 				& 0x7ffffff;
 		d_have_clk27 = true;
+		printf("\nAcquired CLK1-27 offset = 0x%07x\n", d_clk_offset);
+	} else if (new_count == 0) {
+		reset();
+	} else {
+		printf("%d CLK1-27 candidates remaining\n", new_count);
 	}
-	//FIXME maybe do something if new_count == 0
 
 	return new_count;
 }
@@ -377,8 +385,8 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet,
 	} else
 	{
 		printf("Oops. More hops than we can remember.\n");
+		reset();
 		return false; //FIXME ought to throw exception
-		//FIXME reset?
 	}
 	d_packets_observed++;
 	d_total_packets_observed++;
@@ -434,13 +442,9 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet,
 	}
 	d_got_first_packet = true;
 	printf("reduced from %d to %d CLK1-6 candidates\n", starting, remaining);
-	if(0 == remaining)
-	{
-		printf("no candidates remaining! starting over . . .\n");
-		d_got_first_packet = false;
-		d_packets_observed = 0;
-	} else if(1 == starting && 1 == remaining)
-	{
+	if (0 == remaining) {
+		reset();
+	} else if (1 == starting && 1 == remaining) {
 		/* we only trust this result if two packets in a row agree on the winner */
 		printf("We have a winner! UAP = 0x%x found after %d total packets.\n", UAP, d_total_packets_observed);
 		d_clk_offset = (first_clock - (d_first_pkt_time & 0x3f)) & 0x3f;
@@ -461,6 +465,8 @@ char bluetooth_piconet::aliased_channel(char channel)
 /* reset UAP/clock discovery */
 void bluetooth_piconet::reset()
 {
+	printf("no candidates remaining! starting over . . .\n");
+
 	if(d_hop_reversal_inited) {
 		free(d_clock_candidates);
 		free(d_sequence);

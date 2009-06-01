@@ -50,8 +50,6 @@ bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center
 {
 	d_LAP = LAP;
 	d_aliased = aliased;
-	d_have_clock6 = false;
-	d_have_clock27 = false;
 	d_tun = tun;
 	set_symbol_history(3125);
 	d_piconet = bluetooth_make_piconet(d_LAP);
@@ -82,11 +80,10 @@ bluetooth_multi_hopper::work(int noutput_items,
 	int retval, channel, num_symbols, latest_ac;
 	uint32_t clkn; /* native (local) clock in 625 us */
 	char symbols[history()]; //poor estimate but safe
-	int num_candidates = -1;
 
 	clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
 
-	if (d_have_clock27) {
+	if (d_piconet->have_clk27()) {
 		/* now that we know the clock and UAP, follow along and sniff each time slot on the correct channel */
 		hopalong(input_items, symbols, clkn);
 	} else {
@@ -102,36 +99,23 @@ bluetooth_multi_hopper::work(int noutput_items,
 				if(retval > -1) {
 					bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
 					if (packet->get_LAP() == d_LAP && packet->header_present()) {
-						if(!d_have_clock6) {
+						if (!d_piconet->have_clk6()) {
 							/* working on CLK1-6/UAP discovery */
-							d_have_clock6 = d_piconet->UAP_from_header(packet, clkn, channel);
-							if(d_have_clock6) {
+							d_piconet->UAP_from_header(packet, clkn, channel);
+							if (d_piconet->have_clk6()) {
 								/* got CLK1-6/UAP, start working on CLK1-27 */
-								printf("\nCalculating complete hopping sequence.\n");
-								printf("%d initial CLK1-27 candidates\n", d_piconet->init_hop_reversal(d_aliased));
+								d_piconet->init_hop_reversal(d_aliased);
 								/* use previously observed packets to eliminate candidates */
-								num_candidates = d_piconet->winnow();
-								printf("%d CLK1-27 candidates remaining\n", num_candidates);
+								d_piconet->winnow();
 							}
 						} else {
 							/* continue working on CLK1-27 */
 							/* we need timing information from an additional packet, so run through UAP_from_header() again */
-							d_have_clock6 = d_piconet->UAP_from_header(packet, clkn, channel);
-							if (!d_have_clock6) {
-								reset(); //FIXME piconet should do this
+							d_piconet->UAP_from_header(packet, clkn, channel);
+							if (!d_piconet->have_clk6()) {
 								break;
 							}
-							num_candidates = d_piconet->winnow();
-							printf("%d CLK1-27 candidates remaining\n", num_candidates);
-						}
-						/* CLK1-27 results */
-						if(num_candidates == 1) {
-							/* win! */
-							printf("\nAcquired CLK1-27 offset = 0x%07x\n", d_piconet->get_offset());
-							d_have_clock27 = true;
-						} else if(num_candidates == 0) {
-							/* fail! */
-							reset();
+							d_piconet->winnow();
 						}
 						break;
 					}
@@ -200,15 +184,4 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items,
 			}
 		}
 	}
-}
-
-/*
- * start everything over, even CLK1-6/UAP discovery, because we can't trust
- * what we have
- */
-void bluetooth_multi_hopper::reset()
-{
-	printf("Failed to acquire clock. starting over . . .\n\n");
-	d_piconet->reset();
-	d_have_clock6 = false;
 }

@@ -50,12 +50,6 @@ private:
 	/* constructor */
 	bluetooth_multi_hopper(double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun);
 
-	/* do we have CLK1-6? */
-	bool d_have_clock6;
-
-	/* do we have CLK1-27? */
-	bool d_have_clock27;
-
 	/* LAP of the target piconet */
 	uint32_t d_LAP;
 
@@ -74,12 +68,6 @@ private:
 	 */
 	void hopalong(gr_vector_const_void_star &input_items, char *symbols,
 			uint32_t clkn);
-
-	/*
-	 * start everything over, even CLK1-6/UAP discovery, because we can't
-	 * trust what we have
-	 */
-	void reset();
 
 	/* Tun stuff */
 	int			d_tunfd;	// TUN fd

@@ -52,18 +52,11 @@ private:
 
 	bluetooth_hopper (int LAP, int channel);	// private constructor
 
-	/* do we have CLK1-6? */
-	bool d_have_clock6;
 	/* channel number (0-78) we are observing */
 	int d_channel;
+
 	/* the piconet we are monitoring */
 	bluetooth_piconet_sptr d_piconet;
-
-	/*
-	 * start everything over, even CLK1-6/UAP discovery, because we can't
-	 * trust what we have
-	 */
-	void reset();
 
 public:
 	~bluetooth_hopper ();	// public destructor
