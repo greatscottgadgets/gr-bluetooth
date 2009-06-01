@@ -67,6 +67,7 @@ bluetooth_piconet::~bluetooth_piconet()
 int bluetooth_piconet::init_hop_reversal(bool aliased)
 {
 	int max_candidates;
+	uint32_t clock;
 
 	if(aliased)
 		max_candidates = (SEQUENCE_LENGTH / ALIASED_CHANNELS) / 32;
@@ -82,7 +83,8 @@ int bluetooth_piconet::init_hop_reversal(bool aliased)
 	precalc();
 	address_precalc(((d_UAP<<24) | d_LAP) & 0xfffffff);
 	gen_hops();
-	d_num_candidates = init_candidates(d_pattern_channels[0], d_clock & 0x3f);
+	clock = (d_clk_offset + d_first_pkt_time) & 0x3f;
+	d_num_candidates = init_candidates(d_pattern_channels[0], clock);
 	d_winnowed = 0;
 	d_hop_reversal_inited = true;
 	d_have_clk27 = false;
@@ -286,7 +288,6 @@ int bluetooth_piconet::winnow(int offset, char channel)
 	d_num_candidates = new_count;
 
 	if (new_count == 1) {
-		d_clock = d_clock_candidates[0];
 		d_clk_offset = (d_clock_candidates[0] - d_first_pkt_time)
 				& 0x7ffffff;
 		d_have_clk27 = true;
@@ -326,11 +327,11 @@ int bluetooth_piconet::winnow()
 	return new_count;
 }
 
-/* CLK1-27 */
-uint32_t bluetooth_piconet::get_clock()
+/* offset between CLKN (local) and CLK of piconet */
+uint32_t bluetooth_piconet::get_offset()
 {
 	/* caller should check have_clk6() and/or have_clk27() */
-	return d_clock;
+	return d_clk_offset;
 }
 
 /* UAP */
@@ -442,7 +443,6 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet,
 	{
 		/* we only trust this result if two packets in a row agree on the winner */
 		printf("We have a winner! UAP = 0x%x found after %d total packets.\n", UAP, d_total_packets_observed);
-		d_clock = first_clock; //FIXME still needed?
 		d_clk_offset = (first_clock - (d_first_pkt_time & 0x3f)) & 0x3f;
 		d_UAP = UAP;
 		d_have_clk6 = true;

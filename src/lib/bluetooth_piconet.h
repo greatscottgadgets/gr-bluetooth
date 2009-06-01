@@ -103,9 +103,6 @@ private:
 	/* CLK1-6 candidates */
 	int d_clock6_candidates[64];
 
-	/* CLK1-27 (sometimes only holds CLK1-6) */
-	uint32_t d_clock;
-
 	/* remember patterns of observed hops */
 	int d_pattern_indices[MAX_PATTERN_LENGTH];
 	uint8_t d_pattern_channels[MAX_PATTERN_LENGTH];
@@ -140,6 +137,12 @@ private:
 	bool d_have_clk6;
 	bool d_have_clk27;
 
+	/* offset between CLKN (local) and CLK of piconet */
+	uint32_t d_clk_offset;
+
+	/* local clock (clkn) at time of first packet */
+	uint32_t d_first_pkt_time;
+
 public:
 	/* constructors */
 	bluetooth_piconet(uint32_t LAP);
@@ -160,8 +163,8 @@ public:
 	/* narrow a list of candidate clock values based on all observed hops */
 	int winnow();
 
-	/* CLK1-27 */
-	uint32_t get_clock();
+	/* offset between CLKN (local) and CLK of piconet */
+	uint32_t get_offset();
 
 	/* UAP */
 	uint8_t get_UAP();
@@ -183,12 +186,6 @@ public:
 	bool have_UAP();
 	bool have_clk6();
 	bool have_clk27();
-
-	/* offset between CLKN (local) and CLK of piconet */
-	uint32_t d_clk_offset; //FIXME should be private
-
-	/* local clock (clkn) at time of first packet */
-	uint32_t d_first_pkt_time; //FIXME should be private
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

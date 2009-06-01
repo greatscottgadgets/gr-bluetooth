@@ -155,7 +155,7 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 {
 	int clock; /* CLK of target piconet */
 
-	clock = (clkn + pn->d_clk_offset) & 0x3f;
+	clock = (clkn + pn->get_offset()) & 0x3f;
 	pkt->set_clock(clock);
 	pkt->set_UAP(pn->get_UAP());
 	//printf("clock 0x%02x: ", clock);

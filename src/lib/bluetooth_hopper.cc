@@ -98,7 +98,7 @@ int bluetooth_hopper::work (int noutput_items,
 			/* CLK1-27 results */
 			if(num_candidates == 1) {
 				/* win! */
-				printf("\nAcquired CLK1-27 = 0x%07x\n", d_piconet->get_clock());
+				printf("\nAcquired CLK1-27 offset = 0x%07x\n", d_piconet->get_offset());
 				exit(0);
 			} else if(num_candidates == 0) {
 				/* fail! */

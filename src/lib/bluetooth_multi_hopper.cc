@@ -127,10 +127,8 @@ bluetooth_multi_hopper::work(int noutput_items,
 						/* CLK1-27 results */
 						if(num_candidates == 1) {
 							/* win! */
-							printf("\nAcquired CLK1-27 = 0x%07x\n", d_piconet->get_clock());
+							printf("\nAcquired CLK1-27 offset = 0x%07x\n", d_piconet->get_offset());
 							d_have_clock27 = true;
-							//FIXME let piconet keep track of this
-							d_clock_offset = d_piconet->get_clock() - d_piconet->d_first_pkt_time;
 						} else if(num_candidates == 0) {
 							/* fail! */
 							reset();
@@ -160,7 +158,7 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items,
 {
 	int ac_index, channel, num_symbols, latest_ac;
 	char observable_channel;
-	uint32_t clock27 = (clkn + d_clock_offset) % bluetooth_piconet::SEQUENCE_LENGTH;
+	uint32_t clock27 = (clkn + d_piconet->get_offset()) & 0x7ffffff;
 	channel = d_piconet->hop(clock27);
 	if (d_aliased)
 		observable_channel = d_piconet->aliased_channel(channel);
