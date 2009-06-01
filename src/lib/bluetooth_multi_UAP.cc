@@ -49,7 +49,6 @@ bluetooth_multi_UAP::bluetooth_multi_UAP(double sample_rate, double center_freq,
   : bluetooth_multi_block(sample_rate, center_freq, squelch_threshold)
 {
 	d_LAP = LAP;
-	d_previous_slot = 0;
 	set_symbol_history(3125);
 	d_piconet = bluetooth_make_piconet(d_LAP);
 	printf("lowest channel: %d, highest channel %d\n", d_low_channel, d_high_channel);
@@ -65,10 +64,12 @@ bluetooth_multi_UAP::work(int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
-	int retval, interval, current_slot, channel;
+	int retval, channel;
+	uint32_t clkn; /* native (local) clock in 625 us */
 	char symbols[history()]; //poor estimate but safe
 
-	//FIXME maybe limit to one channel for real-time performance
+	clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
+
 	for (channel = d_low_channel; channel <= d_high_channel; channel++)
 	{
 		int num_symbols = channel_symbols(channel, input_items, symbols, history());
@@ -81,11 +82,8 @@ bluetooth_multi_UAP::work(int noutput_items,
 			if(retval > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
 				if (packet->get_LAP() == d_LAP && packet->header_present()) {
-					current_slot = (int) (d_cumulative_count / d_samples_per_slot);
-					interval = current_slot - d_previous_slot;
-					if (d_piconet->UAP_from_header(packet, interval, channel))
+					if (d_piconet->UAP_from_header(packet, clkn, channel))
 						exit(0);
-					d_previous_slot = current_slot;
 					break;
 				}
 			}

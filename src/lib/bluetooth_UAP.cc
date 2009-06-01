@@ -50,7 +50,6 @@ bluetooth_UAP::bluetooth_UAP (int LAP)
 	set_history(3125);
 
 	d_cumulative_count = 0;
-	d_previous_packet_time = 0;
 
 	d_piconet = bluetooth_make_piconet(d_LAP);
 }
@@ -66,7 +65,8 @@ bluetooth_UAP::work (int noutput_items,
 			       gr_vector_void_star &output_items)
 {
 	char *in = (char *) input_items[0];
-	int retval, difference, interval, current_time, consumed;
+	int retval, consumed;
+	uint32_t clkn; /* native (local) clock in 625 us */
 
 	retval = bluetooth_packet::sniff_ac(in, noutput_items);
 	if(-1 == retval) {
@@ -75,14 +75,9 @@ bluetooth_UAP::work (int noutput_items,
 		consumed = retval;
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items + history() - retval);
 		if (packet->get_LAP() == d_LAP && packet->header_present()) {
-			current_time = d_cumulative_count + consumed;
-			/* number of samples elapsed since previous packet */
-			difference = current_time - d_previous_packet_time;
-			/* number of time slots elapsed since previous packet */
-			interval = (difference + 312) / 625;
-			if (d_piconet->UAP_from_header(packet, interval, 0))
+			clkn = ((d_cumulative_count + consumed) / 625) & 0x7ffffff;
+			if (d_piconet->UAP_from_header(packet, clkn, 0))
 				exit(0);
-			d_previous_packet_time = current_time;
 		}
 		consumed += 126;
 	}

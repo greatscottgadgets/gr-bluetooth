@@ -50,8 +50,6 @@ bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center
 {
 	d_LAP = LAP;
 	d_aliased = aliased;
-	d_previous_slot = 0;
-	d_first_packet_slot = -1;
 	d_have_clock6 = false;
 	d_have_clock27 = false;
 	d_tun = tun;
@@ -81,18 +79,17 @@ bluetooth_multi_hopper::work(int noutput_items,
 			       gr_vector_const_void_star &input_items,
 			       gr_vector_void_star &output_items)
 {
-	int retval, interval, current_slot, channel, num_symbols, latest_ac;
+	int retval, channel, num_symbols, latest_ac;
+	uint32_t clkn; /* native (local) clock in 625 us */
 	char symbols[history()]; //poor estimate but safe
 	int num_candidates = -1;
 
-	current_slot = (int) (d_cumulative_count / d_samples_per_slot);
-	interval = current_slot - d_previous_slot;
+	clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
 
 	if (d_have_clock27) {
 		/* now that we know the clock and UAP, follow along and sniff each time slot on the correct channel */
-		hopalong(input_items, symbols, current_slot);
+		hopalong(input_items, symbols, clkn);
 	} else {
-		//FIXME maybe limit to one channel for real-time performance
 		for (channel = d_low_channel; channel <= d_high_channel; channel++)
 		{
 			num_symbols = channel_symbols(channel, input_items, symbols, history());
@@ -107,9 +104,7 @@ bluetooth_multi_hopper::work(int noutput_items,
 					if (packet->get_LAP() == d_LAP && packet->header_present()) {
 						if(!d_have_clock6) {
 							/* working on CLK1-6/UAP discovery */
-							d_have_clock6 = d_piconet->UAP_from_header(packet, interval, channel);
-							if(d_first_packet_slot == -1)
-								d_first_packet_slot = current_slot;
+							d_have_clock6 = d_piconet->UAP_from_header(packet, clkn, channel);
 							if(d_have_clock6) {
 								/* got CLK1-6/UAP, start working on CLK1-27 */
 								printf("\nCalculating complete hopping sequence.\n");
@@ -121,9 +116,9 @@ bluetooth_multi_hopper::work(int noutput_items,
 						} else {
 							/* continue working on CLK1-27 */
 							/* we need timing information from an additional packet, so run through UAP_from_header() again */
-							d_have_clock6 = d_piconet->UAP_from_header(packet, interval, channel);
+							d_have_clock6 = d_piconet->UAP_from_header(packet, clkn, channel);
 							if (!d_have_clock6) {
-								reset();
+								reset(); //FIXME piconet should do this
 								break;
 							}
 							num_candidates = d_piconet->winnow();
@@ -134,12 +129,12 @@ bluetooth_multi_hopper::work(int noutput_items,
 							/* win! */
 							printf("\nAcquired CLK1-27 = 0x%07x\n", d_piconet->get_clock());
 							d_have_clock27 = true;
-							d_clock_offset = d_piconet->get_clock() - d_first_packet_slot;
+							//FIXME let piconet keep track of this
+							d_clock_offset = d_piconet->get_clock() - d_piconet->d_first_pkt_time;
 						} else if(num_candidates == 0) {
 							/* fail! */
 							reset();
 						}
-						d_previous_slot = current_slot;
 						break;
 					}
 				}
@@ -156,12 +151,16 @@ bluetooth_multi_hopper::work(int noutput_items,
 	return (int) d_samples_per_slot;
 }
 
-/* follow a piconet's hopping sequence and look for packets on the appropriate channel for each time slot */
-void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, char *symbols, int current_slot)
+/*
+ * follow a piconet's hopping sequence and look for packets on the appropriate
+ * channel for each time slot
+ */
+void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items,
+		char *symbols, uint32_t clkn)
 {
 	int ac_index, channel, num_symbols, latest_ac;
 	char observable_channel;
-	uint32_t clock27 = (current_slot + d_clock_offset) % bluetooth_piconet::SEQUENCE_LENGTH;
+	uint32_t clock27 = (clkn + d_clock_offset) % bluetooth_piconet::SEQUENCE_LENGTH;
 	channel = d_piconet->hop(clock27);
 	if (d_aliased)
 		observable_channel = d_piconet->aliased_channel(channel);
@@ -205,11 +204,13 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items, ch
 	}
 }
 
-/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
+/*
+ * start everything over, even CLK1-6/UAP discovery, because we can't trust
+ * what we have
+ */
 void bluetooth_multi_hopper::reset()
 {
 	printf("Failed to acquire clock. starting over . . .\n\n");
 	d_piconet->reset();
-	d_first_packet_slot = -1;
 	d_have_clock6 = false;
 }

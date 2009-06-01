@@ -49,9 +49,6 @@ private:
 	/* constructor */
 	bluetooth_multi_UAP(double sample_rate, double center_freq, double squelch_threshold, int LAP);
 
-    /* remember the time slot of the previous packet for interval computation */
-	int d_previous_slot;
-
 	/* LAP of the target piconet */
 	uint32_t d_LAP;
 

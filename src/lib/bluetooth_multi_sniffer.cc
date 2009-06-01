@@ -183,20 +183,9 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 void bluetooth_multi_sniffer::discover(bluetooth_packet_sptr pkt,
 		bluetooth_piconet_sptr pn, uint32_t clkn, int channel)
 {
-	//FIXME some or all of this should move to bluetooth_piconet
-
-	int interval; /* time between packets in 625 us */
-
 	printf("working on UAP/CLK1-6\n");
 
-	if (!pn->d_first_slot)
-		pn->d_first_slot = clkn;
-
-	//FIXME use clkn instead of interval
-	interval = clkn - pn->d_prev_slot;
-	if (pn->UAP_from_header(pkt, interval, channel)) {
-		pn->d_clk_offset = (pn->get_clock() -
-				(pn->d_first_slot & 0x3f)) & 0x3f;
+	if (pn->UAP_from_header(pkt, clkn, channel)) {
 		//FIXME go back and decode remembered packets
 	} else {
 		remember(pn, clkn);
@@ -206,7 +195,6 @@ void bluetooth_multi_sniffer::discover(bluetooth_packet_sptr pkt,
 /* store packet for future use */
 void bluetooth_multi_sniffer::remember(bluetooth_piconet_sptr pn, uint32_t clkn)
 {
-	pn->d_prev_slot = clkn;
 	//FIXME add packet to history
 }
 

@@ -110,9 +110,6 @@ private:
 	int d_pattern_indices[MAX_PATTERN_LENGTH];
 	uint8_t d_pattern_channels[MAX_PATTERN_LENGTH];
 
-	/* number of time slots between first packet and previous packet */
-	int d_previous_clock_offset;
-
 	bool d_hop_reversal_inited;
 
 	/* do all the precalculation that can be done before knowing the address */
@@ -170,7 +167,8 @@ public:
 	uint8_t get_UAP();
 
 	/* use packet headers to determine UAP */
-	bool UAP_from_header(bluetooth_packet_sptr packet, int interval, int channel);
+	bool UAP_from_header(bluetooth_packet_sptr packet, uint32_t clkn,
+			int channel);
 
 	/* look up channel for a particular hop */
 	char hop(int clock);
@@ -186,10 +184,11 @@ public:
 	bool have_clk6();
 	bool have_clk27();
 
-	//FIXME temporary to get multi_sniffer working
-	uint32_t d_clk_offset;
-	uint32_t d_first_slot;
-	uint32_t d_prev_slot;
+	/* offset between CLKN (local) and CLK of piconet */
+	uint32_t d_clk_offset; //FIXME should be private
+
+	/* local clock (clkn) at time of first packet */
+	uint32_t d_first_pkt_time; //FIXME should be private
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

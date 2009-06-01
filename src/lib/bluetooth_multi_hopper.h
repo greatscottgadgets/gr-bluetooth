@@ -56,12 +56,6 @@ private:
 	/* do we have CLK1-27? */
 	bool d_have_clock27;
 
-	/* remember the time slot of the first packet */
-	int d_first_packet_slot;
-
-	/* remember the time slot of the previous packet for interval computation */
-	int d_previous_slot;
-
 	/* difference between local slot count and piconet master's CLK1-27 */
 	int d_clock_offset;
 
@@ -77,10 +71,17 @@ private:
 	/* the piconet we are monitoring */
 	bluetooth_piconet_sptr d_piconet;
 
-	/* follow a piconet's hopping sequence and look for packets on the appropriate channel for each time slot */
-	void hopalong(gr_vector_const_void_star &input_items, char *symbols, int current_slot);
+	/*
+	 * follow a piconet's hopping sequence and look for packets on the
+	 * appropriate channel for each time slot
+	 */
+	void hopalong(gr_vector_const_void_star &input_items, char *symbols,
+			uint32_t clkn);
 
-	/* start everything over, even CLK1-6/UAP discovery, because we can't trust what we have */
+	/*
+	 * start everything over, even CLK1-6/UAP discovery, because we can't
+	 * trust what we have
+	 */
 	void reset();
 
 	/* Tun stuff */

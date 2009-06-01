@@ -53,19 +53,13 @@ private:
 protected:
 	bluetooth_UAP (int LAP);	// private constructor
 
-	/* remember the sample count of the previous packet for interval computation */
-	int d_previous_packet_time;
-
 	/* the piconet we are monitoring */
 	bluetooth_piconet_sptr d_piconet;
 
 public:
-  ~bluetooth_UAP ();	// public destructor
+	~bluetooth_UAP ();	// public destructor
 
-  // Where all the action really happens
-
-  int work (int noutput_items,
-		    gr_vector_const_void_star &input_items,
+	int work (int noutput_items, gr_vector_const_void_star &input_items,
 		    gr_vector_void_star &output_items);
 };
 
