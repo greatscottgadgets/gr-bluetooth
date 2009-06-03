@@ -242,7 +242,6 @@ public:
 	/* try a clock value (CLK1-6) to unwhiten packet header,
 	 * sets resultant d_packet_type and d_UAP, returns UAP.
 	 */
-	//FIXME should this be merged with set_clock()?
 	uint8_t try_clock(int clock);
 
 	/* check to see if the packet has a header */

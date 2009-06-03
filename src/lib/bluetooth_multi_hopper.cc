@@ -85,11 +85,12 @@ bluetooth_multi_hopper::work(int noutput_items,
 
 	if (d_piconet->have_clk27()) {
 		/* now that we know the clock and UAP, follow along and sniff each time slot on the correct channel */
-		hopalong(input_items, symbols, clkn);
+		hopalong(input_items, symbols, clkn, noutput_items);
 	} else {
 		for (channel = d_low_channel; channel <= d_high_channel; channel++)
 		{
-			num_symbols = channel_symbols(channel, input_items, symbols, history());
+			num_symbols = channel_symbols(channel, input_items,
+					symbols, history() + noutput_items);
 	
 			if (num_symbols >= 72 )
 			{
@@ -138,7 +139,7 @@ bluetooth_multi_hopper::work(int noutput_items,
  * channel for each time slot
  */
 void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items,
-		char *symbols, uint32_t clkn)
+		char *symbols, uint32_t clkn, int noutput_items)
 {
 	int ac_index, channel, num_symbols, latest_ac;
 	char observable_channel;
@@ -149,8 +150,8 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items,
 	else
 		observable_channel = channel;
 	if (observable_channel >= d_low_channel && observable_channel <= d_high_channel) {
-		//FIXME history() + noutput_items?
-		num_symbols = channel_symbols(observable_channel, input_items, symbols, history());
+		num_symbols = channel_symbols(observable_channel, input_items,
+				symbols, history() + noutput_items);
 		if (num_symbols >= 72 ) {
 			latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
 			ac_index = bluetooth_packet::sniff_ac(symbols, latest_ac);

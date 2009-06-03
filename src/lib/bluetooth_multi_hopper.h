@@ -67,7 +67,7 @@ private:
 	 * appropriate channel for each time slot
 	 */
 	void hopalong(gr_vector_const_void_star &input_items, char *symbols,
-			uint32_t clkn);
+			uint32_t clkn, int noutput_items);
 
 	/* Tun stuff */
 	int			d_tunfd;	// TUN fd

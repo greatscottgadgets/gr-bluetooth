@@ -72,7 +72,8 @@ bluetooth_multi_LAP::work(int noutput_items,
 	 */
 	for (channel = d_low_channel; channel <= d_high_channel; channel++)
 	{
-		int num_symbols = channel_symbols(channel, input_items, symbols, history());
+		int num_symbols = channel_symbols(channel, input_items,
+				symbols, history() + noutput_items);
 
 		/* completely skip this time slot if we didn't break squelch */
 		if (num_symbols == 0)

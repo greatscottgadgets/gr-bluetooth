@@ -86,7 +86,8 @@ bluetooth_multi_sniffer::work(int noutput_items,
 	char symbols[history()];
 
 	for (ch = d_low_channel; ch <= d_high_channel; ch++) {
-		len = channel_symbols(ch, input_items, symbols, history());
+		len = channel_symbols(ch, input_items, symbols,
+				history() + noutput_items);
 
 		if (len >= 72 ) {
 			/* don't look beyond one slot for ACs */
