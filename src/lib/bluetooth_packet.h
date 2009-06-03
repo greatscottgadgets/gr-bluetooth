@@ -138,10 +138,10 @@ private:
 
 	/* type-specific CRC checks and decoding */
 	int fhs(int clock);
-	int DM(int clock, int type);
-	int DH(int clock, int type);
-	int EV(int clock, int type);
-	int HV(int clock, int type);
+	int DM(int clock);
+	int DH(int clock);
+	int EV(int clock);
+	int HV(int clock);
 
 	/* decode payload header, return value indicates success */
 	bool decode_payload_header(char *stream, int clock, int header_bytes, int size, bool fec);

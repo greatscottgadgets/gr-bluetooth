@@ -512,20 +512,20 @@ int bluetooth_packet::crc_check(int clock)
 		case 3:/* DM1 */
 		case 10:/* DM3 */
 		case 14:/* DM5 */
-			retval = DM(clock, d_packet_type);
+			retval = DM(clock);
 			break;
 
 		case 4:/* DH1 */
 		case 11:/* DH3 */
 		case 15:/* DH5 */
-			retval = DH(clock, d_packet_type);
+			retval = DH(clock);
 			break;
 
 		case 7:/* EV3 */
 		case 12:/* EV4 */
 		case 13:/* EV5 */
 			/* Unknown length, need to cycle through it until CRC matches */
-			retval = EV(clock, d_packet_type);
+			retval = EV(clock);
 			break;
 	}
 	/* never return a zero result unless this ia a FHS or DM1 */
@@ -619,7 +619,7 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 }
 
 /* DM 1/3/5 packet (and DV)*/
-int bluetooth_packet::DM(int clock, int type)
+int bluetooth_packet::DM(int clock)
 {
 	int bitlength;
 	uint16_t crc, check;
@@ -633,7 +633,7 @@ int bluetooth_packet::DM(int clock, int type)
 	/* number of symbols remaining after access code and packet header */
 	int size = d_length - 126;
 
-	switch(type)
+	switch(d_packet_type)
 	{
 		case(8): /* DV */
 			/* skip 80 voice bits, then treat the rest like a DM1 */
@@ -688,7 +688,7 @@ int bluetooth_packet::DM(int clock, int type)
 
 /* DH 1/3/5 packet */
 /* similar to DM 1/3/5 but without FEC */
-int bluetooth_packet::DH(int clock, int type)
+int bluetooth_packet::DH(int clock)
 {
 	int bitlength;
 	uint16_t crc, check;
@@ -701,7 +701,7 @@ int bluetooth_packet::DH(int clock, int type)
 	/* number of symbols remaining after access code and packet header */
 	int size = d_length - 126;
 	
-	switch(type)
+	switch(d_packet_type)
 	{
 		case(4): /* DH1 */
 			header_bytes = 1;
@@ -738,7 +738,7 @@ int bluetooth_packet::DH(int clock, int type)
 	return 0;
 }
 
-int bluetooth_packet::EV(int clock, int type)
+int bluetooth_packet::EV(int clock)
 {
 	int count;
 	uint16_t crc, check;
@@ -750,7 +750,7 @@ int bluetooth_packet::EV(int clock, int type)
 	/* number of symbols remaining after access code and packet header */
 	int size = d_length - 126;
 
-	switch (type)
+	switch (d_packet_type)
 	{
 		case 12:/* EV4 */
 			if(size < 1470)
@@ -795,7 +795,7 @@ int bluetooth_packet::EV(int clock, int type)
 }
 
 /* HV packet type payload parser */
-int bluetooth_packet::HV(int clock, int type)
+int bluetooth_packet::HV(int clock)
 {
 	char *corrected;
 	/* skip the access code and packet header */
@@ -808,7 +808,7 @@ int bluetooth_packet::HV(int clock, int type)
 		return 1; //FIXME should throw exception
 	}
 
-	switch (type)
+	switch (d_packet_type)
 	{
 		case 5:/* HV1 */
 			corrected = (char *) malloc(80);
@@ -900,53 +900,53 @@ void bluetooth_packet::decode_payload()
 			fhs(d_clock);
 			break;
 		case 3: /* DM1 */
-			DM(d_clock, d_packet_type);
+			DM(d_clock);
 			break;
 		case 4: /* DH1 */
 			/* assuming DH1 but could be 2-DH1 */
-			DH(d_clock, d_packet_type);
+			DH(d_clock);
 			break;
 		case 5: /* HV1 */
-			HV(d_clock, d_packet_type);
+			HV(d_clock);
 			break;
 		case 6: /* HV2 */
-			HV(d_clock, d_packet_type);
+			HV(d_clock);
 			break;
 		case 7: /* EV3 */
 			/* assuming EV3 but could be HV3 or 3-EV3 */
-			if(!EV(d_clock, d_packet_type)) {
-				HV(d_clock, d_packet_type);
+			if(!EV(d_clock)) {
+				HV(d_clock);
 			}
 			break;
 		case 8: /* DV */
 			/* assuming DV but could be 3-DH1 */
-			DM(d_clock, d_packet_type);
+			DM(d_clock);
 			break;
 		case 9: /* AUX1 */
 			/* don't know how to decode */
 			break;
 		case 10: /* DM3 */
 			/* assuming DM3 but could be 2-DH3 */
-			DM(d_clock, d_packet_type);
+			DM(d_clock);
 			break;
 		case 11: /* DH3 */
 			/* assuming DH3 but could be 3-DH3 */
-			DH(d_clock, d_packet_type);
+			DH(d_clock);
 			break;
 		case 12: /* EV4 */
 			/* assuming EV4 but could be 2-EV5 */
-			EV(d_clock, d_packet_type);
+			EV(d_clock);
 			break;
 		case 13: /* EV5 */
 			/* assuming EV5 but could be 3-EV5 */
-			EV(d_clock, d_packet_type);
+			EV(d_clock);
 		case 14: /* DM5 */
 			/* assuming DM5 but could be 2-DH5 */
-			DM(d_clock, d_packet_type);
+			DM(d_clock);
 			break;
 		case 15: /* DH5 */
 			/* assuming DH5 but could be 3-DH5 */
-			DH(d_clock, d_packet_type);
+			DH(d_clock);
 			break;
 	}
 	d_have_payload = true;
