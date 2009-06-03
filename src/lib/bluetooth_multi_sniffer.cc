@@ -89,16 +89,27 @@ bluetooth_multi_sniffer::work(int noutput_items,
 		len = channel_symbols(ch, input_items, symbols,
 				history() + noutput_items);
 
-		if (len >= 68 ) {
-			/* don't look beyond one slot for ACs */
-			int limit = (len - 68) < 625 ? (len - 68) : 625;
-			i = bluetooth_packet::sniff_ac(symbols, limit);
-			//FIXME look for more than one packet per slot (multiple piconets)
-			if (i > -1)
-				ac(&symbols[i], len - i, ch);
-		} else {
-			/* skip this time slot if we didn't break squelch */
+		/* skip this time slot if we didn't break squelch */
+		if (len < 68)
 			break;
+
+		/* pointer to our starting place for sniff_ac */
+		char *symp = symbols;
+
+		/* don't look beyond one slot for ACs */
+		int limit = (len - 68) < 625 ? (len - 68) : 625;
+
+		/* look for multiple packets in this slot */
+		while (limit >= 0 ) {
+			i = bluetooth_packet::sniff_ac(symp, limit);
+			if (i > -1) {
+				ac(symp + i, len - i, ch);
+				len -= (i + 68);
+				symp += (i + 68);
+				limit -= (i + 68);
+			} else {
+				break;
+			}
 		}
 	}
 	d_cumulative_count += (int) d_samples_per_slot;
@@ -133,7 +144,7 @@ void bluetooth_multi_sniffer::ac(char *symbols, int len, int channel)
 		pn = d_piconets[lap];
 
 		if (pn->have_clk6() && pn->have_UAP()) {
-			decode(pkt, pn, clkn);
+			decode(pkt, pn, clkn, channel);
 		} else {
 			discover(pkt, pn, clkn, channel);
 		}
@@ -152,7 +163,7 @@ void bluetooth_multi_sniffer::id(uint32_t lap)
 
 /* decode packets with headers */
 void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
-		bluetooth_piconet_sptr pn, uint32_t clkn)
+		bluetooth_piconet_sptr pn, uint32_t clkn, int channel)
 {
 	int clock; /* CLK of target piconet */
 
@@ -176,7 +187,9 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 	} else {
 		printf("lost clock!\n");
 		pn->reset();
-		//FIXME start rediscovery with this packet
+
+		/* start rediscovery with this packet */
+		discover(pkt, pn, clkn, channel);
 	}
 }
 
