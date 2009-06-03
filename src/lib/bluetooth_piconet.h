@@ -165,9 +165,11 @@ public:
 
 	/* offset between CLKN (local) and CLK of piconet */
 	uint32_t get_offset();
+	void set_offset(uint32_t offset);
 
 	/* UAP */
 	uint8_t get_UAP();
+	void set_UAP(uint8_t uap);
 
 	/* use packet headers to determine UAP */
 	bool UAP_from_header(bluetooth_packet_sptr packet, uint32_t clkn,

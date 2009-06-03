@@ -1047,3 +1047,29 @@ bool bluetooth_packet::header_present()
 	 */
 	return (be < ID_THRESHOLD);
 }
+
+/* extract LAP from FHS payload */
+uint32_t bluetooth_packet::lap_from_fhs()
+{
+	/* caller should check got_payload() and get_type() */
+	return air_to_host32(&d_payload[34], 24);
+}
+
+/* extract UAP from FHS payload */
+uint8_t bluetooth_packet::uap_from_fhs()
+{
+	/* caller should check got_payload() and get_type() */
+	return air_to_host8(&d_payload[64], 8);
+}
+
+/* extract clock from FHS payload */
+uint32_t bluetooth_packet::clock_from_fhs()
+{
+	/*
+	 * caller should check got_payload() and get_type()
+	 *
+	 * This is CLK2-27 (units of 1.25 ms).
+	 * CLK0 and CLK1 are implicitly zero.
+	 */
+	return air_to_host32(&d_payload[115], 26);
+}

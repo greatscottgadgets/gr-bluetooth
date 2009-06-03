@@ -172,7 +172,6 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 	pkt->set_UAP(pn->get_UAP());
 	//printf("clock 0x%02x: ", clock);
 	pkt->decode();
-	//FIXME special FHS handling
 
 	if (pkt->got_payload()) {
 		pkt->print();
@@ -184,6 +183,8 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 			write_interface(d_tunfd, (unsigned char *)data, length,
 					0, addr, ETHER_TYPE);
 		}
+		if (pkt->get_type() == 2)
+			fhs(pkt, clkn);
 	} else {
 		printf("lost clock!\n");
 		pn->reset();
@@ -210,6 +211,37 @@ void bluetooth_multi_sniffer::discover(bluetooth_packet_sptr pkt,
 void bluetooth_multi_sniffer::remember(bluetooth_piconet_sptr pn, uint32_t clkn)
 {
 	//FIXME add packet to history
+}
+
+/* pull information out of FHS packet */
+void bluetooth_multi_sniffer::fhs(bluetooth_packet_sptr pkt, uint32_t clkn)
+{
+	uint32_t lap;
+	uint8_t uap;
+	uint32_t clk;
+	uint32_t offset;
+	bluetooth_piconet_sptr pn;
+
+	/* caller should have checked got_payload() and get_type() */
+
+	lap = pkt->lap_from_fhs();
+	uap = pkt->uap_from_fhs();
+
+	/* clk is shifted to put it into units of 625 microseconds */
+	clk = pkt->clock_from_fhs() << 1;
+	offset = (clk - clkn) & 0x7ffffff;
+
+	printf("FHS contents: LAP %06x, UAP %02x, CLK %07x\n", lap, uap, clk);
+
+	/* make use of this information from now on */
+	if (!d_piconets[lap])
+		d_piconets[lap] = bluetooth_make_piconet(lap);
+	pn = d_piconets[lap];
+	
+	pn->set_UAP(uap);
+	pn->set_offset(offset);
+	//FIXME if this is a role switch, the offset can have an error of as
+	//much as 1.25 ms 
 }
 
 /*

@@ -84,6 +84,9 @@ private:
 	/* store packet for future use */
 	void remember(bluetooth_piconet_sptr pn, uint32_t clkn);
 
+	/* pull information out of FHS packet */
+	void fhs(bluetooth_packet_sptr pkt, uint32_t clkn);
+
 public:
 	/* destructor */
 	~bluetooth_multi_sniffer();

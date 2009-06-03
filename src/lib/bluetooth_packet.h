@@ -247,6 +247,15 @@ public:
 	/* check to see if the packet has a header */
 	bool header_present();
 
+	/* extract LAP from FHS payload */
+	uint32_t lap_from_fhs();
+
+	/* extract UAP from FHS payload */
+	uint8_t uap_from_fhs();
+
+	/* extract clock from FHS payload */
+	uint32_t clock_from_fhs();
+
 	/* destructor */
 	~bluetooth_packet();
 };

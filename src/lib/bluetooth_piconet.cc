@@ -342,11 +342,25 @@ uint32_t bluetooth_piconet::get_offset()
 	return d_clk_offset;
 }
 
+/* set clock offset */
+void bluetooth_piconet::set_offset(uint32_t offset)
+{
+	d_clk_offset = offset;
+	d_have_clk6 = true;
+	d_have_clk27 = true;
+}
+
 /* UAP */
 uint8_t bluetooth_piconet::get_UAP()
 {
 	/* caller should check have_UAP() */
 	return d_UAP;
+}
+
+void bluetooth_piconet::set_UAP(uint8_t uap)
+{
+	d_UAP = uap;
+	d_have_UAP = true;
 }
 
 /* discovery status */
