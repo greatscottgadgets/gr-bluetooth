@@ -132,16 +132,16 @@ private:
 	bool d_have_clock;
 
 	bool d_have_payload;
+
 	/* CLK1-27 of master */
 	uint32_t d_clock;
 
-	/* type-specific CRC checks */
-	//FIXME probably ought to use d_symbols, d_length
-	int fhs(char *stream, int clock, uint8_t UAP, int size);
-	int DM(char *stream, int clock, uint8_t UAP, int type, int size);
-	int DH(char *stream, int clock, uint8_t UAP, int type, int size);
-	int EV(char *stream, int clock, uint8_t UAP, int type, int size);
-	int HV(char *stream, int clock, uint8_t UAP, int type, int size);
+	/* type-specific CRC checks and decoding */
+	int fhs(int clock);
+	int DM(int clock, int type);
+	int DH(int clock, int type);
+	int EV(int clock, int type);
+	int HV(int clock, int type);
 
 	/* decode payload header, return value indicates success */
 	bool decode_payload_header(char *stream, int clock, int header_bytes, int size, bool fec);

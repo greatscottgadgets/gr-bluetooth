@@ -41,7 +41,6 @@ const uint8_t bluetooth_packet::PREAMBLE_DISTANCE[] = {2,2,1,2,2,1,2,2,1,2,0,1,2
 const uint8_t bluetooth_packet::TRAILER_DISTANCE[] = {3,3,3,2,3,2,2,1,2,3,3,3,3,3,3,2,2,3,3,3,3,3,3,2,1,2,2,3,2,3,3,3,3,2,2,1,2,1,1,0,3,3,3,2,3,2,2,1,3,3,3,2,3,2,2,1,2,3,3,3,3,3,3,2,2,3,3,3,3,3,3,2,1,2,2,3,2,3,3,3,1,2,2,3,2,3,3,3,0,1,1,2,1,2,2,3,3,3,3,2,3,2,2,1,2,3,3,3,3,3,3,2,2,3,3,3,3,3,3,2,1,2,2,3,2,3,3,3};
 
 const string bluetooth_packet::TYPE_NAMES[] = {
-	//FIXME maybe should track logical transport and have separate names for each
 	"NULL", "POLL", "FHS", "DM1", "DH1/2-DH1", "HV1", "HV2/2-EV3", "HV3/EV3/3-EV3",
 	"DV/3-DH1", "AUX1", "DM3/2-DH3", "DH3/3-DH3", "EV4/2-EV5", "EV5/3-EV5", "DM5/2-DH5", "DH5/3-DH5"
 };
@@ -447,7 +446,6 @@ uint8_t bluetooth_packet::get_UAP()
 /* set the packet's UAP */
 void bluetooth_packet::set_UAP(uint8_t UAP)
 {
-	//FIXME probably should do something if d_have_UAP && (UAP != d_UAP)
 	d_UAP = UAP;
 	d_have_UAP = true;
 }
@@ -462,7 +460,6 @@ uint32_t bluetooth_packet::get_clock()
 /* set the packet's clock (CLK1-27) */
 void bluetooth_packet::set_clock(uint32_t clock)
 {
-	//FIXME probably should do something if d_have_clock && (clock != d_clock)
 	d_clock = clock;
 	d_have_clock = true;
 }
@@ -504,33 +501,31 @@ int bluetooth_packet::crc_check(int clock)
 	 * the possibility that we have assumed the wrong logical transport)
 	 */
 	int retval = 1;
-	/* skip the access code and packet header */
-	char *stream = d_symbols + 126;
 
 	switch(d_packet_type)
 	{
 		case 2:/* FHS */
-			retval = fhs(stream, clock, d_UAP, d_length);
+			retval = fhs(clock);
 			break;
 
 		case 8:/* DV */
 		case 3:/* DM1 */
 		case 10:/* DM3 */
 		case 14:/* DM5 */
-			retval = DM(stream, clock, d_UAP, d_packet_type, d_length);
+			retval = DM(clock, d_packet_type);
 			break;
 
 		case 4:/* DH1 */
 		case 11:/* DH3 */
 		case 15:/* DH5 */
-			retval = DH(stream, clock, d_UAP, d_packet_type, d_length);
+			retval = DH(clock, d_packet_type);
 			break;
 
 		case 7:/* EV3 */
 		case 12:/* EV4 */
 		case 13:/* EV5 */
 			/* Unknown length, need to cycle through it until CRC matches */
-			retval = EV(stream, clock, d_UAP, d_packet_type, d_length);
+			retval = EV(clock, d_packet_type);
 			break;
 	}
 	/* never return a zero result unless this ia a FHS or DM1 */
@@ -540,10 +535,14 @@ int bluetooth_packet::crc_check(int clock)
 	return retval;
 }
 
-int bluetooth_packet::fhs(char *stream, int clock, uint8_t UAP, int size)
+int bluetooth_packet::fhs(int clock)
 {
 	char *corrected;
 	uint16_t crc, check;
+	/* skip the access code and packet header */
+	char *stream = d_symbols + 126;
+	/* number of symbols remaining after access code and packet header */
+	int size = d_length - 126;
 
 	d_payload_length = 20;
 
@@ -556,7 +555,7 @@ int bluetooth_packet::fhs(char *stream, int clock, uint8_t UAP, int size)
 
 	/* try to unwhiten with known clock bits */
 	unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
-	crc = crcgen(d_payload, (d_payload_length - 2) * 8, UAP);
+	crc = crcgen(d_payload, (d_payload_length - 2) * 8, d_UAP);
 	check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
 	if (crc == check) {
 		free(corrected);
@@ -566,7 +565,7 @@ int bluetooth_packet::fhs(char *stream, int clock, uint8_t UAP, int size)
 	/* try all 32 possible X-input values instead */
 	for (clock = 32; clock < 64; clock++) {
 		unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
-		crc = crcgen(d_payload, (d_payload_length - 2) * 8, UAP);
+		crc = crcgen(d_payload, (d_payload_length - 2) * 8, d_UAP);
 		check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
 		if (crc == check) {
 			free(corrected);
@@ -620,7 +619,7 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 }
 
 /* DM 1/3/5 packet (and DV)*/
-int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int type, int size)
+int bluetooth_packet::DM(int clock, int type)
 {
 	int bitlength;
 	uint16_t crc, check;
@@ -629,6 +628,10 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int type, int siz
 	int header_bytes = 2;
 	/* maximum payload length */
 	int max_length;
+	/* skip the access code and packet header */
+	char *stream = d_symbols + 126;
+	/* number of symbols remaining after access code and packet header */
+	int size = d_length - 126;
 
 	switch(type)
 	{
@@ -671,7 +674,7 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int type, int siz
 		return 0;
 	unwhiten(corrected, d_payload, clock, bitlength, 18);
 	free(corrected);
-	crc = crcgen(d_payload, (d_payload_length-2)*8, UAP);
+	crc = crcgen(d_payload, (d_payload_length-2)*8, d_UAP);
 	check = air_to_host16(&d_payload[(d_payload_length-2)*8], 16);
 
 	if(crc == check) {
@@ -685,7 +688,7 @@ int bluetooth_packet::DM(char *stream, int clock, uint8_t UAP, int type, int siz
 
 /* DH 1/3/5 packet */
 /* similar to DM 1/3/5 but without FEC */
-int bluetooth_packet::DH(char *stream, int clock, uint8_t UAP, int type, int size)
+int bluetooth_packet::DH(int clock, int type)
 {
 	int bitlength;
 	uint16_t crc, check;
@@ -693,6 +696,10 @@ int bluetooth_packet::DH(char *stream, int clock, uint8_t UAP, int type, int siz
 	int header_bytes = 2;
 	/* maximum payload length */
 	int max_length;
+	/* skip the access code and packet header */
+	char *stream = d_symbols + 126;
+	/* number of symbols remaining after access code and packet header */
+	int size = d_length - 126;
 	
 	switch(type)
 	{
@@ -719,7 +726,7 @@ int bluetooth_packet::DH(char *stream, int clock, uint8_t UAP, int type, int siz
 		return 1; //FIXME should throw exception
 
 	unwhiten(stream, d_payload, clock, bitlength, 18);
-	crc = crcgen(d_payload, (d_payload_length-2)*8, UAP);
+	crc = crcgen(d_payload, (d_payload_length-2)*8, d_UAP);
 	check = air_to_host16(&d_payload[(d_payload_length-2)*8], 16);
 
 	if(crc == check) {
@@ -731,13 +738,17 @@ int bluetooth_packet::DH(char *stream, int clock, uint8_t UAP, int type, int siz
 	return 0;
 }
 
-int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int size)
+int bluetooth_packet::EV(int clock, int type)
 {
 	int count;
 	uint16_t crc, check;
 	char *corrected;
 	/* EV5 has a maximum of 180 bytes + 2 bytes CRC */
 	int maxlength = 182;
+	/* skip the access code and packet header */
+	char *stream = d_symbols + 126;
+	/* number of symbols remaining after access code and packet header */
+	int size = d_length - 126;
 
 	switch (type)
 	{
@@ -769,7 +780,7 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 	/* Check crc for any integer byte length up to maxlength */
 	for(count = 1; count < (maxlength-1); count++)
 	{
-		crc = crcgen(d_payload, count*8, UAP);
+		crc = crcgen(d_payload, count*8, d_UAP);
 		check = air_to_host16(&d_payload[count*8], 16);
 
 		/* Check CRC */
@@ -784,9 +795,14 @@ int bluetooth_packet::EV(char *stream, int clock, uint8_t UAP, int type, int siz
 }
 
 /* HV packet type payload parser */
-int bluetooth_packet::HV(char *stream, int clock, uint8_t UAP, int type, int size)
+int bluetooth_packet::HV(int clock, int type)
 {
 	char *corrected;
+	/* skip the access code and packet header */
+	char *stream = d_symbols + 126;
+	/* number of symbols remaining after access code and packet header */
+	int size = d_length - 126;
+
 	if(size < 240) {
 		d_payload_length = 0;
 		return 1; //FIXME should throw exception
@@ -872,13 +888,6 @@ bool bluetooth_packet::decode_header()
 
 void bluetooth_packet::decode_payload()
 {
-	int size, clock;
-
-	/* number of symbols remaining after access code and packet header */
-	size = d_length - 126;
-	clock = d_clock;
-
-	char *stream = d_symbols + 126; // AC + header
 	switch(d_packet_type)
 	{
 		case 0: /* NULL */
@@ -888,56 +897,56 @@ void bluetooth_packet::decode_payload()
 			/* no payload to decode */
 			break;
 		case 2: /* FHS */
-			fhs(stream, clock, d_UAP, size);
+			fhs(d_clock);
 			break;
 		case 3: /* DM1 */
-			DM(stream, clock, d_UAP, d_packet_type, size);
+			DM(d_clock, d_packet_type);
 			break;
 		case 4: /* DH1 */
 			/* assuming DH1 but could be 2-DH1 */
-			DH(stream, clock, d_UAP, d_packet_type, size);
+			DH(d_clock, d_packet_type);
 			break;
 		case 5: /* HV1 */
-			HV(stream, clock, d_UAP, d_packet_type, size);
+			HV(d_clock, d_packet_type);
 			break;
 		case 6: /* HV2 */
-			HV(stream, clock, d_UAP, d_packet_type, size);
+			HV(d_clock, d_packet_type);
 			break;
 		case 7: /* EV3 */
 			/* assuming EV3 but could be HV3 or 3-EV3 */
-			if(!EV(stream, clock, d_UAP, d_packet_type, size)) {
-				HV(stream, clock, d_UAP, d_packet_type, size);
+			if(!EV(d_clock, d_packet_type)) {
+				HV(d_clock, d_packet_type);
 			}
 			break;
 		case 8: /* DV */
 			/* assuming DV but could be 3-DH1 */
-			DM(stream, clock, d_UAP, d_packet_type, size);
+			DM(d_clock, d_packet_type);
 			break;
 		case 9: /* AUX1 */
 			/* don't know how to decode */
 			break;
 		case 10: /* DM3 */
 			/* assuming DM3 but could be 2-DH3 */
-			DM(stream, clock, d_UAP, d_packet_type, size);
+			DM(d_clock, d_packet_type);
 			break;
 		case 11: /* DH3 */
 			/* assuming DH3 but could be 3-DH3 */
-			DH(stream, clock, d_UAP, d_packet_type, size);
+			DH(d_clock, d_packet_type);
 			break;
 		case 12: /* EV4 */
 			/* assuming EV4 but could be 2-EV5 */
-			EV(stream, clock, d_UAP, d_packet_type, size);
+			EV(d_clock, d_packet_type);
 			break;
 		case 13: /* EV5 */
 			/* assuming EV5 but could be 3-EV5 */
-			EV(stream, clock, d_UAP, d_packet_type, size);
+			EV(d_clock, d_packet_type);
 		case 14: /* DM5 */
 			/* assuming DM5 but could be 2-DH5 */
-			DM(stream, clock, d_UAP, d_packet_type, size);
+			DM(d_clock, d_packet_type);
 			break;
 		case 15: /* DH5 */
 			/* assuming DH5 but could be 3-DH5 */
-			DH(stream, clock, d_UAP, d_packet_type, size);
+			DH(d_clock, d_packet_type);
 			break;
 	}
 	d_have_payload = true;
