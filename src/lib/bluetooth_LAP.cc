@@ -51,8 +51,8 @@ bluetooth_LAP::bluetooth_LAP (int x)
 {
 	d_x = x;
 	d_cumulative_count = 0;
-	// ensure that we are always given at least 72 symbols
-	set_history(72);
+	// ensure that we are always given enough symbols for an Access Code
+	set_history(68);
 }
 
 //virtual destructor.
@@ -76,7 +76,7 @@ bluetooth_LAP::work (int noutput_items,
 		timeval tim;
 		gettimeofday(&tim, NULL);
 		printf("GOT PACKET on %d , LAP = %06x at sample %d, wall time: %d.%06d\n", d_x, packet->get_LAP(), d_cumulative_count + retval, tim.tv_sec, tim.tv_usec);
-		consumed = retval + 72;
+		consumed = retval + 68;
 	}
 	d_cumulative_count += consumed;
 

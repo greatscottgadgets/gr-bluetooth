@@ -48,7 +48,7 @@ bluetooth_make_multi_LAP(double sample_rate, double center_freq, double squelch_
 bluetooth_multi_LAP::bluetooth_multi_LAP(double sample_rate, double center_freq, double squelch_threshold)
   : bluetooth_multi_block(sample_rate, center_freq, squelch_threshold)
 {
-	set_symbol_history(72);
+	set_symbol_history(68);
 	printf("lowest channel: %d, highest channel %d\n", d_low_channel, d_high_channel);
 }
 
@@ -79,10 +79,10 @@ bluetooth_multi_LAP::work(int noutput_items,
 		if (num_symbols == 0)
 			break;
 
-		if (num_symbols >= 72 )
+		if (num_symbols >= 68 )
 		{
 			/* don't look beyond one slot for ACs */
-			int latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
+			int latest_ac = (num_symbols - 68) < 625 ? (num_symbols - 68) : 625;
 			retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(retval > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);

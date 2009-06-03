@@ -89,9 +89,9 @@ bluetooth_multi_sniffer::work(int noutput_items,
 		len = channel_symbols(ch, input_items, symbols,
 				history() + noutput_items);
 
-		if (len >= 72 ) {
+		if (len >= 68 ) {
 			/* don't look beyond one slot for ACs */
-			int limit = (len - 72) < 625 ? (len - 72) : 625;
+			int limit = (len - 68) < 625 ? (len - 68) : 625;
 			i = bluetooth_packet::sniff_ac(symbols, limit);
 			//FIXME look for more than one packet per slot (multiple piconets)
 			if (i > -1)

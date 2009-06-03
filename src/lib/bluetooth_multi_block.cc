@@ -58,7 +58,7 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	int samples_required = (int) slots * d_samples_per_slot;
 
 	/* power squelch: this is crude, but it works */
-	d_squelch_threshold = (double) std::pow(10.0, squelch_threshold/10) * d_samples_per_symbol * 72; 
+	d_squelch_threshold = (double) std::pow(10.0, squelch_threshold/10) * d_samples_per_symbol * 68; 
 
 	/* channel filter coefficients */
 	double gain = 1;
@@ -157,7 +157,7 @@ int bluetooth_multi_block::channel_symbols(int channel, gr_vector_const_void_sta
 	int i;
 	double pwr = 0; //total power for the time slot (sum of power of every sample)
 	gr_complex *raw_in = (gr_complex *) in[0];
-	int last_sq = d_samples_per_symbol * (SYMBOLS_PER_SLOT + 72); //FIXME 68
+	int last_sq = d_samples_per_symbol * (SYMBOLS_PER_SLOT + 68);
 	if (ninput_items < last_sq)
 		last_sq = ninput_items;
 	for (i = 0; i < last_sq; i++)

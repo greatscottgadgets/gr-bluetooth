@@ -75,10 +75,10 @@ bluetooth_multi_UAP::work(int noutput_items,
 		int num_symbols = channel_symbols(channel, input_items,
 				symbols, history() + noutput_items);
 
-		if (num_symbols >= 72 )
+		if (num_symbols >= 68 )
 		{
 			/* don't look beyond one slot for ACs */
-			int latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
+			int latest_ac = (num_symbols - 68) < 625 ? (num_symbols - 68) : 625;
 			retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(retval > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);

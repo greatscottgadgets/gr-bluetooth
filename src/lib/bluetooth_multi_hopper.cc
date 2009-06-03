@@ -92,10 +92,10 @@ bluetooth_multi_hopper::work(int noutput_items,
 			num_symbols = channel_symbols(channel, input_items,
 					symbols, history() + noutput_items);
 	
-			if (num_symbols >= 72 )
+			if (num_symbols >= 68 )
 			{
 				/* don't look beyond one slot for ACs */
-				latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
+				latest_ac = (num_symbols - 68) < 625 ? (num_symbols - 68) : 625;
 				retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 				if(retval > -1) {
 					bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
@@ -152,8 +152,8 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items,
 	if (observable_channel >= d_low_channel && observable_channel <= d_high_channel) {
 		num_symbols = channel_symbols(observable_channel, input_items,
 				symbols, history() + noutput_items);
-		if (num_symbols >= 72 ) {
-			latest_ac = (num_symbols - 72) < 625 ? (num_symbols - 72) : 625;
+		if (num_symbols >= 68 ) {
+			latest_ac = (num_symbols - 68) < 625 ? (num_symbols - 68) : 625;
 			ac_index = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(ac_index > -1) {
 				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[ac_index], num_symbols - ac_index);
