@@ -166,10 +166,10 @@ public:
 	static void convert_to_grformat(uint8_t input, uint8_t *output);
 
 	/* Decode 1/3 rate FEC, three like symbols in a row */
-	static char *unfec13(char *stream, char *output, int length);
+	static bool unfec13(char *input, char *output, int length);
 
 	/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
-	static char *unfec23(char *input, int length);
+	static bool unfec23(char *input, char *output, int length);
 
 	/* When passed 10 bits of data this returns a pointer to a 5 bit hamming code */
 	static char *fec23gen(char *data);

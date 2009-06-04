@@ -171,6 +171,7 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items,
 								char *data = packet->tun_format();
 								int addr = (packet->get_UAP() << 24) | packet->get_LAP();
 								write_interface(d_tunfd, (unsigned char *)data, length, 0, addr, ETHER_TYPE);
+								free(data);
 							}
 						}
 					} else {

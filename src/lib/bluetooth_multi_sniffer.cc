@@ -182,6 +182,7 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 			int addr = (pkt->get_UAP() << 24) | pkt->get_LAP();
 			write_interface(d_tunfd, (unsigned char *)data, length,
 					0, addr, ETHER_TYPE);
+			free(data);
 		}
 		if (pkt->get_type() == 2)
 			fhs(pkt, clkn);

@@ -216,27 +216,30 @@ void bluetooth_packet::convert_to_grformat(uint8_t input, uint8_t *output)
 }
 
 /* Decode 1/3 rate FEC, three like symbols in a row */
-char *bluetooth_packet::unfec13(char *stream, char *output, int length)
+bool bluetooth_packet::unfec13(char *input, char *output, int length)
 {
-    int count, a, b, c;
+	int a, b, c, i;
+	int be = 0; /* bit errors */
 
-    for(count = 0; count < length; count++)
-    {
-        a = 3*count;
-        b = a + 1;
-        c = a + 2;
-        output[count] = ((stream[a] & stream[b]) | (stream[b] & stream[c]) | (stream[c] & stream[a]));
-    }
-    return stream;
+	for (i = 0; i < length; i++) {
+		a = 3 * i;
+		b = a + 1;
+		c = a + 2;
+		output[i] = ((input[a] & input[b]) | (input[b] & input[c]) |
+				(input[c] & input[a]));
+		be += ((input[a] ^ input[b]) | (input[b] ^ input[c]) |
+				(input[c] ^ input[a]));
+	}
+
+	return (be < (length / 4));
 }
 
 /* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
-char *bluetooth_packet::unfec23(char *input, int length)
+bool bluetooth_packet::unfec23(char *input, char *output, int length)
 {
 	/* input points to the input data
 	 * length is length in bits of the data
 	 * before it was encoded with fec2/3 */
-	char *output;
 	int iptr, optr, blocks;
 	uint8_t difference, count, *codeword;
 	uint8_t fecgen[] = {1,1,0,1,0,1};
@@ -249,7 +252,6 @@ char *bluetooth_packet::unfec23(char *input, int length)
 		length += (10 - difference);
 
 	blocks = length/10;
-	output = (char *) malloc(length);
 
 	while(blocks) {
 		iptr += 15;
@@ -309,10 +311,10 @@ char *bluetooth_packet::unfec23(char *input, int length)
 			case 21: output[optr+9] ^= 1; break;
 			/* not one of these errors, probably multiple bit errors
 			 * or maybe not a real packet, safe to drop it? */
-			default: free(output); return NULL;
+			default: return false;
 		}
 	}
-	return output;
+	return true;
 }
 
 /* Create an Access Code from LAP and check it against stream */
@@ -537,7 +539,6 @@ int bluetooth_packet::crc_check(int clock)
 
 int bluetooth_packet::fhs(int clock)
 {
-	char *corrected;
 	uint16_t crc, check;
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
@@ -549,50 +550,42 @@ int bluetooth_packet::fhs(int clock)
 	if (size < d_payload_length * 12)
 		return 1; //FIXME should throw exception
 
-	corrected = unfec23(stream, d_payload_length * 8);
-	if (NULL == corrected)
+	char corrected[d_payload_length * 8];
+	if (!unfec23(stream, corrected, d_payload_length * 8))
 		return 0;
 
 	/* try to unwhiten with known clock bits */
 	unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
 	crc = crcgen(d_payload, (d_payload_length - 2) * 8, d_UAP);
 	check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
-	if (crc == check) {
-		free(corrected);
+	if (crc == check)
 		return 1000;
-	}
 
 	/* try all 32 possible X-input values instead */
 	for (clock = 32; clock < 64; clock++) {
 		unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
 		crc = crcgen(d_payload, (d_payload_length - 2) * 8, d_UAP);
 		check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
-		if (crc == check) {
-			free(corrected);
+		if (crc == check)
 			return 1000;
-		}
 	}
 
 	/* failed to unwhiten */
-	free(corrected);
 	return 0;
 }
 
 /* decode payload header, return value indicates success */
 bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header_bytes, int size, bool fec)
 {
-	char *corrected;
-
 	if(header_bytes == 2)
 	{
 		if(size < 30)
 			return false; //FIXME should throw exception
 		if(fec) {
-			corrected = unfec23(stream, 16);
-			if(NULL == corrected)
+			char corrected[16];
+			if (!unfec23(stream, corrected, 16))
 				return false;
 			unwhiten(corrected, d_payload_header, clock, 16, 18);
-			free(corrected);
 		} else {
 			unwhiten(stream, d_payload_header, clock, 16, 18);
 		}
@@ -602,11 +595,10 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 		if(size < 8)
 			return false; //FIXME should throw exception
 		if(fec) {
-			corrected = unfec23(stream, 8);
-			if(NULL == corrected)
+			char corrected[8];
+			if (!unfec23(stream, corrected, 8))
 				return false;
 			unwhiten(corrected, d_payload_header, clock, 8, 18);
-			free(corrected);
 		} else {
 			unwhiten(stream, d_payload_header, clock, 8, 18);
 		}
@@ -623,7 +615,6 @@ int bluetooth_packet::DM(int clock)
 {
 	int bitlength;
 	uint16_t crc, check;
-	char *corrected;
 	/* number of bytes in the payload header */
 	int header_bytes = 2;
 	/* maximum payload length */
@@ -669,11 +660,10 @@ int bluetooth_packet::DM(int clock)
 	if(bitlength > size)
 		return 1; //FIXME should throw exception
 
-	corrected = unfec23(stream, bitlength);
-	if(NULL == corrected)
+	char corrected[bitlength];
+	if (!unfec23(stream, corrected, bitlength))
 		return 0;
 	unwhiten(corrected, d_payload, clock, bitlength, 18);
-	free(corrected);
 	crc = crcgen(d_payload, (d_payload_length-2)*8, d_UAP);
 	check = air_to_host16(&d_payload[(d_payload_length-2)*8], 16);
 
@@ -742,7 +732,6 @@ int bluetooth_packet::EV(int clock)
 {
 	int count;
 	uint16_t crc, check;
-	char *corrected;
 	/* EV5 has a maximum of 180 bytes + 2 bytes CRC */
 	int maxlength = 182;
 	/* skip the access code and packet header */
@@ -750,31 +739,30 @@ int bluetooth_packet::EV(int clock)
 	/* number of symbols remaining after access code and packet header */
 	int size = d_length - 126;
 
-	switch (d_packet_type)
-	{
-		case 12:/* EV4 */
-			if(size < 1470)
-				return 1; //FIXME should throw exception
-			/* 120 bytes + 2 bytes CRC */
-			maxlength = 122;
-			corrected = unfec23(stream, maxlength * 8);
-			if(NULL == corrected)
-				return 0;
-			unwhiten(corrected, d_payload, clock, maxlength * 8, 18);
-			free(corrected);
-			break;
-
-		case 7:/* EV3 */
-			/* 30 bytes + 2 bytes CRC */
-			maxlength = 32;
-		case 13:/* EV5 */
-			if(size < (maxlength * 8))
-				return 1; //FIXME should throw exception
-			unwhiten(stream, d_payload, clock, maxlength * 8, 18);
-			break;
-
-		default:
+	//FIXME should do all this one byte at a time
+	switch (d_packet_type) {
+	case 12:/* EV4 */
+		{
+		if(size < 1470)
+			return 1; //FIXME should throw exception
+		/* 120 bytes + 2 bytes CRC */
+		maxlength = 122;
+		char corrected[maxlength * 8];
+		if (!unfec23(stream, corrected, maxlength * 8))
 			return 0;
+		unwhiten(corrected, d_payload, clock, maxlength * 8, 18);
+		}
+		break;
+	case 7:/* EV3 */
+		/* 30 bytes + 2 bytes CRC */
+		maxlength = 32;
+	case 13:/* EV5 */
+		if(size < (maxlength * 8))
+			return 1; //FIXME should throw exception
+		unwhiten(stream, d_payload, clock, maxlength * 8, 18);
+		break;
+	default:
+		return 0;
 	}
 
 	/* Check crc for any integer byte length up to maxlength */
@@ -797,7 +785,6 @@ int bluetooth_packet::EV(int clock)
 /* HV packet type payload parser */
 int bluetooth_packet::HV(int clock)
 {
-	char *corrected;
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
 	/* number of symbols remaining after access code and packet header */
@@ -808,31 +795,29 @@ int bluetooth_packet::HV(int clock)
 		return 1; //FIXME should throw exception
 	}
 
-	switch (d_packet_type)
-	{
-		case 5:/* HV1 */
-			corrected = (char *) malloc(80);
-			if(NULL == corrected)
-				return 0;
-			unfec13(stream, corrected, 80);
-			d_payload_length = 10;
-			unwhiten(corrected, d_payload, clock, d_payload_length*8, 18);
-			free(corrected);
-			break;
-
-		case 6:/* HV2 */
-			corrected = unfec23(stream, 160);
-			if(NULL == corrected)
-				return 0;
-			d_payload_length = 20;
-			unwhiten(corrected, d_payload, clock, d_payload_length*8, 18);
-			free(corrected);
-			break;
-		case 7:/* HV3 */
-			d_payload_length = 30;
-			corrected = stream;
-			unwhiten(corrected, d_payload, clock, d_payload_length*8, 18);
-			break;
+	switch (d_packet_type) {
+	case 5:/* HV1 */
+		{
+		char corrected[80];
+		if (!unfec13(stream, corrected, 80))
+			return 0;
+		d_payload_length = 10;
+		unwhiten(corrected, d_payload, clock, d_payload_length*8, 18);
+		}
+		break;
+	case 6:/* HV2 */
+		{
+		char corrected[160];
+		if (!unfec23(stream, corrected, 160))
+			return 0;
+		d_payload_length = 20;
+		unwhiten(corrected, d_payload, clock, d_payload_length*8, 18);
+		}
+		break;
+	case 7:/* HV3 */
+		d_payload_length = 30;
+		unwhiten(stream, d_payload, clock, d_payload_length*8, 18);
+		break;
 	}
 
 	return 0;
@@ -848,7 +833,8 @@ uint8_t bluetooth_packet::try_clock(int clock)
 	char header[18];
 	char unwhitened[18];
 
-	unfec13(stream, header, 18);
+	if (!unfec13(stream, header, 18))
+		return 0;
 	unwhiten(header, unwhitened, clock, 18, 0);
 	uint16_t hdr_data = air_to_host16(unwhitened, 10);
 	uint8_t hec = air_to_host8(&unwhitened[10], 8);
@@ -867,9 +853,7 @@ bool bluetooth_packet::decode_header()
 	char header[18];
 	uint8_t UAP;
 
-	unfec13(stream, header, 18);
-
-	if (d_have_clock) {
+	if (d_have_clock && unfec13(stream, header, 18)) {
 		unwhiten(header, d_packet_header, d_clock, 18, 0);
 		uint16_t hdr_data = air_to_host16(d_packet_header, 10);
 		uint8_t hec = air_to_host8(&d_packet_header[10], 8);
