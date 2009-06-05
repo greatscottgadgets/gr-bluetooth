@@ -690,7 +690,7 @@ int bluetooth_packet::DM(int clock)
 	return 1;
 }
 
-/* DH 1/3/5 packet */
+/* DH 1/3/5 packet (and AUX1) */
 /* similar to DM 1/3/5 but without FEC */
 int bluetooth_packet::DH(int clock)
 {
@@ -707,6 +707,7 @@ int bluetooth_packet::DH(int clock)
 	
 	switch(d_packet_type)
 	{
+		case(9): /* AUX1 */
 		case(4): /* DH1 */
 			header_bytes = 1;
 			max_length = 30;
@@ -731,6 +732,11 @@ int bluetooth_packet::DH(int clock)
 		return 1; //FIXME should throw exception
 
 	unwhiten(stream, d_payload, clock, bitlength, 18);
+	
+	/* AUX1 has no CRC */
+	if (d_packet_type == 9)
+		return 1;
+
 	crc = crcgen(d_payload, (d_payload_length-2)*8, d_UAP);
 	check = air_to_host16(&d_payload[(d_payload_length-2)*8], 16);
 
@@ -924,7 +930,7 @@ void bluetooth_packet::decode_payload()
 			DM(d_clock);
 			break;
 		case 9: /* AUX1 */
-			/* don't know how to decode */
+			DH(d_clock);
 			break;
 		case 10: /* DM3 */
 			/* assuming DM3 but could be 2-DH3 */
