@@ -529,10 +529,22 @@ int bluetooth_packet::crc_check(int clock)
 			/* Unknown length, need to cycle through it until CRC matches */
 			retval = EV(clock);
 			break;
+		
+		case 5:/* HV1 */
+			retval = HV(clock);
+			break;
+
+		/* some types can't help us */
+		default:
+			break;
 	}
-	/* never return a zero result unless this ia a FHS or DM1 */
-	/* any other type could have actually been something else */
-	if(retval == 0 && (d_packet_type < 2 || d_packet_type > 3))
+	/*
+	 * never return a zero result unless this is a FHS, DM1, or HV1.  any
+	 * other type could have actually been something else (another logical
+	 * transport)
+	 */
+	if (retval == 0 && (d_packet_type != 2 && d_packet_type != 3 &&
+			d_packet_type != 5))
 		return 1;
 	return retval;
 }
@@ -655,7 +667,8 @@ int bluetooth_packet::DM(int clock)
 		return 0;
 	/* check that the length indicated in the payload header is within spec */
 	if(d_payload_length > max_length)
-		return 0;
+		/* could be encrypted */
+		return 1;
 	bitlength = d_payload_length*8;
 	if(bitlength > size)
 		return 1; //FIXME should throw exception
@@ -673,7 +686,8 @@ int bluetooth_packet::DM(int clock)
 		return 10;
 	}
 
-	return 0;
+	/* could be encrypted */
+	return 1;
 }
 
 /* DH 1/3/5 packet */
@@ -710,7 +724,8 @@ int bluetooth_packet::DH(int clock)
 		return 0;
 	/* check that the length indicated in the payload header is within spec */
 	if(d_payload_length > max_length)
-		return 0;
+		/* could be encrypted */
+		return 1;
 	bitlength = d_payload_length*8;
 	if(bitlength > size)
 		return 1; //FIXME should throw exception
@@ -725,7 +740,8 @@ int bluetooth_packet::DH(int clock)
 		return 10;
 	}
 
-	return 0;
+	/* could be encrypted */
+	return 1;
 }
 
 int bluetooth_packet::EV(int clock)
@@ -779,7 +795,8 @@ int bluetooth_packet::EV(int clock)
 			return 10;
 		}
 	}
-	return 0;
+	/* could be encrypted */
+	return 1;
 }
 
 /* HV packet type payload parser */
@@ -820,7 +837,7 @@ int bluetooth_packet::HV(int clock)
 		break;
 	}
 
-	return 0;
+	return 1;
 }
 /* try a clock value (CLK1-6) to unwhiten packet header,
  * sets resultant d_packet_type and d_UAP, returns UAP.

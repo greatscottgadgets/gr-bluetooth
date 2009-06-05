@@ -49,7 +49,7 @@ private:
 	static const int ALIASED_CHANNELS = 25;
 
 	/* maximum number of hops to remember */
-	static const int MAX_PATTERN_LENGTH = 100;
+	static const int MAX_PATTERN_LENGTH = 1000;
 
 	/* true if using a particular aliased receiver implementation */
 	bool d_aliased;
