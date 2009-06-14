@@ -546,6 +546,11 @@ int bluetooth_packet::crc_check(int clock)
 	if (retval == 0 && (d_packet_type != 2 && d_packet_type != 3 &&
 			d_packet_type != 5))
 		return 1;
+
+	/* EV3 and EV5 have a relatively high false positive rate */
+	if (retval > 1 && (d_packet_type == 7 || d_packet_type == 13))
+		return 1;
+
 	return retval;
 }
 
