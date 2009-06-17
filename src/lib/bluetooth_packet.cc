@@ -924,11 +924,12 @@ void bluetooth_packet::decode_payload()
 		case 6: /* HV2 */
 			HV(d_clock);
 			break;
-		case 7: /* EV3 */
-			/* assuming EV3 but could be HV3 or 3-EV3 */
-			if(!EV(d_clock)) {
+		case 7: /* HV3/EV3/3-EV3 */
+			/* decode as EV3 if CRC checks out */
+			if (EV(d_clock) <= 1)
+				/* otherwise assume HV3 */
 				HV(d_clock);
-			}
+			/* don't know how to decode 3-EV3 */
 			break;
 		case 8: /* DV */
 			/* assuming DV but could be 3-DH1 */
