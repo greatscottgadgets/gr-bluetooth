@@ -119,9 +119,6 @@ private:
 	 */
 	char d_payload[2744];
 
-	/* CRC of packet payload */
-	uint16_t d_payload_crc;
-
 	/* is the packet whitened? */
 	bool d_whitened;
 
@@ -150,6 +147,9 @@ private:
 
 	/* Remove the whitening from an air order array */
 	void unwhiten(char* input, char* output, int clock, int length, int skip);
+
+	/* verify the payload CRC */
+	bool payload_crc();
 
 public:
 	/* search a symbol stream to find a packet, return index */

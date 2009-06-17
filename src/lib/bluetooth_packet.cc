@@ -72,7 +72,7 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	d_have_UAP = false;
 	d_have_clock = false;
 	d_have_payload = false;
-	d_payload_header_length = -1;
+	d_payload_header_length = 0;
 	d_payload_length = 0;
 }
 
@@ -557,9 +557,20 @@ int bluetooth_packet::crc_check(int clock)
 	return retval;
 }
 
+/* verify the payload CRC */
+bool bluetooth_packet::payload_crc()
+{
+	uint16_t crc;   /* CRC calculated from payload data */
+	uint16_t check; /* CRC supplied by packet */
+
+	crc = crcgen(d_payload, (d_payload_length - 2) * 8, d_UAP);
+	check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
+
+	return (crc == check);
+}
+
 int bluetooth_packet::fhs(int clock)
 {
-	uint16_t crc, check;
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
 	/* number of symbols remaining after access code and packet header */
@@ -576,17 +587,13 @@ int bluetooth_packet::fhs(int clock)
 
 	/* try to unwhiten with known clock bits */
 	unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
-	crc = crcgen(d_payload, (d_payload_length - 2) * 8, d_UAP);
-	check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
-	if (crc == check)
+	if (payload_crc())
 		return 1000;
 
 	/* try all 32 possible X-input values instead */
 	for (clock = 32; clock < 64; clock++) {
 		unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
-		crc = crcgen(d_payload, (d_payload_length - 2) * 8, d_UAP);
-		check = air_to_host16(&d_payload[(d_payload_length - 2) * 8], 16);
-		if (crc == check)
+		if (payload_crc())
 			return 1000;
 	}
 
@@ -627,6 +634,7 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 	}
 	d_payload_llid = air_to_host8(&d_payload_header[0], 2);
 	d_payload_flow = air_to_host8(&d_payload_header[2], 1);
+	d_payload_header_length = header_bytes;
 	return true;
 }
 
@@ -634,7 +642,6 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 int bluetooth_packet::DM(int clock)
 {
 	int bitlength;
-	uint16_t crc, check;
 	/* number of bytes in the payload header */
 	int header_bytes = 2;
 	/* maximum payload length */
@@ -685,14 +692,9 @@ int bluetooth_packet::DM(int clock)
 	if (!unfec23(stream, corrected, bitlength))
 		return 0;
 	unwhiten(corrected, d_payload, clock, bitlength, 18);
-	crc = crcgen(d_payload, (d_payload_length-2)*8, d_UAP);
-	check = air_to_host16(&d_payload[(d_payload_length-2)*8], 16);
 
-	if(crc == check) {
-		d_payload_crc = crc;
-		d_payload_header_length = header_bytes;
+	if (payload_crc())
 		return 10;
-	}
 
 	/* could be encrypted */
 	return 1;
@@ -703,7 +705,6 @@ int bluetooth_packet::DM(int clock)
 int bluetooth_packet::DH(int clock)
 {
 	int bitlength;
-	uint16_t crc, check;
 	/* number of bytes in the payload header */
 	int header_bytes = 2;
 	/* maximum payload length */
@@ -745,14 +746,8 @@ int bluetooth_packet::DH(int clock)
 	if (d_packet_type == 9)
 		return 1;
 
-	crc = crcgen(d_payload, (d_payload_length-2)*8, d_UAP);
-	check = air_to_host16(&d_payload[(d_payload_length-2)*8], 16);
-
-	if(crc == check) {
-		d_payload_crc = crc;
-		d_payload_header_length = header_bytes;
+	if (payload_crc())
 		return 10;
-	}
 
 	/* could be encrypted */
 	return 1;
@@ -760,8 +755,6 @@ int bluetooth_packet::DH(int clock)
 
 int bluetooth_packet::EV3(int clock)
 {
-	uint16_t crc, check;
-
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
 
@@ -771,38 +764,28 @@ int bluetooth_packet::EV3(int clock)
 	/* maximum payload length is 30 bytes + 2 bytes CRC */
 	int maxlength = 32;
 
-	int bytes; /* number of bytes we have decoded */
-	int bits;  /* number of bits we have decoded */
-	int i;     /* byte index to candidate CRC within payload */
+	/* number of bits we have decoded */
+	int bits;
 
 	/* check CRC for any integer byte length up to maxlength */
-	for (bytes = 0; bytes < maxlength; bytes++) {
-		bits = bytes * 8;
+	for (d_payload_length = 0;
+			d_payload_length < maxlength; d_payload_length++) {
+
+		bits = d_payload_length * 8;
 
 		/* unwhiten next byte */
 		if ((bits + 8) > size)
 			return 1; //FIXME should throw exception
 		unwhiten(stream, d_payload + bits, clock, 8, 18 + bits);
 
-		if (bytes > 2) {
-			i = bytes - 2;
-			crc = crcgen(d_payload, i * 8, d_UAP);
-			check = air_to_host16(&d_payload[i * 8], 16);
-
-			if (crc == check) {
-				d_payload_crc = crc;
-				d_payload_header_length = 0;
-				d_payload_length = bytes;
+		if ((d_payload_length > 2) && (payload_crc()))
 				return 10;
-			}
-		}
 	}
 	return 1;
 }
 
 int bluetooth_packet::EV4(int clock)
 {
-	uint16_t crc, check;
 	char corrected[30];
 
 	/* skip the access code and packet header */
@@ -825,7 +808,8 @@ int bluetooth_packet::EV4(int clock)
 
 	int syms = 0; /* number of symbols we have decoded */
 	int bits = 0; /* number of payload bits we have decoded */
-	int i = 1;    /* byte index to candidate CRC within payload */
+
+	d_payload_length = 1;
 
 	while (syms < maxlength) {
 
@@ -840,17 +824,10 @@ int bluetooth_packet::EV4(int clock)
 		unwhiten(corrected, d_payload + bits, clock, 10, 18 + bits);
 
 		/* check CRC one byte at a time */
-		while ((i + 2) * 8 <= bits) {
-			crc = crcgen(d_payload, i * 8, d_UAP);
-			check = air_to_host16(&d_payload[i * 8], 16);
-
-			if (crc == check) {
-				d_payload_crc = crc;
-				d_payload_header_length = 0;
-				d_payload_length = i + 2;
+		while (d_payload_length * 8 <= bits) {
+			if (payload_crc())
 				return 10;
-			}
-			i++;
+			d_payload_length++;
 		}
 		syms += 15;
 		bits += 10;
@@ -860,8 +837,6 @@ int bluetooth_packet::EV4(int clock)
 
 int bluetooth_packet::EV5(int clock)
 {
-	uint16_t crc, check;
-
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
 
@@ -871,31 +846,22 @@ int bluetooth_packet::EV5(int clock)
 	/* maximum payload length is 180 bytes + 2 bytes CRC */
 	int maxlength = 182;
 
-	int bytes; /* number of bytes we have decoded */
-	int bits;  /* number of bits we have decoded */
-	int i;     /* byte index to candidate CRC within payload */
+	/* number of bits we have decoded */
+	int bits;
 
 	/* check CRC for any integer byte length up to maxlength */
-	for (bytes = 0; bytes < maxlength; bytes++) {
-		bits = bytes * 8;
+	for (d_payload_length = 0;
+			d_payload_length < maxlength; d_payload_length++) {
+
+		bits = d_payload_length * 8;
 
 		/* unwhiten next byte */
 		if ((bits + 8) > size)
 			return 1; //FIXME should throw exception
 		unwhiten(stream, d_payload + bits, clock, 8, 18 + bits);
 
-		if (bytes > 2) {
-			i = bytes - 2;
-			crc = crcgen(d_payload, i * 8, d_UAP);
-			check = air_to_host16(&d_payload[i * 8], 16);
-
-			if (crc == check) {
-				d_payload_crc = crc;
-				d_payload_header_length = 0;
-				d_payload_length = bytes;
+		if ((d_payload_length > 2) && (payload_crc()))
 				return 10;
-			}
-		}
 	}
 	return 1;
 }
