@@ -38,11 +38,18 @@ typedef boost::shared_ptr<bluetooth_packet> bluetooth_packet_sptr;
  */
 bluetooth_packet_sptr bluetooth_make_packet(char *stream, int length);
 
+/* construct with known CLKN and channel */
+bluetooth_packet_sptr bluetooth_make_packet(char *stream, int length,
+		uint32_t clkn, int channel);
+
+
 class bluetooth_packet
 {
 private:
 	/* allow bluetooth_make_packet to access the private constructor. */
 	friend bluetooth_packet_sptr bluetooth_make_packet(char *stream, int length);
+	friend bluetooth_packet_sptr bluetooth_make_packet(char *stream, int length,
+			uint32_t clkn, int channel);
 
 	/* constructor */
 	bluetooth_packet(char *stream, int length);
@@ -152,6 +159,11 @@ private:
 	bool payload_crc();
 
 public:
+	int d_channel;
+
+	/* native (local) clock */
+	uint32_t d_clkn;
+
 	/* search a symbol stream to find a packet, return index */
 	static int sniff_ac(char *stream, int stream_length);
 

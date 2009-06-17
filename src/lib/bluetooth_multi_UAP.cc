@@ -81,9 +81,11 @@ bluetooth_multi_UAP::work(int noutput_items,
 			int latest_ac = (num_symbols - 68) < 625 ? (num_symbols - 68) : 625;
 			retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 			if(retval > -1) {
-				bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
+				bluetooth_packet_sptr packet = bluetooth_make_packet(
+						&symbols[retval], num_symbols - retval,
+						clkn, channel);
 				if (packet->get_LAP() == d_LAP && packet->header_present()) {
-					if (d_piconet->UAP_from_header(packet, clkn, channel))
+					if (d_piconet->UAP_from_header(packet))
 						exit(0);
 					break;
 				}

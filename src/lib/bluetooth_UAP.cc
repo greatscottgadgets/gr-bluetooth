@@ -73,10 +73,14 @@ bluetooth_UAP::work (int noutput_items,
 		consumed = noutput_items;
 	} else {
 		consumed = retval;
-		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items + history() - retval);
+		clkn = ((d_cumulative_count + consumed) / 625) & 0x7ffffff;
+
+		bluetooth_packet_sptr packet = bluetooth_make_packet(
+				&in[retval], noutput_items + history() - retval,
+				clkn, 0);
+
 		if (packet->get_LAP() == d_LAP && packet->header_present()) {
-			clkn = ((d_cumulative_count + consumed) / 625) & 0x7ffffff;
-			if (d_piconet->UAP_from_header(packet, clkn, 0))
+			if (d_piconet->UAP_from_header(packet))
 				exit(0);
 		}
 		consumed += 126;

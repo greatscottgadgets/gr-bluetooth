@@ -132,7 +132,8 @@ void bluetooth_multi_sniffer::ac(char *symbols, int len, int channel)
 	
 	clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
 
-	bluetooth_packet_sptr pkt = bluetooth_make_packet(symbols, len);
+	bluetooth_packet_sptr pkt = bluetooth_make_packet(symbols, len, clkn,
+			channel);
 	lap = pkt->get_LAP();
 
 	printf("time %6d, channel %2d, LAP %06x ", clkn, channel, lap);
@@ -144,9 +145,9 @@ void bluetooth_multi_sniffer::ac(char *symbols, int len, int channel)
 		pn = d_piconets[lap];
 
 		if (pn->have_clk6() && pn->have_UAP()) {
-			decode(pkt, pn, clkn, channel);
+			decode(pkt, pn, true);
 		} else {
-			discover(pkt, pn, clkn, channel);
+			discover(pkt, pn);
 		}
 	} else {
 		id(lap);
@@ -163,11 +164,11 @@ void bluetooth_multi_sniffer::id(uint32_t lap)
 
 /* decode packets with headers */
 void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
-		bluetooth_piconet_sptr pn, uint32_t clkn, int channel)
+		bluetooth_piconet_sptr pn, bool first_run)
 {
 	int clock; /* CLK of target piconet */
 
-	clock = (clkn + pn->get_offset()) & 0x3f;
+	clock = (pkt->d_clkn + pn->get_offset()) & 0x3f;
 	pkt->set_clock(clock);
 	pkt->set_UAP(pn->get_UAP());
 	//printf("clock 0x%02x: ", clock);
@@ -185,37 +186,50 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 			free(data);
 		}
 		if (pkt->get_type() == 2)
-			fhs(pkt, clkn);
-	} else {
+			fhs(pkt);
+	} else if (first_run) {
 		printf("lost clock!\n");
 		pn->reset();
 
 		/* start rediscovery with this packet */
-		discover(pkt, pn, clkn, channel);
+		discover(pkt, pn);
+	} else {
+		printf("Giving up on queued packet!\n");
 	}
 }
 
 /* work on UAP/CLK1-6 discovery */
 void bluetooth_multi_sniffer::discover(bluetooth_packet_sptr pkt,
-		bluetooth_piconet_sptr pn, uint32_t clkn, int channel)
+		bluetooth_piconet_sptr pn)
 {
 	printf("working on UAP/CLK1-6\n");
 
-	if (pn->UAP_from_header(pkt, clkn, channel)) {
-		//FIXME go back and decode remembered packets
-	} else {
-		remember(pn, clkn);
-	}
+	/* store packet for decoding after discovery is complete */
+	pn->enqueue(pkt);
+
+	if (pn->UAP_from_header(pkt))
+		/* success! decode the stored packets */
+		recall(pn);
 }
 
-/* store packet for future use */
-void bluetooth_multi_sniffer::remember(bluetooth_piconet_sptr pn, uint32_t clkn)
+/* decode stored packets */
+void bluetooth_multi_sniffer::recall(bluetooth_piconet_sptr pn)
 {
-	//FIXME add packet to history
+	bluetooth_packet_sptr pkt;
+	int i;
+	printf("Decoding queued packets\n");
+
+	while (pkt = pn->dequeue()) {
+		printf("time %6d, channel %2d, LAP %06x ", pkt->d_clkn,
+				pkt->d_channel, pkt->get_LAP());
+		decode(pkt, pn, false);
+	}
+
+	printf("Finished decoding queued packets\n");
 }
 
 /* pull information out of FHS packet */
-void bluetooth_multi_sniffer::fhs(bluetooth_packet_sptr pkt, uint32_t clkn)
+void bluetooth_multi_sniffer::fhs(bluetooth_packet_sptr pkt)
 {
 	uint32_t lap;
 	uint8_t uap;
@@ -230,7 +244,7 @@ void bluetooth_multi_sniffer::fhs(bluetooth_packet_sptr pkt, uint32_t clkn)
 
 	/* clk is shifted to put it into units of 625 microseconds */
 	clk = pkt->clock_from_fhs() << 1;
-	offset = (clk - clkn) & 0x7ffffff;
+	offset = (clk - pkt->d_clkn) & 0x7ffffff;
 
 	printf("FHS contents: LAP %06x, UAP %02x, CLK %07x\n", lap, uap, clk);
 

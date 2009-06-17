@@ -98,11 +98,13 @@ bluetooth_multi_hopper::work(int noutput_items,
 				latest_ac = (num_symbols - 68) < 625 ? (num_symbols - 68) : 625;
 				retval = bluetooth_packet::sniff_ac(symbols, latest_ac);
 				if(retval > -1) {
-					bluetooth_packet_sptr packet = bluetooth_make_packet(&symbols[retval], num_symbols - retval);
+					bluetooth_packet_sptr packet = bluetooth_make_packet(
+							&symbols[retval], num_symbols - retval,
+							clkn, channel);
 					if (packet->get_LAP() == d_LAP && packet->header_present()) {
 						if (!d_piconet->have_clk6()) {
 							/* working on CLK1-6/UAP discovery */
-							d_piconet->UAP_from_header(packet, clkn, channel);
+							d_piconet->UAP_from_header(packet);
 							if (d_piconet->have_clk6()) {
 								/* got CLK1-6/UAP, start working on CLK1-27 */
 								d_piconet->init_hop_reversal(d_aliased);
@@ -112,7 +114,7 @@ bluetooth_multi_hopper::work(int noutput_items,
 						} else {
 							/* continue working on CLK1-27 */
 							/* we need timing information from an additional packet, so run through UAP_from_header() again */
-							d_piconet->UAP_from_header(packet, clkn, channel);
+							d_piconet->UAP_from_header(packet);
 							if (!d_piconet->have_clk6()) {
 								break;
 							}

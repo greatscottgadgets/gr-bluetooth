@@ -75,17 +75,16 @@ private:
 
 	/* decode packets with headers */
 	void decode(bluetooth_packet_sptr pkt, bluetooth_piconet_sptr pn,
-			uint32_t clkn, int channel);
+			bool first_run);
 
 	/* work on UAP/CLK1-6 discovery */
-	void discover(bluetooth_packet_sptr pkt, bluetooth_piconet_sptr pn,
-			uint32_t clkn, int channel);
+	void discover(bluetooth_packet_sptr pkt, bluetooth_piconet_sptr pn);
 
-	/* store packet for future use */
-	void remember(bluetooth_piconet_sptr pn, uint32_t clkn);
+	/* decode stored packets */
+	void recall(bluetooth_piconet_sptr pn);
 
 	/* pull information out of FHS packet */
-	void fhs(bluetooth_packet_sptr pkt, uint32_t clkn);
+	void fhs(bluetooth_packet_sptr pkt);
 
 public:
 	/* destructor */

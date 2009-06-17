@@ -26,6 +26,7 @@
 
 #include "bluetooth_packet.h"
 #include <stdint.h>
+#include <vector>
 #include <boost/enable_shared_from_this.hpp>
 
 class bluetooth_piconet;
@@ -109,6 +110,9 @@ private:
 
 	bool d_hop_reversal_inited;
 
+	/* queue of packets to be decoded */
+	vector<bluetooth_packet_sptr> d_pkt_queue;
+
 	/* do all the precalculation that can be done before knowing the address */
 	void precalc();
 
@@ -172,8 +176,7 @@ public:
 	void set_UAP(uint8_t uap);
 
 	/* use packet headers to determine UAP */
-	bool UAP_from_header(bluetooth_packet_sptr packet, uint32_t clkn,
-			int channel);
+	bool UAP_from_header(bluetooth_packet_sptr packet);
 
 	/* look up channel for a particular hop */
 	char hop(int clock);
@@ -188,6 +191,12 @@ public:
 	bool have_UAP();
 	bool have_clk6();
 	bool have_clk27();
+
+	/* add a packet to the queue */
+	void enqueue(bluetooth_packet_sptr pkt);
+
+	/* pull the first packet from the queue (FIFO) */
+	bluetooth_packet_sptr dequeue();
 };
 
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

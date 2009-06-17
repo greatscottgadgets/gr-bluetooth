@@ -69,12 +69,14 @@ int bluetooth_hopper::work (int noutput_items,
 		consumed = noutput_items;
 	} else {
 		consumed = retval;
-		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items + history() - retval);
+		bluetooth_packet_sptr packet = bluetooth_make_packet(
+				&in[retval], noutput_items + history() - retval,
+				clkn, d_channel);
 		if (packet->get_LAP() == d_LAP && packet->header_present()) {
 			clkn = ((d_cumulative_count + consumed) / 625) & 0x7ffffff;
 			if (!d_piconet->have_clk6()) {
 				/* working on CLK1-6/UAP discovery */
-				d_piconet->UAP_from_header(packet, clkn, d_channel);
+				d_piconet->UAP_from_header(packet);
 				if (d_piconet->have_clk6()) {
 					/* got CLK1-6/UAP, start working on CLK1-27 */
 					d_piconet->init_hop_reversal(false);
@@ -85,7 +87,7 @@ int bluetooth_hopper::work (int noutput_items,
 			} else {
 				/* continue working on CLK1-27 */
 				/* we need timing information from an additional packet, so run through UAP_from_header() again */
-				d_piconet->UAP_from_header(packet, clkn, d_channel);
+				d_piconet->UAP_from_header(packet);
 				if (d_piconet->have_clk6()) {
 					num_candidates = d_piconet->winnow();
 				}

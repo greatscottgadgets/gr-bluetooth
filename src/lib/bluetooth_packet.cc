@@ -55,6 +55,19 @@ bluetooth_make_packet(char *stream, int length)
 	return bluetooth_packet_sptr (new bluetooth_packet (stream, length));
 }
 
+/* construct with known CLKN and channel */
+bluetooth_packet_sptr
+bluetooth_make_packet(char *stream, int length, uint32_t clkn, int channel)
+{
+	bluetooth_packet_sptr pkt = bluetooth_packet_sptr
+			(new bluetooth_packet (stream, length));
+
+	pkt->d_clkn = clkn;
+	pkt->d_channel = channel;
+
+	return pkt;
+}
+
 /* constructor */
 bluetooth_packet::bluetooth_packet(char *stream, int length)
 {
@@ -72,7 +85,6 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	d_have_UAP = false;
 	d_have_clock = false;
 	d_have_payload = false;
-	d_payload_header_length = 0;
 	d_payload_length = 0;
 }
 
@@ -956,6 +968,8 @@ bool bluetooth_packet::decode_header()
 
 void bluetooth_packet::decode_payload()
 {
+	d_payload_header_length = 0;
+
 	switch(d_packet_type)
 	{
 		case 0: /* NULL */

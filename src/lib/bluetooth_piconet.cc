@@ -46,6 +46,7 @@ bluetooth_piconet::bluetooth_piconet(uint32_t LAP)
 
 	d_got_first_packet = false;
 	d_packets_observed = 0;
+	d_total_packets_observed = 0;
 	d_hop_reversal_inited = false;
 	d_afh = false;
 	d_looks_like_afh = false;
@@ -380,20 +381,20 @@ bool bluetooth_piconet::have_clk27()
 }
 
 /* use packet headers to determine UAP */
-bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet,
-		uint32_t clkn, int channel)
+bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet)
 {
 	uint8_t UAP;
 	int count, retval, first_clock;
 	int starting = 0;
 	int remaining = 0;
+	uint32_t clkn = packet->d_clkn;
 
 	if (!d_got_first_packet)
 		d_first_pkt_time = clkn;
 
 	if (d_packets_observed < MAX_PATTERN_LENGTH) {
 		d_pattern_indices[d_packets_observed] = clkn - d_first_pkt_time;
-		d_pattern_channels[d_packets_observed] = channel;
+		d_pattern_channels[d_packets_observed] = packet->d_channel;
 	} else {
 		printf("Oops. More hops than we can remember.\n");
 		reset();
@@ -438,6 +439,7 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet,
 				d_UAP = UAP;
 				d_have_clk6 = true;
 				d_have_UAP = true;
+				d_total_packets_observed = 0;
 				return true;
 			}
 		}
@@ -454,6 +456,7 @@ bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet,
 		d_have_UAP = true;
 		printf("We have a winner! UAP = 0x%x found after %d total packets.\n",
 				d_UAP, d_total_packets_observed);
+		d_total_packets_observed = 0;
 		return true;
 	}
 
@@ -486,9 +489,28 @@ void bluetooth_piconet::reset()
 	d_have_clk27 = false;
 
 	/*
-	 * If we have recently observed two packets in a row, try AFH next
-	 * time.  If not, don't.
+	 * If we have recently observed two packets in a row on the same
+	 * channel, try AFH next time.  If not, don't.
 	 */
 	d_afh = d_looks_like_afh;
 	d_looks_like_afh = false;
+}
+
+/* add a packet to the queue */
+void bluetooth_piconet::enqueue(bluetooth_packet_sptr pkt)
+{
+	d_pkt_queue.push_back(pkt);
+}
+
+/* pull the first packet from the queue (FIFO) */
+bluetooth_packet_sptr bluetooth_piconet::dequeue()
+{
+	bluetooth_packet_sptr pkt;
+
+	if (d_pkt_queue.size() > 0) {
+		pkt = d_pkt_queue.front();
+		d_pkt_queue.erase(d_pkt_queue.begin());
+	}
+
+	return pkt;
 }
