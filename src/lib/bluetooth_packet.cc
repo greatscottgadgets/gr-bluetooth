@@ -524,10 +524,13 @@ int bluetooth_packet::crc_check(int clock)
 			break;
 
 		case 7:/* EV3 */
+			retval = EV3(clock);
+			break;
 		case 12:/* EV4 */
+			retval = EV4(clock);
+			break;
 		case 13:/* EV5 */
-			/* Unknown length, need to cycle through it until CRC matches */
-			retval = EV(clock);
+			retval = EV5(clock);
 			break;
 		
 		case 5:/* HV1 */
@@ -755,58 +758,145 @@ int bluetooth_packet::DH(int clock)
 	return 1;
 }
 
-int bluetooth_packet::EV(int clock)
+int bluetooth_packet::EV3(int clock)
 {
-	int count;
 	uint16_t crc, check;
-	/* EV5 has a maximum of 180 bytes + 2 bytes CRC */
-	int maxlength = 182;
+
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
+
 	/* number of symbols remaining after access code and packet header */
 	int size = d_length - 126;
 
-	//FIXME should do all this one byte at a time
-	switch (d_packet_type) {
-	case 12:/* EV4 */
-		{
-		if(size < 1470)
-			return 1; //FIXME should throw exception
-		/* 120 bytes + 2 bytes CRC */
-		maxlength = 122;
-		char corrected[maxlength * 8];
-		if (!unfec23(stream, corrected, maxlength * 8))
-			return 0;
-		unwhiten(corrected, d_payload, clock, maxlength * 8, 18);
-		}
-		break;
-	case 7:/* EV3 */
-		/* 30 bytes + 2 bytes CRC */
-		maxlength = 32;
-	case 13:/* EV5 */
-		if(size < (maxlength * 8))
-			return 1; //FIXME should throw exception
-		unwhiten(stream, d_payload, clock, maxlength * 8, 18);
-		break;
-	default:
-		return 0;
-	}
+	/* maximum payload length is 30 bytes + 2 bytes CRC */
+	int maxlength = 32;
 
-	/* Check crc for any integer byte length up to maxlength */
-	for(count = 1; count < (maxlength-1); count++)
-	{
-		crc = crcgen(d_payload, count*8, d_UAP);
-		check = air_to_host16(&d_payload[count*8], 16);
+	int bytes; /* number of bytes we have decoded */
+	int bits;  /* number of bits we have decoded */
+	int i;     /* byte index to candidate CRC within payload */
 
-		/* Check CRC */
-		if(crc == check) {
-			d_payload_crc = crc;
-			d_payload_header_length = 0;
-			d_payload_length = count + 2;
-			return 10;
+	/* check CRC for any integer byte length up to maxlength */
+	for (bytes = 0; bytes < maxlength; bytes++) {
+		bits = bytes * 8;
+
+		/* unwhiten next byte */
+		if ((bits + 8) > size)
+			return 1; //FIXME should throw exception
+		unwhiten(stream, d_payload + bits, clock, 8, 18 + bits);
+
+		if (bytes > 2) {
+			i = bytes - 2;
+			crc = crcgen(d_payload, i * 8, d_UAP);
+			check = air_to_host16(&d_payload[i * 8], 16);
+
+			if (crc == check) {
+				d_payload_crc = crc;
+				d_payload_header_length = 0;
+				d_payload_length = bytes;
+				return 10;
+			}
 		}
 	}
-	/* could be encrypted */
+	return 1;
+}
+
+int bluetooth_packet::EV4(int clock)
+{
+	uint16_t crc, check;
+	char corrected[30];
+
+	/* skip the access code and packet header */
+	char *stream = d_symbols + 126;
+
+	/* number of symbols remaining after access code and packet header */
+	int size = d_length - 126;
+
+	/*
+	 * maximum payload length is 120 bytes + 2 bytes CRC
+	 * after FEC2/3, this results in a maximum of 1470 symbols
+	 */
+	int maxlength = 1470;
+
+	/*
+	 * minumum payload length is 1 bytes + 2 bytes CRC
+	 * after FEC2/3, this results in a minimum of 45 symbols
+	 */
+	int minlength = 45;
+
+	int syms = 0; /* number of symbols we have decoded */
+	int bits = 0; /* number of payload bits we have decoded */
+	int i = 1;    /* byte index to candidate CRC within payload */
+
+	while (syms < maxlength) {
+
+		/* unfec/unwhiten next block (15 symbols -> 10 bits) */
+		if (syms + 15 > size)
+			return 1; //FIXME should throw exception
+		if (!unfec23(stream + syms, corrected, 10))
+			if (syms < minlength)
+				return 0;
+			else
+				return 1;
+		unwhiten(corrected, d_payload + bits, clock, 10, 18 + bits);
+
+		/* check CRC one byte at a time */
+		while ((i + 2) * 8 <= bits) {
+			crc = crcgen(d_payload, i * 8, d_UAP);
+			check = air_to_host16(&d_payload[i * 8], 16);
+
+			if (crc == check) {
+				d_payload_crc = crc;
+				d_payload_header_length = 0;
+				d_payload_length = i + 2;
+				return 10;
+			}
+			i++;
+		}
+		syms += 15;
+		bits += 10;
+	}
+	return 1;
+}
+
+int bluetooth_packet::EV5(int clock)
+{
+	uint16_t crc, check;
+
+	/* skip the access code and packet header */
+	char *stream = d_symbols + 126;
+
+	/* number of symbols remaining after access code and packet header */
+	int size = d_length - 126;
+
+	/* maximum payload length is 180 bytes + 2 bytes CRC */
+	int maxlength = 182;
+
+	int bytes; /* number of bytes we have decoded */
+	int bits;  /* number of bits we have decoded */
+	int i;     /* byte index to candidate CRC within payload */
+
+	/* check CRC for any integer byte length up to maxlength */
+	for (bytes = 0; bytes < maxlength; bytes++) {
+		bits = bytes * 8;
+
+		/* unwhiten next byte */
+		if ((bits + 8) > size)
+			return 1; //FIXME should throw exception
+		unwhiten(stream, d_payload + bits, clock, 8, 18 + bits);
+
+		if (bytes > 2) {
+			i = bytes - 2;
+			crc = crcgen(d_payload, i * 8, d_UAP);
+			check = air_to_host16(&d_payload[i * 8], 16);
+
+			if (crc == check) {
+				d_payload_crc = crc;
+				d_payload_header_length = 0;
+				d_payload_length = bytes;
+				return 10;
+			}
+		}
+	}
 	return 1;
 }
 
@@ -926,7 +1016,7 @@ void bluetooth_packet::decode_payload()
 			break;
 		case 7: /* HV3/EV3/3-EV3 */
 			/* decode as EV3 if CRC checks out */
-			if (EV(d_clock) <= 1)
+			if (EV3(d_clock) <= 1)
 				/* otherwise assume HV3 */
 				HV(d_clock);
 			/* don't know how to decode 3-EV3 */
@@ -948,11 +1038,11 @@ void bluetooth_packet::decode_payload()
 			break;
 		case 12: /* EV4 */
 			/* assuming EV4 but could be 2-EV5 */
-			EV(d_clock);
+			EV4(d_clock);
 			break;
 		case 13: /* EV5 */
 			/* assuming EV5 but could be 3-EV5 */
-			EV(d_clock);
+			EV5(d_clock);
 		case 14: /* DM5 */
 			/* assuming DM5 but could be 2-DH5 */
 			DM(d_clock);

@@ -140,7 +140,9 @@ private:
 	int fhs(int clock);
 	int DM(int clock);
 	int DH(int clock);
-	int EV(int clock);
+	int EV3(int clock);
+	int EV4(int clock);
+	int EV5(int clock);
 	int HV(int clock);
 
 	/* decode payload header, return value indicates success */
