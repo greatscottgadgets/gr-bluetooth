@@ -166,10 +166,10 @@ void bluetooth_multi_sniffer::id(uint32_t lap)
 void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 		bluetooth_piconet_sptr pn, bool first_run)
 {
-	int clock; /* CLK of target piconet */
+	uint32_t clock; /* CLK of target piconet */
 
-	clock = (pkt->d_clkn + pn->get_offset()) & 0x3f;
-	pkt->set_clock(clock);
+	clock = (pkt->d_clkn + pn->get_offset());
+	pkt->set_clock(clock, pn->have_clk27());
 	pkt->set_UAP(pn->get_UAP());
 	//printf("clock 0x%02x: ", clock);
 	pkt->decode();
@@ -178,7 +178,7 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 		pkt->print();
 		if (d_tun) {
 			/* include 3 bytes for packet header */
-			int length = pkt->get_payload_length() + 3;
+			int length = pkt->get_payload_length() + 9;
 			char *data = pkt->tun_format();
 			int addr = (pkt->get_UAP() << 24) | pkt->get_LAP();
 			write_interface(d_tunfd, (unsigned char *)data, length,

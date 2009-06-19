@@ -132,8 +132,9 @@ private:
 	/* do we know the UAP? */
 	bool d_have_UAP;
 
-	/* do we know the clock (master CLK1-27)? */
-	bool d_have_clock;
+	/* do we know the master clock? */
+	bool d_have_clk6;
+	bool d_have_clk27;
 
 	bool d_have_payload;
 
@@ -245,8 +246,8 @@ public:
 	/* return the packet's clock (CLK1-27) */
 	uint32_t get_clock();
 
-	/* set the packet's clock (CLK1-27) */
-	void set_clock(uint32_t clock);
+	/* set the packet's clock */
+	void set_clock(uint32_t clk6, bool have27);
 
 	/* Retrieve the length of the payload data */
 	int get_payload_length();

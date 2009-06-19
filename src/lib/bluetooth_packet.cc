@@ -83,7 +83,8 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	d_length = length;
 	d_whitened = true;
 	d_have_UAP = false;
-	d_have_clock = false;
+	d_have_clk6 = false;
+	d_have_clk27 = false;
 	d_have_payload = false;
 	d_payload_length = 0;
 }
@@ -467,15 +468,21 @@ void bluetooth_packet::set_UAP(uint8_t UAP)
 /* return the packet's clock (CLK1-27) */
 uint32_t bluetooth_packet::get_clock()
 {
-	//FIXME throw exception if !d_have_clock
+	//FIXME throw exception if !d_have_clk6
 	return d_clock;
 }
 
 /* set the packet's clock (CLK1-27) */
-void bluetooth_packet::set_clock(uint32_t clock)
+void bluetooth_packet::set_clock(uint32_t clock, bool have27)
 {
-	d_clock = clock;
-	d_have_clock = true;
+	/* we expect to be called with either 6 or 27 clock bits */
+	if (have27)
+		d_clock = clock & 0x7ffffff;
+	else
+		d_clock = clock & 0x3f;
+
+	d_have_clk6 = true;
+	d_have_clk27 = have27;
 }
 
 /* is the packet whitened? */
@@ -949,7 +956,7 @@ bool bluetooth_packet::decode_header()
 	char header[18];
 	uint8_t UAP;
 
-	if (d_have_clock && unfec13(stream, header, 18)) {
+	if (d_have_clk6 && unfec13(stream, header, 18)) {
 		unwhiten(header, d_packet_header, d_clock, 18, 0);
 		uint16_t hdr_data = air_to_host16(d_packet_header, 10);
 		uint8_t hec = air_to_host8(&d_packet_header[10], 8);
@@ -1057,21 +1064,29 @@ void bluetooth_packet::print()
 
 char *bluetooth_packet::tun_format()
 {
-	/* include 3 bytes for packet header */
-	int length = 3 + d_payload_length;
+	/* include 6 bytes for meta data, 3 bytes for packet header */
+	int length = 9 + d_payload_length;
 	char *tun_format = (char *) malloc(length);
 	int i;
 
+	/* meta data */
+	tun_format[0] = d_clock & 0xff;
+	tun_format[1] = (d_clock >> 8) & 0xff;
+	tun_format[2] = (d_clock >> 16) & 0xff;
+	tun_format[3] = (d_clock >> 24) & 0xff;
+	tun_format[4] = d_channel;
+	tun_format[5] = d_have_clk27;
+
 	/* packet header modified to fit byte boundaries */
 	/* lt_addr and type */
-	tun_format[0] = (char) air_to_host8(&d_packet_header[0], 7);
+	tun_format[6] = (char) air_to_host8(&d_packet_header[0], 7);
 	/* flags */
-	tun_format[1] = (char) air_to_host8(&d_packet_header[7], 3);
+	tun_format[7] = (char) air_to_host8(&d_packet_header[7], 3);
 	/* HEC */
-	tun_format[2] = (char) air_to_host8(&d_packet_header[10], 8);
+	tun_format[8] = (char) air_to_host8(&d_packet_header[10], 8);
 
 	for(i=0;i<d_payload_length;i++)
-		tun_format[i+3] = (char) air_to_host8(&d_payload[i*8], 8);
+		tun_format[i+9] = (char) air_to_host8(&d_payload[i*8], 8);
 
 	return tun_format;
 }
