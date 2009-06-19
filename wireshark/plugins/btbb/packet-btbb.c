@@ -39,6 +39,7 @@ static int hf_btbb_meta = -1;
 static int hf_btbb_dir = -1;
 static int hf_btbb_clk = -1;
 static int hf_btbb_channel = -1;
+static int hf_btbb_addrbits = -1;
 static int hf_btbb_clkbits = -1;
 static int hf_btbb_pkthdr = -1;
 static int hf_btbb_ltaddr = -1;
@@ -68,13 +69,18 @@ static int hf_btbb_fhs_psmode = -1;
 
 /* field values */
 static const true_false_string direction = {
-        "Slave to Master",
+	"Slave to Master",
 	"Master to Slave"
 };
 
 static const true_false_string clock_bits = {
-        "27",
+	"27",
 	"6"
+};
+
+static const true_false_string address_bits = {
+	"48 (NAP known)",
+	"32 (NAP unknown)"
 };
 
 static const value_string packet_types[] = {
@@ -290,6 +296,7 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		offset += 1;
 
 		proto_tree_add_item(meta_tree, hf_btbb_clkbits, tvb, offset, 1, TRUE);
+		proto_tree_add_item(meta_tree, hf_btbb_addrbits, tvb, offset, 1, TRUE);
 		offset += 1;
 
 		/* packet header */
@@ -368,8 +375,13 @@ proto_register_btbb(void)
 		},
 		{ &hf_btbb_clkbits,
 			{ "Known Clock Bits ", "btbb.clkbits",
-			FT_BOOLEAN, BASE_NONE, TFS(&clock_bits), 0x0,
+			FT_BOOLEAN, BASE_NONE, TFS(&clock_bits), 0x01,
 			"Number of Known Master CLK Bits (6 or 27)", HFILL }
+		},
+		{ &hf_btbb_addrbits,
+			{ "Known Address Bits ", "btbb.addrbits",
+			FT_BOOLEAN, BASE_NONE, TFS(&address_bits), 0x02,
+			"Number of Known Bits of BD_ADDR (32 or 48)", HFILL }
 		},
 		{ &hf_btbb_pkthdr,
 			{ "Packet Header", "btbb.pkthdr",
