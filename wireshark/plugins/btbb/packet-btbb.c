@@ -35,6 +35,11 @@ void proto_reg_handoff_btbb(void);
 
 /* initialize the protocol and registered fields */
 static int proto_btbb = -1;
+static int hf_btbb_meta = -1;
+static int hf_btbb_dir = -1;
+static int hf_btbb_clk = -1;
+static int hf_btbb_channel = -1;
+static int hf_btbb_clkbits = -1;
 static int hf_btbb_pkthdr = -1;
 static int hf_btbb_ltaddr = -1;
 static int hf_btbb_type = -1;
@@ -62,6 +67,16 @@ static int hf_btbb_fhs_clk = -1;
 static int hf_btbb_fhs_psmode = -1;
 
 /* field values */
+static const true_false_string direction = {
+        "Slave to Master",
+	"Master to Slave"
+};
+
+static const true_false_string clock_bits = {
+        "27",
+	"6"
+};
+
 static const value_string packet_types[] = {
 	/* generic names for unknown logical transport */
 	{ 0x0, "NULL" },
@@ -107,6 +122,7 @@ static const value_string llid_codes[] = {
 
 /* initialize the subtree pointers */
 static gint ett_btbb = -1;
+static gint ett_btbb_meta = -1;
 static gint ett_btbb_pkthdr = -1;
 static gint ett_btbb_flags = -1;
 static gint ett_btbb_payload = -1;
@@ -221,14 +237,14 @@ dissect_dm1(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 static int
 dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	proto_item *btbb_item, *pkthdr_item, *pld_item;
-	proto_tree *btbb_tree, *pkthdr_tree;
+	proto_item *btbb_item, *meta_item, *pkthdr_item, *pld_item;
+	proto_tree *btbb_tree, *meta_tree, *pkthdr_tree;
 	int offset;
 	guint8 type;
 	char *info;
 
 	/* sanity check: length */
-	if (tvb_length(tvb) > 0 && tvb_length(tvb) < 3)
+	if (tvb_length(tvb) > 0 && tvb_length(tvb) < 9)
 		/* bad length: look for a different dissector */
 		return 0;
 
@@ -241,7 +257,7 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	if (tvb_length(tvb) == 0) {
 		info = "ID";
 	} else {
-		type = (tvb_get_guint8(tvb, 0) >> 3) & 0x0f;
+		type = (tvb_get_guint8(tvb, 6) >> 3) & 0x0f;
 		info = match_strval(type, packet_types);
 	}
 
@@ -261,6 +277,20 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		/* ID packets have no header, no payload */
 		if (tvb_length(tvb) == 0)
 			return 1;
+
+		/* meta data */
+		meta_item = proto_tree_add_item(btbb_tree, hf_btbb_meta, tvb, offset, 3, TRUE);
+		meta_tree = proto_item_add_subtree(meta_item, ett_btbb_meta);
+
+		proto_tree_add_item(meta_tree, hf_btbb_dir, tvb, offset, 1, TRUE);
+		proto_tree_add_item(meta_tree, hf_btbb_clk, tvb, offset, 4, TRUE);
+		offset += 4;
+
+		proto_tree_add_item(meta_tree, hf_btbb_channel, tvb, offset, 1, TRUE);
+		offset += 1;
+
+		proto_tree_add_item(meta_tree, hf_btbb_clkbits, tvb, offset, 1, TRUE);
+		offset += 1;
 
 		/* packet header */
 		pkthdr_item = proto_tree_add_item(btbb_tree, hf_btbb_pkthdr, tvb, offset, 3, TRUE);
@@ -316,6 +346,31 @@ proto_register_btbb(void)
 
 	/* list of fields */
 	static hf_register_info hf[] = {
+		{ &hf_btbb_meta,
+			{ "Meta Data", "btbb.meta",
+			FT_NONE, BASE_NONE, NULL, 0x0,
+			"Meta Data About the Packet", HFILL }
+		},
+		{ &hf_btbb_dir,
+			{ "Direction", "btbb.dir",
+			FT_BOOLEAN, BASE_NONE, TFS(&direction), 0x01,
+			"Direction of Transmission", HFILL }
+		},
+		{ &hf_btbb_clk,
+			{ "CLK", "btbb.clk",
+			FT_UINT32, BASE_HEX, NULL, 0x0,
+			"Clock bits 1 through 27", HFILL }
+		},
+		{ &hf_btbb_channel,
+			{ "Channel", "btbb.channel",
+			FT_UINT8, BASE_DEC, NULL, 0x0,
+			"Channel (0-78)", HFILL }
+		},
+		{ &hf_btbb_clkbits,
+			{ "Known Clock Bits ", "btbb.clkbits",
+			FT_BOOLEAN, BASE_NONE, TFS(&clock_bits), 0x0,
+			"Number of Known Master CLK Bits (6 or 27)", HFILL }
+		},
 		{ &hf_btbb_pkthdr,
 			{ "Packet Header", "btbb.pkthdr",
 			FT_NONE, BASE_NONE, NULL, 0x0,
@@ -447,6 +502,7 @@ proto_register_btbb(void)
 	/* protocol subtree arrays */
 	static gint *ett[] = {
 		&ett_btbb,
+		&ett_btbb_meta,
 		&ett_btbb_pkthdr,
 		&ett_btbb_flags,
 		&ett_btbb_payload,
