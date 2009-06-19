@@ -83,6 +83,7 @@ bluetooth_packet::bluetooth_packet(char *stream, int length)
 	d_length = length;
 	d_whitened = true;
 	d_have_UAP = false;
+	d_have_NAP = false;
 	d_have_clk6 = false;
 	d_have_clk27 = false;
 	d_have_payload = false;
@@ -463,6 +464,12 @@ void bluetooth_packet::set_UAP(uint8_t UAP)
 {
 	d_UAP = UAP;
 	d_have_UAP = true;
+}
+
+void bluetooth_packet::set_NAP(uint16_t NAP)
+{
+	d_NAP = NAP;
+	d_have_NAP = true;
 }
 
 /* return the packet's clock (CLK1-27) */
@@ -1075,7 +1082,7 @@ char *bluetooth_packet::tun_format()
 	tun_format[2] = (d_clock >> 16) & 0xff;
 	tun_format[3] = (d_clock >> 24) & 0xff;
 	tun_format[4] = d_channel;
-	tun_format[5] = d_have_clk27;
+	tun_format[5] = d_have_clk27 | (d_have_NAP << 1);
 
 	/* packet header modified to fit byte boundaries */
 	/* lt_addr and type */
@@ -1158,6 +1165,13 @@ uint8_t bluetooth_packet::uap_from_fhs()
 {
 	/* caller should check got_payload() and get_type() */
 	return air_to_host8(&d_payload[64], 8);
+}
+
+/* extract NAP from FHS payload */
+uint16_t bluetooth_packet::nap_from_fhs()
+{
+	/* caller should check got_payload() and get_type() */
+	return air_to_host8(&d_payload[72], 16);
 }
 
 /* extract clock from FHS payload */

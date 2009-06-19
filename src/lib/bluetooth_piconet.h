@@ -67,6 +67,9 @@ private:
 	/* upper address part (of master's BD_ADDR) */
 	uint8_t d_UAP;
 
+	/* non-significant address part (of master's BD_ADDR) */
+	uint16_t d_NAP;
+
 	/* CLK1-27 candidates */
 	uint32_t *d_clock_candidates;
 
@@ -138,6 +141,7 @@ private:
 
 	/* discovery status */
 	bool d_have_UAP;
+	bool d_have_NAP;
 	bool d_have_clk6;
 	bool d_have_clk27;
 
@@ -175,6 +179,10 @@ public:
 	uint8_t get_UAP();
 	void set_UAP(uint8_t uap);
 
+	/* NAP */
+	uint16_t get_NAP();
+	void set_NAP(uint16_t nap);
+
 	/* use packet headers to determine UAP */
 	bool UAP_from_header(bluetooth_packet_sptr packet);
 
@@ -189,6 +197,7 @@ public:
 
 	/* discovery status */
 	bool have_UAP();
+	bool have_NAP();
 	bool have_clk6();
 	bool have_clk27();
 

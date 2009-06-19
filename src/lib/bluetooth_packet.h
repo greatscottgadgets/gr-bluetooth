@@ -86,6 +86,9 @@ private:
 	/* upper address part */
 	uint8_t d_UAP;
 
+	/* non-significant address part */
+	uint8_t d_NAP;
+
 	/* number of symbols */
 	int d_length;
 
@@ -129,8 +132,9 @@ private:
 	/* is the packet whitened? */
 	bool d_whitened;
 
-	/* do we know the UAP? */
+	/* do we know the UAP/NAP? */
 	bool d_have_UAP;
+	bool d_have_NAP;
 
 	/* do we know the master clock? */
 	bool d_have_clk6;
@@ -234,6 +238,9 @@ public:
 	/* set the packet's UAP */
 	void set_UAP(uint8_t UAP);
 
+	/* set the packet's NAP */
+	void set_NAP(uint16_t NAP);
+
 	/* is the packet whitened? */
 	bool get_whitened();
 
@@ -267,6 +274,9 @@ public:
 
 	/* extract UAP from FHS payload */
 	uint8_t uap_from_fhs();
+
+	/* extract NAP from FHS payload */
+	uint16_t nap_from_fhs();
 
 	/* extract clock from FHS payload */
 	uint32_t clock_from_fhs();

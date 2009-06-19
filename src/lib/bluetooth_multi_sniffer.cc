@@ -171,16 +171,23 @@ void bluetooth_multi_sniffer::decode(bluetooth_packet_sptr pkt,
 	clock = (pkt->d_clkn + pn->get_offset());
 	pkt->set_clock(clock, pn->have_clk27());
 	pkt->set_UAP(pn->get_UAP());
-	//printf("clock 0x%02x: ", clock);
+
 	pkt->decode();
 
 	if (pkt->got_payload()) {
 		pkt->print();
 		if (d_tun) {
-			/* include 3 bytes for packet header */
+			uint64_t addr = (pkt->get_UAP() << 24) | pkt->get_LAP();
+
+			if (pn->have_NAP()) {
+				addr |= ((uint64_t) pn->get_NAP()) << 32;
+				pkt->set_NAP(pn->get_NAP());
+			}
+
+			/* include 9 bytes for meta data & packet header */
 			int length = pkt->get_payload_length() + 9;
 			char *data = pkt->tun_format();
-			int addr = (pkt->get_UAP() << 24) | pkt->get_LAP();
+
 			write_interface(d_tunfd, (unsigned char *)data, length,
 					0, addr, ETHER_TYPE);
 			free(data);
@@ -216,7 +223,6 @@ void bluetooth_multi_sniffer::discover(bluetooth_packet_sptr pkt,
 void bluetooth_multi_sniffer::recall(bluetooth_piconet_sptr pn)
 {
 	bluetooth_packet_sptr pkt;
-	int i;
 	printf("Decoding queued packets\n");
 
 	while (pkt = pn->dequeue()) {
@@ -233,6 +239,7 @@ void bluetooth_multi_sniffer::fhs(bluetooth_packet_sptr pkt)
 {
 	uint32_t lap;
 	uint8_t uap;
+	uint16_t nap;
 	uint32_t clk;
 	uint32_t offset;
 	bluetooth_piconet_sptr pn;
@@ -241,12 +248,22 @@ void bluetooth_multi_sniffer::fhs(bluetooth_packet_sptr pkt)
 
 	lap = pkt->lap_from_fhs();
 	uap = pkt->uap_from_fhs();
+	nap = pkt->nap_from_fhs();
 
 	/* clk is shifted to put it into units of 625 microseconds */
 	clk = pkt->clock_from_fhs() << 1;
 	offset = (clk - pkt->d_clkn) & 0x7ffffff;
 
-	printf("FHS contents: LAP %06x, UAP %02x, CLK %07x\n", lap, uap, clk);
+	printf("FHS contents: BD_ADDR ");
+
+	printf("%2.2x:", (nap >> 8) & 0xff);
+	printf("%2.2x:", nap & 0xff);
+	printf("%2.2x:", uap);
+	printf("%2.2x:", (lap >> 16) & 0xff);
+	printf("%2.2x:", (lap >> 8) & 0xff);
+	printf("%2.2x", lap & 0xff);
+
+	printf(", CLK %07x\n", clk);
 
 	/* make use of this information from now on */
 	if (!d_piconets[lap])
@@ -254,6 +271,7 @@ void bluetooth_multi_sniffer::fhs(bluetooth_packet_sptr pkt)
 	pn = d_piconets[lap];
 	
 	pn->set_UAP(uap);
+	pn->set_NAP(nap);
 	pn->set_offset(offset);
 	//FIXME if this is a role switch, the offset can have an error of as
 	//much as 1.25 ms 

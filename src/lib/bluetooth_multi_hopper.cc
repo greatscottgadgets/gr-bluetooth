@@ -168,7 +168,7 @@ void bluetooth_multi_hopper::hopalong(gr_vector_const_void_star &input_items,
 						if(packet->got_payload()) {
 							packet->print();
 							if(d_tun) {
-								/* include 3 bytes for packet header */
+								/* include 9 bytes for meta data & packet header */
 								int length = packet->get_payload_length() + 9;
 								char *data = packet->tun_format();
 								int addr = (packet->get_UAP() << 24) | packet->get_LAP();

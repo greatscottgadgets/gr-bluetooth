@@ -102,8 +102,8 @@ int write_interface(int fd, unsigned char *data, unsigned int data_len,
 	uint8_t i, shift;
 	for(i=0;i<6;i++) {
 		shift = 8*(5-i);
-		src_mac[i] = (src_addr & (0xff << shift)) >> shift;
-		dst_mac[i] = (dst_addr & (0xff << shift)) >> shift;
+		src_mac[i] = (src_addr >> shift) & 0xff;
+		dst_mac[i] = (dst_addr >> shift) & 0xff;
 	}
 
 	memcpy(eh.h_dest, dst_mac, ETH_ALEN);

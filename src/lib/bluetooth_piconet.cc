@@ -51,6 +51,7 @@ bluetooth_piconet::bluetooth_piconet(uint32_t LAP)
 	d_afh = false;
 	d_looks_like_afh = false;
 	d_have_UAP = false;
+	d_have_NAP = false;
 	d_have_clk6 = false;
 	d_have_clk27 = false;
 }
@@ -364,10 +365,28 @@ void bluetooth_piconet::set_UAP(uint8_t uap)
 	d_have_UAP = true;
 }
 
+/* NAP */
+uint16_t bluetooth_piconet::get_NAP()
+{
+	/* caller should check have_NAP() */
+	return d_NAP;
+}
+
+void bluetooth_piconet::set_NAP(uint16_t nap)
+{
+	d_NAP = nap;
+	d_have_NAP = true;
+}
+
 /* discovery status */
 bool bluetooth_piconet::have_UAP()
 {
 	return d_have_UAP;
+}
+
+bool bluetooth_piconet::have_NAP()
+{
+	return d_have_NAP;
 }
 
 bool bluetooth_piconet::have_clk6()
