@@ -136,6 +136,7 @@ static gint ett_btbb_pldhdr = -1;
 
 /* subdissectors */
 static dissector_handle_t btlmp_handle = NULL;
+static dissector_handle_t btl2cap_handle = NULL;
 
 /* packet header flags */
 static const int *flag_fields[] = {
@@ -213,8 +214,17 @@ dissect_dm1(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
 	int len;	/* payload length indicated by payload header */
 	int llid;	/* logical link id */
+	int l2len;	/* length indicated by l2cap header */
 	proto_item *dm1_item;
 	proto_tree *dm1_tree;
+	tvbuff_t *pld_tvb;
+
+	/*
+	 * FIXME
+	 * I'm probably doing a terrible, terrible thing here, but it gets my
+	 * initial test cases working.
+	 */
+	guint16 fake_acl_data;
 
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 3);
 
@@ -228,8 +238,21 @@ dissect_dm1(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) == len + 2);
 
 	if (llid == 3 && btlmp_handle) {
-		tvbuff_t *lmp_tvb = tvb_new_subset(tvb, offset, len, len);
-		call_dissector(btlmp_handle, lmp_tvb, pinfo, dm1_tree);
+		/* LMP */
+		pld_tvb = tvb_new_subset(tvb, offset, len, len);
+		call_dissector(btlmp_handle, pld_tvb, pinfo, dm1_tree);
+	} else if (llid == 2 && btl2cap_handle) {
+		/* unfragmented L2CAP or start of fragment */
+		l2len = tvb_get_letohs(tvb, offset);
+		if (l2len + 4 == len) {
+			/* unfragmented */
+			pinfo->private_data = &fake_acl_data;
+			pld_tvb = tvb_new_subset(tvb, offset, len, len);
+			call_dissector(btl2cap_handle, pld_tvb, pinfo, dm1_tree);
+		} else {
+			/* start of fragment */
+			proto_tree_add_item(dm1_tree, hf_btbb_pldbody, tvb, offset, len, TRUE);
+		}
 	} else {
 		proto_tree_add_item(dm1_tree, hf_btbb_pldbody, tvb, offset, len, TRUE);
 	}
@@ -546,6 +569,7 @@ proto_reg_handoff_btbb(void)
 		dissector_add("ethertype", 0xFFF0, btbb_handle);
 
 		btlmp_handle = find_dissector("btlmp");
+		btl2cap_handle = find_dissector("btl2cap");
 
 		inited = TRUE;
 	}
