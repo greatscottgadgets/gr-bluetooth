@@ -988,9 +988,11 @@ void bluetooth_packet::decode_payload()
 	{
 		case 0: /* NULL */
 			/* no payload to decode */
+			d_payload_length = 0;
 			break;
 		case 1: /* POLL */
 			/* no payload to decode */
+			d_payload_length = 0;
 			break;
 		case 2: /* FHS */
 			fhs(d_clock);
