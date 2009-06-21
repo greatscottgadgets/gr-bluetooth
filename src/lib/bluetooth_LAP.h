@@ -24,8 +24,7 @@
 #ifndef INCLUDED_BLUETOOTH_LAP_H
 #define INCLUDED_BLUETOOTH_LAP_H
 
-#include <bluetooth_block.h>
-#include <stdio.h>
+#include "bluetooth_block.h"
 #include <stdlib.h>
 
 class bluetooth_LAP;

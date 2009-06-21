@@ -27,7 +27,6 @@
 #include "bluetooth_block.h"
 #include "bluetooth_packet.h"
 #include "bluetooth_piconet.h"
-#include <stdio.h>
 #include <stdlib.h>
 
 class bluetooth_UAP;

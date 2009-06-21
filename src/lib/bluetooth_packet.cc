@@ -514,7 +514,7 @@ int bluetooth_packet::UAP_from_hec(uint16_t data, uint8_t hec)
                 if (hec & 0x80)
                         hec ^= 0x65;
 
-                hec = (hec << 1) | ((hec >> 7) ^ (data >> i) & 0x01);
+                hec = (hec << 1) | (((hec >> 7) ^ (data >> i)) & 0x01);
         }
         return reverse(hec);
 }

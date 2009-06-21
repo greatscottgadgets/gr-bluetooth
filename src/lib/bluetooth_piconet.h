@@ -25,7 +25,6 @@
 #define INCLUDED_BLUETOOTH_PICONET_H
 
 #include "bluetooth_packet.h"
-#include <stdint.h>
 #include <vector>
 #include <boost/enable_shared_from_this.hpp>
 

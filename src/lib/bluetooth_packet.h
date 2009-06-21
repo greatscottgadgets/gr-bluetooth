@@ -26,6 +26,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <cstdio>
 #include <boost/enable_shared_from_this.hpp>
 
 using namespace std;

@@ -24,8 +24,7 @@
 #ifndef INCLUDED_BLUETOOTH_TUN_H
 #define INCLUDED_BLUETOOTH_TUN_H
 
-#include <bluetooth_block.h>
-#include <stdio.h>
+#include "bluetooth_block.h"
 #include <stdlib.h>
 #include <linux/if_ether.h>
 

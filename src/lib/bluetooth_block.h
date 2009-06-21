@@ -26,6 +26,7 @@
 
 #include <gr_sync_block.h>
 #include <stdint.h>
+#include <cstdio>
 
 static const int IN = 1;
 static const int OUT = 0;

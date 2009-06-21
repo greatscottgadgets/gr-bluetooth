@@ -25,7 +25,6 @@
 #define INCLUDED_BLUETOOTH_SNIFFER_H
 
 #include "bluetooth_block.h"
-#include <stdio.h>
 #include <stdlib.h>
 
 class bluetooth_sniffer;
