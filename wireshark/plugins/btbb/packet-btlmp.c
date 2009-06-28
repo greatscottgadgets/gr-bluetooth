@@ -158,6 +158,7 @@ static int hf_lmp_enclen = -1;
 static int hf_lmp_encmaj = -1;
 static int hf_lmp_encmin = -1;
 static int hf_lmp_eop = -1;
+static int hf_lmp_eopinre = -1;
 static int hf_lmp_escolenms = -1;
 static int hf_lmp_escolensm = -1;
 static int hf_lmp_escotypems = -1;
@@ -200,6 +201,7 @@ static int hf_lmp_nottype = -1;
 static int hf_lmp_npoll = -1;
 static int hf_lmp_oobauthdata = -1;
 static int hf_lmp_op = -1;
+static int hf_lmp_opinre = -1;
 static int hf_lmp_pagesch = -1;
 static int hf_lmp_pcmode = -1;
 static int hf_lmp_pkttype = -1;
@@ -782,7 +784,7 @@ dissect_accepted(proto_tree *tree, tvbuff_t *tvb, int offset, int len)
 	DISSECTOR_ASSERT(len == 2);
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 1);
 
-	proto_tree_add_item(tree, hf_lmp_op, tvb, offset, 1, TRUE);
+	proto_tree_add_item(tree, hf_lmp_opinre, tvb, offset, 1, TRUE);
 }
 
 void
@@ -791,7 +793,7 @@ dissect_not_accepted(proto_tree *tree, tvbuff_t *tvb, int offset, int len)
 	DISSECTOR_ASSERT(len == 3);
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 2);
 
-	proto_tree_add_item(tree, hf_lmp_op, tvb, offset, 1, TRUE);
+	proto_tree_add_item(tree, hf_lmp_opinre, tvb, offset, 1, TRUE);
 	offset += 1;
 
 	proto_tree_add_item(tree, hf_lmp_err, tvb, offset, 1, TRUE);
@@ -1591,10 +1593,10 @@ dissect_accepted_ext(proto_tree *tree, tvbuff_t *tvb, int offset, int len)
 	DISSECTOR_ASSERT(len == 4);
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 2);
 
-	proto_tree_add_item(tree, hf_lmp_op, tvb, offset, 1, TRUE);
+	proto_tree_add_item(tree, hf_lmp_opinre, tvb, offset, 1, TRUE);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_lmp_eop, tvb, offset, 1, TRUE);
+	proto_tree_add_item(tree, hf_lmp_eopinre, tvb, offset, 1, TRUE);
 }
 
 void
@@ -1603,10 +1605,10 @@ dissect_not_accepted_ext(proto_tree *tree, tvbuff_t *tvb, int offset, int len)
 	DISSECTOR_ASSERT(len == 4);
 	DISSECTOR_ASSERT(tvb_length_remaining(tvb, offset) >= 2);
 
-	proto_tree_add_item(tree, hf_lmp_op, tvb, offset, 1, TRUE);
+	proto_tree_add_item(tree, hf_lmp_opinre, tvb, offset, 1, TRUE);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_lmp_eop, tvb, offset, 1, TRUE);
+	proto_tree_add_item(tree, hf_lmp_eopinre, tvb, offset, 1, TRUE);
 	offset += 1;
 
 	proto_tree_add_item(tree, hf_lmp_err, tvb, offset, 1, TRUE);
@@ -2368,6 +2370,11 @@ proto_register_btlmp(void)
 			FT_UINT8, BASE_DEC, VALS(ext_opcode), 0x0,
 			"Extended Opcode", HFILL }
 		},
+		{ &hf_lmp_eopinre,
+			{ "In Response To", "btlmp.eopinre",
+			FT_UINT8, BASE_DEC, VALS(ext_opcode), 0x0,
+			"Extended Opcode this is in response to", HFILL }
+		},
 		{ &hf_lmp_escolenms,
 			{ "Packet Length M -> S", "btlmp.escolenms",
 			FT_UINT16, BASE_DEC, NULL, 0x0,
@@ -2578,6 +2585,11 @@ proto_register_btlmp(void)
 			{ "Opcode", "btlmp.op",
 			FT_UINT8, BASE_DEC, VALS(opcode), 0xfe,
 			"Opcode", HFILL }
+		},
+		{ &hf_lmp_opinre,
+			{ "In Response To", "btlmp.opinre",
+			FT_UINT8, BASE_DEC, VALS(opcode), 0x7f,
+			"Opcode this is in response to", HFILL }
 		},
 		{ &hf_lmp_pagesch,
 			{ "Paging Scheme", "btlmp.pagesch",
