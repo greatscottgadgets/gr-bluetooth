@@ -266,6 +266,7 @@ bool bluetooth_packet::unfec23(char *input, char *output, int length)
 		length += (10 - difference);
 
 	blocks = length/10;
+	output = (char *) malloc(length);
 
 	while(blocks) {
 		iptr += 15;
@@ -325,7 +326,7 @@ bool bluetooth_packet::unfec23(char *input, char *output, int length)
 			case 21: output[optr+9] ^= 1; break;
 			/* not one of these errors, probably multiple bit errors
 			 * or maybe not a real packet, safe to drop it? */
-			default: return false;
+			default: free(output); return false;
 		}
 	}
 	return true;
@@ -607,23 +608,28 @@ int bluetooth_packet::fhs(int clock)
 	if (size < d_payload_length * 12)
 		return 1; //FIXME should throw exception
 
-	char corrected[d_payload_length * 8];
+	char *corrected;
 	if (!unfec23(stream, corrected, d_payload_length * 8))
 		return 0;
 
 	/* try to unwhiten with known clock bits */
 	unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
-	if (payload_crc())
+	if (payload_crc()) {
+		free(corrected);
 		return 1000;
+	}
 
 	/* try all 32 possible X-input values instead */
 	for (clock = 32; clock < 64; clock++) {
 		unwhiten(corrected, d_payload, clock, d_payload_length * 8, 18);
-		if (payload_crc())
+		if (payload_crc()) {
+			free(corrected);
 			return 1000;
+		}
 	}
 
 	/* failed to unwhiten */
+	free(corrected);
 	return 0;
 }
 
@@ -632,13 +638,16 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 {
 	if(header_bytes == 2)
 	{
-		if(size < 30)
+		if(size < 16)
 			return false; //FIXME should throw exception
 		if(fec) {
-			char corrected[16];
+			if(size < 30)
+				return false; //FIXME should throw exception
+			char *corrected;
 			if (!unfec23(stream, corrected, 16))
 				return false;
 			unwhiten(corrected, d_payload_header, clock, 16, 18);
+			free(corrected);
 		} else {
 			unwhiten(stream, d_payload_header, clock, 16, 18);
 		}
@@ -648,10 +657,13 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 		if(size < 8)
 			return false; //FIXME should throw exception
 		if(fec) {
-			char corrected[8];
+			if(size < 15)
+				return false; //FIXME should throw exception
+			char *corrected;
 			if (!unfec23(stream, corrected, 8))
 				return false;
 			unwhiten(corrected, d_payload_header, clock, 8, 18);
+			free(corrected);
 		} else {
 			unwhiten(stream, d_payload_header, clock, 8, 18);
 		}
@@ -714,10 +726,11 @@ int bluetooth_packet::DM(int clock)
 	if(bitlength > size)
 		return 1; //FIXME should throw exception
 
-	char corrected[bitlength];
+	char *corrected;
 	if (!unfec23(stream, corrected, bitlength))
 		return 0;
 	unwhiten(corrected, d_payload, clock, bitlength, 18);
+	free(corrected);
 
 	if (payload_crc())
 		return 10;
@@ -812,7 +825,7 @@ int bluetooth_packet::EV3(int clock)
 
 int bluetooth_packet::EV4(int clock)
 {
-	char corrected[30];
+	char *corrected;
 
 	/* skip the access code and packet header */
 	char *stream = d_symbols + 126;
@@ -842,12 +855,15 @@ int bluetooth_packet::EV4(int clock)
 		/* unfec/unwhiten next block (15 symbols -> 10 bits) */
 		if (syms + 15 > size)
 			return 1; //FIXME should throw exception
-		if (!unfec23(stream + syms, corrected, 10))
+		if (!unfec23(stream + syms, corrected, 10)) {
+			free(corrected);
 			if (syms < minlength)
 				return 0;
 			else
 				return 1;
+		}
 		unwhiten(corrected, d_payload + bits, clock, 10, 18 + bits);
+		free(corrected);
 
 		/* check CRC one byte at a time */
 		while (d_payload_length * 8 <= bits) {
@@ -917,11 +933,12 @@ int bluetooth_packet::HV(int clock)
 		break;
 	case 6:/* HV2 */
 		{
-		char corrected[160];
+		char *corrected;
 		if (!unfec23(stream, corrected, 160))
 			return 0;
 		d_payload_length = 20;
 		unwhiten(corrected, d_payload, clock, d_payload_length*8, 18);
+		free(corrected);
 		}
 		break;
 	case 7:/* HV3 */
