@@ -73,7 +73,7 @@ bluetooth_multi_UAP::work(int noutput_items,
 	for (channel = d_low_channel; channel <= d_high_channel; channel++)
 	{
 		int num_symbols = channel_symbols(channel, input_items,
-				symbols, history() + noutput_items);
+				symbols, history() /*+ noutput_items*/);
 
 		if (num_symbols >= 68 )
 		{

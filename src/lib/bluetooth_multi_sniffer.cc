@@ -87,7 +87,7 @@ bluetooth_multi_sniffer::work(int noutput_items,
 
 	for (ch = d_low_channel; ch <= d_high_channel; ch++) {
 		len = channel_symbols(ch, input_items, symbols,
-				history() + noutput_items);
+				history() /*+ noutput_items*/);
 
 		/* skip this time slot if we didn't break squelch */
 		if (len < 68)
