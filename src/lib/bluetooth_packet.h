@@ -189,7 +189,7 @@ public:
 	static bool unfec13(char *input, char *output, int length);
 
 	/* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
-	static bool unfec23(char *input, char *output, int length);
+	static char *unfec23(char *input, int length);
 
 	/* When passed 10 bits of data this returns a pointer to a 5 bit hamming code */
 	static char *fec23gen(char *data);

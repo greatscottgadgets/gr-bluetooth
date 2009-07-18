@@ -249,12 +249,13 @@ bool bluetooth_packet::unfec13(char *input, char *output, int length)
 }
 
 /* Decode 2/3 rate FEC, a (15,10) shortened Hamming code */
-bool bluetooth_packet::unfec23(char *input, char *output, int length)
+char *bluetooth_packet::unfec23(char *input, int length)
 {
 	/* input points to the input data
 	 * length is length in bits of the data
 	 * before it was encoded with fec2/3 */
 	int iptr, optr, blocks;
+	char* output;
 	uint8_t difference, count, *codeword;
 	uint8_t fecgen[] = {1,1,0,1,0,1};
 
@@ -329,7 +330,7 @@ bool bluetooth_packet::unfec23(char *input, char *output, int length)
 			default: free(output); return false;
 		}
 	}
-	return true;
+	return output;
 }
 
 /* Create an Access Code from LAP and check it against stream */
@@ -608,8 +609,8 @@ int bluetooth_packet::fhs(int clock)
 	if (size < d_payload_length * 12)
 		return 1; //FIXME should throw exception
 
-	char *corrected;
-	if (!unfec23(stream, corrected, d_payload_length * 8))
+	char *corrected = unfec23(stream, d_payload_length * 8);
+	if (!corrected)
 		return 0;
 
 	/* try to unwhiten with known clock bits */
@@ -643,8 +644,8 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 		if(fec) {
 			if(size < 30)
 				return false; //FIXME should throw exception
-			char *corrected;
-			if (!unfec23(stream, corrected, 16))
+			char *corrected = unfec23(stream, 16);
+			if (!corrected)
 				return false;
 			unwhiten(corrected, d_payload_header, clock, 16, 18);
 			free(corrected);
@@ -659,8 +660,8 @@ bool bluetooth_packet::decode_payload_header(char *stream, int clock, int header
 		if(fec) {
 			if(size < 15)
 				return false; //FIXME should throw exception
-			char *corrected;
-			if (!unfec23(stream, corrected, 8))
+			char *corrected = unfec23(stream, 8);
+			if (!corrected)
 				return false;
 			unwhiten(corrected, d_payload_header, clock, 8, 18);
 			free(corrected);
@@ -726,8 +727,8 @@ int bluetooth_packet::DM(int clock)
 	if(bitlength > size)
 		return 1; //FIXME should throw exception
 
-	char *corrected;
-	if (!unfec23(stream, corrected, bitlength))
+	char *corrected = unfec23(stream, bitlength);
+	if (!corrected)
 		return 0;
 	unwhiten(corrected, d_payload, clock, bitlength, 18);
 	free(corrected);
@@ -855,7 +856,8 @@ int bluetooth_packet::EV4(int clock)
 		/* unfec/unwhiten next block (15 symbols -> 10 bits) */
 		if (syms + 15 > size)
 			return 1; //FIXME should throw exception
-		if (!unfec23(stream + syms, corrected, 10)) {
+		corrected = unfec23(stream + syms, 10);
+		if (!corrected) {
 			free(corrected);
 			if (syms < minlength)
 				return 0;
@@ -933,8 +935,8 @@ int bluetooth_packet::HV(int clock)
 		break;
 	case 6:/* HV2 */
 		{
-		char *corrected;
-		if (!unfec23(stream, corrected, 160))
+		char *corrected = unfec23(stream, 160);
+		if (!corrected)
 			return 0;
 		d_payload_length = 20;
 		unwhiten(corrected, d_payload, clock, d_payload_length*8, 18);
