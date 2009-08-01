@@ -352,7 +352,7 @@ bool bluetooth_packet::check_ac(char *stream, int LAP)
 		convert_to_grformat(ac[count], &grdata[count*8]);
 	free(ac);
 
-	for(count = 0; count < aclength; count++)
+	for(count = 0; count < 68; count++)
 	{
 		if(grdata[count] != stream[count])
 			biterrors++;
