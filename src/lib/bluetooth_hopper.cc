@@ -62,7 +62,7 @@ int bluetooth_hopper::work (int noutput_items,
 	char *in = (char *) input_items[0];
 	int retval, consumed;
 	int num_candidates = -1;
-	uint32_t clkn; /* native (local) clock in 625 us */
+	uint32_t clkn=0; /* native (local) clock in 625 us */
 
 	retval = bluetooth_packet::sniff_ac(in, noutput_items);
 	if(-1 == retval) {

@@ -83,7 +83,7 @@ bluetooth_tun::work (int noutput_items,
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items - retval);
 		timeval tim;
 		gettimeofday(&tim, NULL);
-		printf("GOT PACKET on %d , LAP = %06x at sample %d, wall time: %d.%06d\n", d_x, packet->get_LAP(), d_cumulative_count + retval, tim.tv_sec, tim.tv_usec);
+		printf("GOT PACKET on %d , LAP = %06x at sample %llu, wall time: %d.%06ld\n", d_x, packet->get_LAP(), d_cumulative_count + retval, (int)tim.tv_sec, tim.tv_usec);
 		LAP = packet->get_LAP();
 		unsigned char *data = (unsigned char *) calloc(1, 6);
 		data[3] = (LAP & 0xff0000) >> 16;

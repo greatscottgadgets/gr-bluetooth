@@ -6,6 +6,7 @@
 %import "gnuradio.i"			// the common stuff
 
 %{
+#pragma GCC diagnostic ignored "-Wuninitialized"
 #include "gnuradio_swig_bug_workaround.h"	// mandatory bug fix
 #include "bluetooth_sniffer.h"
 #include "bluetooth_LAP.h"

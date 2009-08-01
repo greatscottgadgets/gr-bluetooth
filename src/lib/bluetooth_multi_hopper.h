@@ -71,7 +71,7 @@ private:
 
 	/* Tun stuff */
 	int			d_tunfd;	// TUN fd
-	char			*chan_name;  // TUN interface name
+	char			chan_name[20];  // TUN interface name
 	unsigned char		d_ether_addr[ETH_ALEN];
 	static const unsigned short ETHER_TYPE = 0xFFF0;
 

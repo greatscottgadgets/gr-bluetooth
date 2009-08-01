@@ -75,7 +75,7 @@ bluetooth_LAP::work (int noutput_items,
 		bluetooth_packet_sptr packet = bluetooth_make_packet(&in[retval], noutput_items + history() - retval);
 		timeval tim;
 		gettimeofday(&tim, NULL);
-		printf("GOT PACKET on %d , LAP = %06x at sample %d, wall time: %d.%06d\n", d_x, packet->get_LAP(), d_cumulative_count + retval, tim.tv_sec, tim.tv_usec);
+		printf("GOT PACKET on %d , LAP = %06x at sample %llu, wall time: %d.%06ld\n", d_x, packet->get_LAP(), d_cumulative_count + retval, (int)tim.tv_sec, tim.tv_usec);
 		consumed = retval + 68;
 	}
 	d_cumulative_count += consumed;

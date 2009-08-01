@@ -338,7 +338,7 @@ bool bluetooth_packet::check_ac(char *stream, int LAP)
 {
 	int count, aclength, biterrors;
 	uint8_t *ac, *grdata;
-	aclength = 68;
+	aclength = 72;
 	biterrors = 0;
 
 	/* Generate AC */

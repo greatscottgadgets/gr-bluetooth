@@ -60,7 +60,7 @@ private:
 
 	/* Tun stuff */
 	int d_tunfd;
-	char *d_chan_name;
+	char d_chan_name[20];
 	unsigned char d_ether_addr[ETH_ALEN];
 	static const unsigned short ETHER_TYPE = 0xFFF0;
 

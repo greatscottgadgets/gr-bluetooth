@@ -57,7 +57,7 @@ bluetooth_multi_hopper::bluetooth_multi_hopper(double sample_rate, double center
 
 	/* Tun interface */
 	if(d_tun) {
-		chan_name = "gr-bluetooth";
+		strncpy(chan_name, "gr-bluetooth", sizeof(chan_name)-1);
 
 		if((d_tunfd = mktun(chan_name, d_ether_addr)) == -1) {
 			fprintf(stderr, "warning: was not able to open TUN device, "

@@ -59,7 +59,7 @@ bluetooth_multi_sniffer::bluetooth_multi_sniffer(double sample_rate,
 
 	/* Tun interface */
 	if (d_tun) {
-		d_chan_name = "gr-bluetooth";
+		strncpy(d_chan_name, "gr-bluetooth", sizeof(d_chan_name)-1);
 		if ((d_tunfd = mktun(d_chan_name, d_ether_addr)) == -1) {
 			fprintf(stderr,
 				"warning: was not able to open TUN device, "

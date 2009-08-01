@@ -403,7 +403,8 @@ bool bluetooth_piconet::have_clk27()
 bool bluetooth_piconet::UAP_from_header(bluetooth_packet_sptr packet)
 {
 	uint8_t UAP;
-	int count, retval, first_clock;
+	int count, retval, first_clock = 0;
+
 	int starting = 0;
 	int remaining = 0;
 	uint32_t clkn = packet->d_clkn;

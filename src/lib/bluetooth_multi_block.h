@@ -50,7 +50,7 @@ protected:
 	static const int SYMBOLS_PER_SLOT = 625;
 
 	/* channel 0 in Hz */
-	static const uint32_t BASE_FREQUENCY = 2402000000;
+	static const uint32_t BASE_FREQUENCY = 2402000000UL;
 
 	/* channel width in Hz */
 	static const int CHANNEL_WIDTH = 1000000;

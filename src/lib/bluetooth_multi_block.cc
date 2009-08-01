@@ -99,7 +99,7 @@ slice(float x)
 int bluetooth_multi_block::mm_cr(const float *in, int ninput_items, float *out, int noutput_items)
 {
 	unsigned int ii = 0; /* input index */
-	unsigned int oo = 0; /* output index */
+	int oo = 0; /* output index */
 	unsigned int ni = ninput_items - d_interp->ntaps(); /* max input */
 	float mm_val;
 
