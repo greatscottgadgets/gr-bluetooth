@@ -1073,6 +1073,7 @@ void bluetooth_packet::decode_payload()
 /* decode the whole packet */
 void bluetooth_packet::decode()
 {
+	d_have_payload = false;
 	if (decode_header())
 		decode_payload();
 }
