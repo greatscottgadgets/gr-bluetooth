@@ -40,48 +40,28 @@ Examples:
 
 1. Getting help:
 
-$ btrx.py -h
-$ multibtrx.py -h
-
-The first command, btrx.py, uses signal processing blocks (based on
-bluetooth_block) that each decode a single Bluetooth channel.  You can specify
-more than one channel (with -c), but each channel will be handled by a separate
-decoder.  The decoders can't talk to each other, so certain tasks are not
-possible.  This approach has the benefit of being multi-threaded (taking
-advantage of multiple CPU cores if you are using GNU Radio 3.2 or later), but
-has the drawback that the decoders cannot detect accurate time intervals,
-reducing the success rate of certain operations such as UAP and clock
-discovery.
-
-The second command, multibtrx.py, uses signal processing blocks (based on
-bluetooth_multi_block) that can each decode several channels at a time.  This
-approach yields accurate time intervals which is helpful for UAP and clock
-discovery.  It also allows a single decoder to hop from channel to channel.  A
-drawback of this approach is that it is single-threaded and will not take
-advantage of multiple CPU cores.
+$ btrx -h
 
 2. Finding packets and displaying LAPs:
 
-$ btrx.py -i samples/headset3.cfile
-$ multibtrx.py -f 2476M -i samples/headset3.cfile
+$ btrx -f 2476M -i samples/headset3.cfile
 
 See samples/manifest.txt for similar examples using different sample rates and
 selection of multiple channels.
 
 3. UAP discovery by CRC:
 
-$ btrx.py -r 8M -i samples/keyboard1.cfile -c 1.5M -l 4831dd
-$ multibtrx.py -d 8 -f 2476.5M -i samples/keyboard1.cfile -l 4831dd
+$ btrx -d 8 -f 2476.5M -i samples/keyboard1.cfile -l 4831dd
 
 4. UAP/CLK1-6 discovery by time intervals:
 
-$ multibtrx.py -d 8 -i samples/headset1.cfile -f 2476.5M -l 24d952
+$ btrx -d 8 -i samples/headset1.cfile -f 2476.5M -l 24d952
 
 5. Clock (CLK1-27) discovery followed by hopping:
 
-$ multibtrx.py -d 8 -i samples/headset1.cfile -f 2476.5M -l 24d952 -p
-$ multibtrx.py -d 16 -i samples/headset2.cfile -f 2476M -l 24d952 -p
+$ btrx -d 8 -i samples/headset1.cfile -f 2476.5M -l 24d952 -p
+$ btrx -d 16 -i samples/headset2.cfile -f 2476M -l 24d952 -p
 
 6. Decoding all piconets on all available channels:
 
-$ multibtrx.py -d 16 -f 2476M -i samples/headset2.cfile -S
+$ btrx -d 16 -f 2476M -i samples/headset2.cfile -S

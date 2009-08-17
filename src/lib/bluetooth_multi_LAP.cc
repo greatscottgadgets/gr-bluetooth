@@ -65,11 +65,6 @@ bluetooth_multi_LAP::work(int noutput_items,
 	int retval, channel;
 	char symbols[history()]; //poor estimate but safe
 
-	/*
-	 * This would be more efficient with a filterbank.  Then again, there is no compelling reason
-	 * to use this rather than the single channel bluetooth_LAP, so the filterbank probably ought
-	 * to be in examples/btrx.py and is not needed here or in bluetooth_multi_block.
-	 */
 	for (channel = d_low_channel; channel <= d_high_channel; channel++)
 	{
 		int num_symbols = channel_symbols(channel, input_items,

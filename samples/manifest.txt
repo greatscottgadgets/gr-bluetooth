@@ -2,28 +2,27 @@ channel37.dem:
 
 	One channel demodulated.  Headset and cell phone during call.
 	Extracted from noalias2.sfile (too big for svn).
-	Example usage: btrx.py -bi samples/channel37.dem
 
 headset1.cfile:
 
 	8 MHz bandwidth (8 Msps) centered at 2476.5 MHz.  Headset and cell phone during call.
 	Captured with: usrp_rx_cfile.py -d 8 -f 2476.5e6 -g 45 -N 1.6e6
-	Example usage: btrx.py -d 8 -i samples/headset1.cfile -c -3.5e6,-2.5e6,-1.5e6,-0.5e6,0.5e6,1.5e6,2.5e6,3.5e6
+	Example usage: btrx -f 2476.5M -d 8 -i headset1.cfile
 
 headset2.cfile:
 
 	4 MHz bandwidth (4 Msps) centered at 2476 MHz.  Headset and cell phone during call.
 	Captured with: usrp_rx_cfile.py -d 16 -f 2476e6 -g 45 -N 4e6
-	Example usage: btrx.py -d 16 -c -1e6,0,1e6 -i - < samples/headset2.cfile
+	Example usage: btrx -f 2476M -d 16 -i - < headset2.cfile
 
 headset3.cfile:
 
 	2 MHz bandwidth (2 Msps) centered at 2476 MHz.  Headset and cell phone during call.
 	Captured with: usrp_rx_cfile.py -d 32 -f 2476e6 -g 45 -N 2e6
-	Example usage: btrx.py -i samples/headset3.cfile
+	Example usage: btrx -f 2476M -i headset3.cfile
 
 keyboard1.cfile:
 
 	8 MHz bandwidth (8 Msps) centered at 2476.5 MHz.  Keyboard while typing rapidly (plus idle cell phone and headset).
 	Captured with: usrp_rx_cfile.py -d 8 -f 2476.5e6 -g 45 -N 1.6e6
-	Example usage: btrx.py -r 8e6 -i samples/keyboard1.cfile -c -3.5e6,-2.5e6,-1.5e6,-0.5e6,0.5e6,1.5e6,2.5e6,3.5e6
+	Example usage: btrx -f 2476.5M -r 8e6 -i keyboard1.cfile
