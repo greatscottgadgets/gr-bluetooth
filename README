@@ -30,6 +30,9 @@ To build the examples from the tarball use the normal recipe:
   $ make check
   (as root) $ make install
 
+If libtool gives errors in the "make" phase, try restarting using the
+SVN instructions below.
+
 If you're building from SVN, you'll need to use this sequence, since
 SVN doesn't contain configure or the generated Makefiles.
 
@@ -39,7 +42,7 @@ SVN doesn't contain configure or the generated Makefiles.
   $ make check
   (as root) $ make install
 
-See INSTALL for generic build instructions such as how to tell ./configure that
-you want the software installed in a particular location.
+See INSTALL for generic build instructions such as how to tell ./configure
+that you want the software installed in a particular location.
 
 See the files in the doc directory for more information.
