@@ -42,4 +42,10 @@ details).
 
 USRP2 FPGA modification:
 
-See README.patches
+A modified version of u2_rev3.bin is located in ../bin/u2_rev3_alias.bin and
+can be installed on your USRP2's SD card in the usual way described here:
+
+http://gnuradio.org/trac/wiki/USRP2UserFAQ
+
+See README.patches if you would like to compile from source (requires non-free
+development tools).
