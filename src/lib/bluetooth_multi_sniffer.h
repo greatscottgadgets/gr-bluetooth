@@ -55,6 +55,10 @@ private:
 	bluetooth_multi_sniffer(double sample_rate, double center_freq,
 			double squelch_threshold, bool tun);
 
+	/* General Inquiry and Limited Inquiry Access Codes */
+	static const uint32_t GIAC = 0x9E8B33;
+	static const uint32_t LIAC = 0x9E8B00;
+
 	/* Using tun for output */
 	bool d_tun;
 

@@ -149,6 +149,14 @@ void bluetooth_multi_sniffer::ac(char *symbols, int len, int channel)
 		} else {
 			discover(pkt, pn);
 		}
+
+		/*
+		 * If this is an inquiry response, saving the piconet state will only
+		 * cause problems later.
+		 */
+		if (lap == GIAC || lap == LIAC)
+			d_piconets.erase(lap);
+
 	} else {
 		id(lap);
 	}
