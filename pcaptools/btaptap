@@ -297,7 +297,7 @@ USBHID_SHIFT_MAP = {
 }
 
 # global variable to track currently depressed keys
-active_keys = {}
+active_keys = []
 
 def hid2ascii(scancode, shift):
     '''
@@ -385,15 +385,15 @@ def parse_keydata(packet):
     mod = leftmod | rightmod
 
     # up to six keys can be reported at once
-    keycodes = {}
+    keycodes = []
     for byte in range(8,14):
         keystroke = ord(l2cappkt[byte])
         if keystroke != 0x00:
-            keycodes[keystroke] = True
+            keycodes.append(keystroke)
     
-    for keystroke in keycodes.keys():
+    for keystroke in keycodes:
         # don't repeat keys that are still held down
-        if not active_keys.has_key(keystroke):
+        if active_keys.count(keystroke) == 0:
 
             if (mod & CTRL):
                 sys.stdout.write("CTRL^")
