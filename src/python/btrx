@@ -107,10 +107,19 @@ class my_top_block(gr.top_block):
 					options.gain = float(g[0]+g[1])/2
 				src.set_gain(options.gain)
 			else:
-				from gnuradio import usrp
-				src = usrp.source_c(decim_rate=options.decim)
-				subdev = usrp.selected_subdev(src, options.rx_subdev_spec)
-				print "Using RX board %s" % (subdev.side_and_name())
+				try:
+					from gnuradio import usrp
+				except:
+					print 'Unable to import usrp module, please make sure it was installed and try again'
+					raise SystemExit, 1
+				try:
+					src = usrp.source_c(decim_rate=options.decim)
+					subdev = usrp.selected_subdev(src, options.rx_subdev_spec)
+					print "Using RX board %s" % (subdev.side_and_name())
+				except:
+					print 'Error accessing USRP, ensure it is plugged in and switched on and try again'
+					parser.print_help()
+					raise SystemExit, 1
 				r = src.tune(0, subdev, options.freq)
 				if not r:
 					raise SystemExit, "Failed to set USRP frequency"
