@@ -94,11 +94,20 @@ class my_top_block(gr.top_block):
 		if options.input_file is None:
 			# input from USRP or USRP2
 			if options.usrp2:
-				from gnuradio import usrp2
-				src = usrp2.source_32fc(options.interface, options.mac_addr)
-				print "Using RX board id 0x%04X" % (src.daughterboard_id(),)
-				src.set_decim(options.decim)
-				r = src.set_center_freq(options.freq)
+				try:
+					from gnuradio import usrp2
+				except:
+					print 'Unable to import usrp2 module, please make sure it was installed and try again'
+					raise SystemExit, 1
+				try:
+					src = usrp2.source_32fc(options.interface, options.mac_addr)
+					print "Using RX board id 0x%04X" % (src.daughterboard_id(),)
+					src.set_decim(options.decim)
+					r = src.set_center_freq(options.freq)
+				except:
+					print 'Error accessing USRP2, ensure it is plugged in and switched on and try again'
+					parser.print_help()
+					raise SystemExit, 1
 				if r == None:
 					raise SystemExit, "Failed to set USRP2 frequency"
 				if options.gain is None:
