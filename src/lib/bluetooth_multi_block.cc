@@ -214,7 +214,10 @@ void bluetooth_multi_block::set_channels()
 	double min_channel_width = 0.9;
 
 	d_low_channel = (int) (low_edge + (min_channel_width / 2) + 1);
+	d_low_channel = (d_low_channel < 0) ? 0 : d_low_channel;
+
 	d_high_channel = (int) (high_edge - (min_channel_width / 2));
+	d_high_channel = (d_high_channel > 78) ? 78 : d_high_channel;
 }
 
 /* returns relative (with respect to d_center_freq) frequency in Hz of given channel */
