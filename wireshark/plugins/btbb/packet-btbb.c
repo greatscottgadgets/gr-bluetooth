@@ -347,6 +347,8 @@ dissect_btbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			dissect_dm1(btbb_tree, tvb, pinfo, offset);
 			break;
 		case 0x4: /* DH1/2-DH1 */
+			dissect_dm1(btbb_tree, tvb, pinfo, offset);
+			break;
 		case 0x5: /* HV1 */
 		case 0x6: /* HV2/2-EV3 */
 		case 0x7: /* HV3/EV3/3-EV3 */
