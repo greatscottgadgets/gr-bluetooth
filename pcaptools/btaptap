@@ -331,8 +331,8 @@ def parse_keydata(packet):
     BTBBPAYLOADHDR_LEN_MASK = 0xF8
     BTBBPAYLOADHDR_LEN_SHIFT = 3
     LLID_L2CAP = 2
-    HID_COLLECTION_TAG = 0xA1
-    HID_APPLICATION_TYPE = 0x01
+    TRANS_HDR_IN_DATA = 0xA1
+    REPORT_ID_KEYBOARD = 0x01
     CTRL = 1
     SHIFT = 2
     ALT = 4
@@ -365,14 +365,14 @@ def parse_keydata(packet):
     # channel, but we don't handle the negotiation (and may not have even
     # seen it).
 
-    # Keyboard keystrokes should have Main item tag == Collection
-    tag = ord(l2cappkt[4])
-    if tag != HID_COLLECTION_TAG:
+    # Transaction Header should indicate input data
+    thdr = ord(l2cappkt[4])
+    if thdr != TRANS_HDR_IN_DATA:
         return
 
-    # Keyboard keystrokes should have Collection type == Application
-    coltype = ord(l2cappkt[5])
-    if coltype != HID_APPLICATION_TYPE:
+    # Report ID should indicate this is a keyboard
+    rid = ord(l2cappkt[5])
+    if rid != REPORT_ID_KEYBOARD:
         return
 
     # This byte describes modifier key status (one bit per key)
