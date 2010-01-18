@@ -25,6 +25,7 @@ import time
 from pcapdump import *
 
 DLT_EN10MB = 1
+DLT_BLUETOOTH_HCI_H4 = 187
 USBHID_MAP = {
     0x04 : "a",
     0x05 : "b",
@@ -320,17 +321,9 @@ def usage():
     print >>sys.stderr, "Usage: btaptap [-r pcapfile.pcap] [-c count] [-h]\n"
     sys.exit(0)
 
-def parse_keydata(packet):
+def parse_l2cap_keydata(l2cappkt):
     global active_keys
 
-    BTBBHDR_TYPE_MASK = 0x78
-    BTBBHDR_TYPE_SHIFT = 3
-    BTBBHDR_TYPE_DM1 = 3
-    BTBBPAYLOADHDR_LLID_MASK = 0x03
-    BTBBPAYLOADHDR_LLID_SHIFT = 0
-    BTBBPAYLOADHDR_LEN_MASK = 0xF8
-    BTBBPAYLOADHDR_LEN_SHIFT = 3
-    LLID_L2CAP = 2
     TRANS_HDR_IN_DATA = 0xA1
     REPORT_ID_KEYBOARD = 0x01
     CTRL = 1
@@ -338,25 +331,11 @@ def parse_keydata(packet):
     ALT = 4
     GUI = 8
 
-    # Keyboard keystrokes are only seen in frames at least 40 bytes long
-    if len(packet) < 40:
+    # Keyboard keystrokes are only seen in L2CAP packets at least 10 bytes long
+    l2clen = (ord(l2cappkt[1]) << 8) | ord(l2cappkt[0])
+    if l2clen < 10:
         return
 
-    # Keyboard keystrokes are only seen in DM1 frames
-    btbbhdr = packet[20:23]
-    type = (ord(btbbhdr[0]) & BTBBHDR_TYPE_MASK) >> BTBBHDR_TYPE_SHIFT
-    if type != BTBBHDR_TYPE_DM1:
-        return
-
-    # Keyboard keystrokes are only seen in L2CAP packets 14 bytes long
-    btbbpayloadhdr = ord(packet[23])
-    llid = btbbpayloadhdr & (BTBBPAYLOADHDR_LLID_MASK) >> BTBBPAYLOADHDR_LLID_SHIFT
-    l2clen = (btbbpayloadhdr & BTBBPAYLOADHDR_LEN_MASK) >> BTBBPAYLOADHDR_LEN_SHIFT
-    #print "Debug btbbpayloadhdr 0x%02x, llid %d, l2clen %d"%(btbbpayloadhdr, llid, l2clen)
-    if llid != LLID_L2CAP or l2clen != 14:
-        return
-
-    l2cappkt = packet[24:38]
     # Keyboard keystrokes are only carried by Channel ID >= 0x40
     cid = (ord(l2cappkt[3]) << 8) | ord(l2cappkt[2])
     if cid < 0x40:
@@ -406,12 +385,57 @@ def parse_keydata(packet):
 
     active_keys = keycodes
 
+def parse_bb_keydata(packet):
+
+    BTBBHDR_TYPE_MASK = 0x78
+    BTBBHDR_TYPE_SHIFT = 3
+    BTBBHDR_TYPE_DM1 = 3
+    BTBBPAYLOADHDR_LLID_MASK = 0x03
+    BTBBPAYLOADHDR_LLID_SHIFT = 0
+    BTBBPAYLOADHDR_LEN_MASK = 0xF8
+    BTBBPAYLOADHDR_LEN_SHIFT = 3
+    LLID_L2CAP = 2
+
+    # Keyboard keystrokes are only seen in frames at least 40 bytes long
+    if len(packet) < 40:
+        return
+
+    # Keyboard keystrokes are only seen in DM1 frames
+    btbbhdr = packet[20:23]
+    type = (ord(btbbhdr[0]) & BTBBHDR_TYPE_MASK) >> BTBBHDR_TYPE_SHIFT
+    if type != BTBBHDR_TYPE_DM1:
+        return
+
+    # Keyboard keystrokes are only seen in L2CAP packets 14 bytes long
+    btbbpayloadhdr = ord(packet[23])
+    llid = btbbpayloadhdr & (BTBBPAYLOADHDR_LLID_MASK) >> BTBBPAYLOADHDR_LLID_SHIFT
+    l2clen = (btbbpayloadhdr & BTBBPAYLOADHDR_LEN_MASK) >> BTBBPAYLOADHDR_LEN_SHIFT
+    #print "Debug btbbpayloadhdr 0x%02x, llid %d, l2clen %d"%(btbbpayloadhdr, llid, l2clen)
+    if llid != LLID_L2CAP or l2clen < 14:
+        return
+
+    parse_l2cap_keydata(packet[24:38])
+
+def parse_hci_keydata(packet):
+
+    HCI_TYPE_ACL_DATA = 2
+
+    # Keyboard keystrokes are only seen in frames at least 29 bytes long
+    if len(packet) < 29:
+        return
+
+    # Keyboard keystrokes are only seen in ACL Data frames
+    type = ord(packet[0])
+    if type != HCI_TYPE_ACL_DATA:
+        return
+
+    parse_l2cap_keydata(packet[5:])
+
 if __name__ == '__main__':
 
     arg_pcapfile = None
     arg_count = -1
     packetcount = 0
-
 
     while len(sys.argv) > 1:
         op = sys.argv.pop(1)
@@ -429,8 +453,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     cap = PcapReader(arg_pcapfile)
-    if cap.datalink() != DLT_EN10MB:
-        print >>sys.stderr, "Unsupported libpcap data link layer: %d\n" % cap.datalink()
 
     while arg_count != packetcount:
         try:
@@ -438,7 +460,12 @@ if __name__ == '__main__':
             pkttime = pheader[0]
             packetcount+=1
     
-            parse_keydata(packet)
+            if cap.datalink() == DLT_EN10MB:
+                parse_bb_keydata(packet)
+            elif cap.datalink() == DLT_BLUETOOTH_HCI_H4:
+                parse_hci_keydata(packet)
+            else:
+                print >>sys.stderr, "Unsupported libpcap data link layer: %d\n" % cap.datalink()
         except TypeError: # raised when pnext returns Null (end of capture)
             break
 
