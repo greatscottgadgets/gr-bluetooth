@@ -475,7 +475,7 @@ proto_register_btbb(void)
 		},
 		{ &hf_btbb_pldbody,
 			{ "Payload Body", "btbb.pldbody",
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Payload Body", HFILL }
 		},
 		{ &hf_btbb_crc,

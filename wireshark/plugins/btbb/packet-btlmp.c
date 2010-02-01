@@ -2206,13 +2206,13 @@ proto_register_btlmp(void)
 		{ &hf_lmp_afhchmap,
 			{ "AFH Channel Map", "btlmp.afhchmap",
 			/* could break out individual channels but long */
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Adaptive Frequency Hopping Channel Map", HFILL }
 		},
 		{ &hf_lmp_afhclass,
 			{ "AFH Channel Classification", "btlmp.afhclass",
 			/* could break out individual channels but long */
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Adaptive Frequency Hopping Channel Classification", HFILL }
 		},
 		{ &hf_lmp_afhinst,
@@ -2257,7 +2257,7 @@ proto_register_btlmp(void)
 		},
 		{ &hf_lmp_authres,
 			{ "Authentication Response", "btlmp.authres",
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Authentication Response", HFILL }
 		},
 		{ &hf_lmp_bdaddr,
@@ -2287,12 +2287,12 @@ proto_register_btlmp(void)
 		},
 		{ &hf_lmp_commit,
 			{ "Commitment Value", "btlmp.commit",
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Commitment Value", HFILL }
 		},
 		{ &hf_lmp_confirm,
 			{ "Confirmation Value", "btlmp.confirm",
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Confirmation Value", HFILL }
 		},
 		{ &hf_lmp_compid,
@@ -2347,7 +2347,7 @@ proto_register_btlmp(void)
 		},
 		{ &hf_lmp_encdata,
 			{ "Encapsulated Data", "btlmp.encdata",
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Encapsulated Data", HFILL }
 		},
 		{ &hf_lmp_enclen,
@@ -2413,7 +2413,7 @@ proto_register_btlmp(void)
 		{ &hf_lmp_features,
 			{ "Features", "btlmp.features",
 			/* could break out individual features but long */
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Feature Mask", HFILL }
 		},
 		{ &hf_lmp_fpage,
@@ -2448,7 +2448,7 @@ proto_register_btlmp(void)
 		},
 		{ &hf_lmp_key,
 			{ "Key", "btlmp.key",
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Key", HFILL }
 		},
 		{ &hf_lmp_keysz,
@@ -2563,7 +2563,7 @@ proto_register_btlmp(void)
 		},
 		{ &hf_lmp_nonce,
 			{ "Nonce Value", "btlmp.nonce",
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Nonce Value", HFILL }
 		},
 		{ &hf_lmp_nottype,
@@ -2694,7 +2694,7 @@ proto_register_btlmp(void)
 		},
 		{ &hf_lmp_rand,
 			{ "Random Number", "btlmp.rand",
-			FT_BYTES, BASE_HEX, NULL, 0x0,
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"Random Number", HFILL }
 		},
 		{ &hf_lmp_rate,
