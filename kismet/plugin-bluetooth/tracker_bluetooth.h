@@ -40,9 +40,13 @@ public:
 
 	uint32_t lap;
 
+	mac_addr bd_addr;
+
 	int num_packets;
 
 	time_t first_time, last_time;
+
+	kis_gps_data gpsdata;
 
 	int dirty;
 };

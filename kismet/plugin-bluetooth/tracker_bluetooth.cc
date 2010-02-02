@@ -32,14 +32,16 @@
 extern int pack_comp_bluetooth;
 
 enum BTBBDEV_fields {
-	BTBBDEV_lap, BTBBDEV_firsttime,
+	BTBBDEV_bdaddr, BTBBDEV_firsttime,
 	BTBBDEV_lasttime, BTBBDEV_packets,
+	GPS_COMMON_FIELDS(BTBBDEV),
 	BTBBDEV_maxfield
 };
 
 const char *BTBBDEV_fields_text[] = {
-	"lap", "firsttime",
+	"bdaddr", "firsttime",
 	"lasttime", "packets",
+	GPS_COMMON_FIELDS_TEXT,
 	NULL
 };
 
@@ -65,9 +67,9 @@ int Protocol_BTBBDEV(PROTO_PARMS) {
 		}
 
 		switch (fnum) {
-			case BTBBDEV_lap:
+			case BTBBDEV_bdaddr:
 				// TODO - fix these for endian swaps, output as bytes in a fixed order ?
-				osstr << net->lap;
+				osstr << net->bd_addr.Mac2String();
 				break;
 			case BTBBDEV_firsttime:
 				osstr << net->first_time;
@@ -77,6 +79,45 @@ int Protocol_BTBBDEV(PROTO_PARMS) {
 				break;
 			case BTBBDEV_packets:
 				osstr << net->num_packets;
+				break;
+			case BTBBDEV_gpsfixed:
+				osstr << net->gpsdata.gps_valid;
+				break;
+			case BTBBDEV_minlat:
+				osstr << net->gpsdata.min_lat;
+				break;
+			case BTBBDEV_maxlat:
+				osstr << net->gpsdata.max_lat;
+				break;
+			case BTBBDEV_minlon:
+				osstr << net->gpsdata.min_lon;
+				break;
+			case BTBBDEV_maxlon:
+				osstr << net->gpsdata.max_lon;
+				break;
+			case BTBBDEV_minalt:
+				osstr << net->gpsdata.min_alt;
+				break;
+			case BTBBDEV_maxalt:
+				osstr << net->gpsdata.max_alt;
+				break;
+			case BTBBDEV_minspd:
+				osstr << net->gpsdata.min_spd;
+				break;
+			case BTBBDEV_maxspd:
+				osstr << net->gpsdata.max_spd;
+				break;
+			case BTBBDEV_agglat:
+				osstr << net->gpsdata.aggregate_lat;
+				break;
+			case BTBBDEV_agglon:
+				osstr << net->gpsdata.aggregate_lon;
+				break;
+			case BTBBDEV_aggalt:
+				osstr << net->gpsdata.aggregate_alt;
+				break;
+			case BTBBDEV_aggpoints:
+				osstr <<net->gpsdata.aggregate_points;
 				break;
 		}
 
@@ -134,10 +175,19 @@ int Tracker_Bluetooth::chain_handler(kis_packet *in_pack) {
 		net = new bluetooth_network();
 		net->first_time = globalreg->timestamp.tv_sec;
 		net->lap = lap;
+		/* for now we only ever populate the low 24 bits of BD_ADDR */
+		net->bd_addr.longmac = lap;
 
 		tracked_nets[lap] = net;
 	} else {
 		net = titr->second;
+	}
+
+	kis_gps_packinfo *gpsinfo = (kis_gps_packinfo *)
+			in_pack->fetch(_PCM(PACK_COMP_GPS));
+
+	if (gpsinfo != NULL && gpsinfo->gps_fix) {
+		net->gpsdata += gpsinfo;
 	}
 
 	net->dirty = 1;

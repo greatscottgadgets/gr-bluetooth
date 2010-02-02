@@ -19,6 +19,9 @@ SRVOBJS = packetsource_usrp.o packet_bluetooth.o packet_bluetooth_types.o \
 			bluetooth_multi_block.o bluetooth_packet.o #FIXME should not be here
 SRVOUT	= bluetooth.so
 
+CLIOBJS = bluetooth_ui.o
+CLIOUT  = bluetooth_ui.so
+
 all:	$(SRVOUT) $(CLIOUT)
 
 $(CLIOUT):	$(CLIOBJS)
@@ -30,10 +33,15 @@ $(SRVOUT):	$(SRVOBJS)
 install:	$(SRVOUT) $(CLIOUT)
 	mkdir -p $(DESTDIR)$(prefix)/lib/kismet/
 	install -o $(INSTUSR) -g $(INSTGRP) -m 644 $(SRVOUT) $(DESTDIR)$(prefix)/lib/kismet/$(SRVOUT)
+	mkdir -p $(DESTDIR)$(prefix)/lib/kismet_client/
+	install -o $(INSTUSR) -g $(INSTGRP) -m 644 $(CLIOUT) $(DESTDIR)$(prefix)/lib/kismet_client/$(CLIOUT)
+
 
 userinstall:	$(SRVOUT) $(CLIOUT)
 	mkdir -p ${HOME}/.kismet/plugins/
 	install -v $(SRVOUT) ${HOME}/.kismet/plugins/$(SRVOUT)
+	mkdir -p ${HOME}/.kismet/client_plugins/
+	install -v $(CLIOUT) ${HOME}/.kismet/client_plugins/$(CLIOUT)
 
 clean:
 	@-rm -f *.o
