@@ -124,6 +124,7 @@ class my_top_block(gr.top_block):
 				try:
 					src = usrp.source_c(decim_rate=options.decim)
 					subdev = usrp.selected_subdev(src, options.rx_subdev_spec)
+					src.set_mux(usrp.determine_rx_mux_value(src, options.rx_subdev_spec))
 					print "Using RX board %s" % (subdev.side_and_name())
 				except:
 					print 'Error accessing USRP, ensure it is plugged in and switched on and try again'
