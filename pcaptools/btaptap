@@ -420,8 +420,8 @@ def parse_hci_keydata(packet):
 
     HCI_TYPE_ACL_DATA = 2
 
-    # Keyboard keystrokes are only seen in frames at least 29 bytes long
-    if len(packet) < 29:
+    # Keyboard keystrokes are only seen in frames at least 19 bytes long
+    if len(packet) < 19:
         return
 
     # Keyboard keystrokes are only seen in ACL Data frames
