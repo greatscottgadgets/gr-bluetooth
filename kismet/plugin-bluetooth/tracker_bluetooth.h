@@ -63,6 +63,8 @@ public:
 protected:
 	GlobalRegistry *globalreg;
 
+	map<uint32_t, bluetooth_network *> first_nets;
+	
 	map<uint32_t, bluetooth_network *> tracked_nets;
 
 	int BTBBDEV_ref;

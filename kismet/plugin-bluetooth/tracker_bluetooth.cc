@@ -168,19 +168,26 @@ int Tracker_Bluetooth::chain_handler(kis_packet *in_pack) {
 	uint32_t lap = pi->lap;
 	bluetooth_network *net = NULL;
 
-	map<uint32_t, bluetooth_network *>::iterator titr = tracked_nets.find(lap);
-
-	if (titr == tracked_nets.end()) {
-		printf("new network %06x\n", lap);
+	/*
+	 * Due to poor error correction, there is a high likelihood that LAPs seen
+	 * only once don't really exist.
+	 */
+	if (!first_nets[lap]) {
+		printf("first sighting %06x\n", lap);
 		net = new bluetooth_network();
 		net->first_time = globalreg->timestamp.tv_sec;
 		net->lap = lap;
 		/* for now we only ever populate the low 24 bits of BD_ADDR */
 		net->bd_addr.longmac = lap;
+		first_nets[lap] = net;
 
-		tracked_nets[lap] = net;
+	} else if (!tracked_nets[lap]) {
+		/* track this LAP now that we've seen it twice */
+		printf("new network %06x\n", lap);
+		tracked_nets[lap] = first_nets[lap];
+		net = tracked_nets[lap];
 	} else {
-		net = titr->second;
+		net = tracked_nets[lap];
 	}
 
 	kis_gps_packinfo *gpsinfo = (kis_gps_packinfo *)
