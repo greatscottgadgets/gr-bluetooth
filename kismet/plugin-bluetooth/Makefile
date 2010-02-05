@@ -10,7 +10,7 @@ top_builddir = $(BLDHOME)
 
 PLUGINLDFLAGS ?= $(LDFLAGS)
 PLUGINLDFLAGS += -shared -rdynamic
-LIBS	+= -lstdc++ -lusb -lpthread -lgnuradio-core
+LIBS	+= -lstdc++ -lusb -lpthread -lgnuradio-core -lgnuradio-usrp
 CFLAGS	+= -I/usr/include -I$(KIS_INC_DIR) -I$(GR_INC_DIR) -g -fPIC
 
 SRVOBJS = packetsource_usrp.o packet_bluetooth.o packet_bluetooth_types.o \

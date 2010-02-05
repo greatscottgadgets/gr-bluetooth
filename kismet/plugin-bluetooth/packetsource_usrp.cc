@@ -84,20 +84,9 @@ int PacketSource_USRP::AutotypeProbe(string in_device) {
 // Capture thread to fake async io
 void *usrp_cap_thread(void *arg) {
 	PacketSource_USRP *usrp = (PacketSource_USRP *) arg;
-	//int len = 0;
-	//char *pkt;
 
-	// printf("debug - cap thread\n");
-
-	//FIXME how to terminate?
-	while (usrp->thread_active > 0) {
-		//pkt = new char[1024]; //FIXME 411?
-
+	while (usrp->thread_active > 0)
 		usrp->top_block->run();
-
-		//sleep(1); // FIXME get a packet
-		//len = 14;
-	}
 
 	usrp->thread_active = -1;
 	close(usrp->kblock->fake_fd[1]);
@@ -112,11 +101,6 @@ int PacketSource_USRP::OpenSource() {
 		//return 0;
 	//}
 
-	//double sample_rate = 2000000;
-	//double center_freq = 2402;
-	//double squelch_threshold = -1000;
-	//top_block = bluetooth_make_multi_LAP(sample_rate, center_freq, squelch_threshold);
-	//pkt_buf = new RingBufferNPT<PacketSource_USRP::usrp_bt_pkt> (1024); //FIXME len?
 	top_block = bluetooth_make_top_block();
 	kblock = top_block->sink;
 
@@ -151,6 +135,7 @@ int PacketSource_USRP::CloseSource() {
 	if (thread_active > 0) {
 		// Tell the thread to die
 		thread_active = 0;
+		top_block->stop();
 
 		// Grab it back
 		pthread_join(cap_thread, &ret);
@@ -176,9 +161,6 @@ int PacketSource_USRP::CloseSource() {
 		close(kblock->fake_fd[1]);
 		kblock->fake_fd[1] = -1;
 	}
-
-	//if (pkt_buf)
-		//delete pkt_buf;
 
 	return 1;
 }

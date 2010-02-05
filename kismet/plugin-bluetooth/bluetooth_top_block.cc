@@ -22,7 +22,7 @@
 
 #include "bluetooth_top_block.h"
 #include <gr_io_signature.h>
-#include <gr_file_source.h>
+#include <usrp_source_c.h>
 
 // Shared pointer constructor
 bluetooth_top_block_sptr bluetooth_make_top_block()
@@ -34,13 +34,42 @@ bluetooth_top_block_sptr bluetooth_make_top_block()
 bluetooth_top_block::bluetooth_top_block() : 
 	gr_top_block("bluetooth_top_block")
 {
-	//FIXME using file source for testing
-	gr_file_source_sptr src = gr_make_file_source (sizeof(gr_complex), "/tmp/headset3.cfile", true);
-	double sample_rate = 2000000;
-	double center_freq = 2476000000;
-	double squelch_threshold = -1000;
-	sink = bluetooth_make_kismet_block(sample_rate, center_freq, squelch_threshold);
+	//FIXME a lot of this stuff should be configurable
+	int which_board = 0;
+	unsigned int decimation = 32;
+	usrp_source_c_sptr usrp = usrp_make_source_c(which_board, decimation);
 
-	connect(src, 0, sink, 0);
+	usrp_subdev_spec spec(1,0); // B side daughterboard
+	//spec.side = 1;
+	//spec.subdev = 1;
+	db_base_sptr subdev = usrp->selected_subdev(spec);
+	printf("Subdevice name is %s\n", subdev->side_and_name().c_str());
+	printf("Subdevice freq range: (%g, %g)\n",
+			subdev->freq_min(), subdev->freq_max());
+
+	unsigned int mux = usrp->determine_rx_mux_value(spec);
+	mux = usrp->determine_rx_mux_value(spec);
+	printf("mux: %#08x\n",  mux);
+	usrp->set_mux(mux);
+
+	float gain;
+	float gain_min = subdev->gain_min();
+	float gain_max = subdev->gain_max();
+	//if(gain == -1) {
+		gain = (gain_min + gain_max)/2.0;
+	//}
+	printf("gain: %g\n", gain);
+	subdev->set_gain(gain);
+
+	double freq = 2477000000;
+	usrp_tune_result r;
+	bool ok = usrp->tune(0, subdev, freq, &r); //DDC 0
+	if (!ok)
+		throw std::runtime_error("Could not set frequency.");
+
+	double sample_rate = 64000000 / decimation;
+	double squelch_threshold = -1000;
+	sink = bluetooth_make_kismet_block(sample_rate, freq, squelch_threshold);
+
+	connect(usrp, 0, sink, 0);
 }
-//FIXME handle termination
