@@ -1,6 +1,0 @@
-CommandLine
-/home/dominicgs/CS/FPGA/Xilinx/10.1/ISE/bin/lin/unwrapped/xst -ise /home/dominicgs/CS/Bluetooth/gnuradio/trunk/usrp2/fpga/top/u2_fpga/u2_fpga.ise -intstyle ise -ifn /home/dominicgs/CS/Bluetooth/gnuradio/trunk/usrp2/fpga/top/u2_fpga/MAC_top.xst -ofn /home/dominicgs/CS/Bluetooth/gnuradio/trunk/usrp2/fpga/top/u2_fpga/MAC_top.syr -finalclean 1
-s
-FormatString
-xst [-ifn <InputFile>] [-ofn <OutputFile>] [-ise <iseProjectFile>] [--quiet] [-intstyle <Style>] [--deb <DebugLevel>] [--finalclean <Clean>] [--PcubeFlow] [--globOptFlow] [--XstNtrc]
-s
