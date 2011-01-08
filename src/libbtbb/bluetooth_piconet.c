@@ -287,7 +287,7 @@ int winnow(piconet *pnet)
 			/*
 			 * Two packets in a row on the same channel should only
 			 * happen if adaptive frequency hopping is in use.
-			 * There can be 0 positives, though, especially if
+			 * There can be false positives, though, especially if
 			 * there is aliasing.
 			 */
 			if (!pnet->looks_like_afh && (index == last_index + 1)

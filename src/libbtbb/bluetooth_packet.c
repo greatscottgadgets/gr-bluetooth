@@ -452,7 +452,7 @@ int crc_check(int clock, packet* p)
 			p->packet_type != 5))
 		return 1;
 
-	/* EV3 and EV5 have a relatively high 0 positive rate */
+	/* EV3 and EV5 have a relatively high false positive rate */
 	if (retval > 1 && (p->packet_type == 7 || p->packet_type == 13))
 		return 1;
 
