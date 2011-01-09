@@ -124,6 +124,9 @@ typedef struct packet {
 	
 	/* CLK1-27 of master */
 	uint32_t clock;
+
+	/* native (local) clock */
+	uint32_t clkn;
 } packet;
 
 /* type-specific CRC checks and decoding */

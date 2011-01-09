@@ -307,7 +307,7 @@ int UAP_from_header(packet *pkt, piconet *pnet)
 
 	int starting = 0;
 	int remaining = 0;
-	uint32_t clkn = pkt->clock;
+	uint32_t clkn = pkt->clkn;
 
 	if (!pnet->got_first_packet)
 		pnet->first_pkt_time = clkn;
@@ -337,6 +337,10 @@ int UAP_from_header(packet *pkt, piconet *pnet)
 			/* if not: check CRCs if UAPs match */
 			if (!pnet->got_first_packet || UAP == pnet->clock6_candidates[count])
 				retval = crc_check(clock, pkt);
+
+			// debugging with a particular UAP
+			//if (UAP == 0x61 || pnet->clock6_candidates[count] == 0x61)
+				//printf("%u: UAP %02x, %02x, type %u, clock %u, clkn %u, first %u, result %d\n", count, UAP, pnet->clock6_candidates[count], pkt->packet_type, clock, clkn, pnet->first_pkt_time, retval);
 
 			switch(retval) {
 
