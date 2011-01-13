@@ -56,6 +56,8 @@ typedef struct packet {
 	//FIXME maybe this should be a vector so we can grow it only to the size
 	//needed and later shrink it if we find we have more symbols than necessary
 	char symbols[MAX_SYMBOLS];
+	
+	char *start;
 
 	/* Bluetooth channel */
 	uint8_t channel;
@@ -148,7 +150,7 @@ void unwhiten(char* input, char* output, int clock, int length, int skip, packet
 int payload_crc(packet* p);
 
 /* search a symbol stream to find a packet, return index */
-int sniff_ac(char *stream, int stream_length);
+packet *sniff_ac(char *stream, int stream_length);
 
 /* Error correction coding for Access Code */
 uint8_t *lfsr(uint8_t *data, int length, int k, uint8_t *g);
