@@ -174,4 +174,6 @@ void enqueue(packet* pkt, piconet *pnet);
 /* pull the first packet from the queue (FIFO) */
 packet *dequeue(piconet *pnet);
 
+void init_piconet(piconet *pnet);
+
 #endif /* INCLUDED_BLUETOOTH_PICONET_H */

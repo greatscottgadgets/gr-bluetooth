@@ -28,6 +28,20 @@
 #include "bluetooth_piconet.h"
 #include <stdlib.h>
 
+void init_piconet(piconet *pnet)
+{
+	pnet->got_first_packet = 0;
+	pnet->packets_observed = 0;
+	pnet->total_packets_observed = 0;
+	pnet->hop_reversal_inited = 0;
+	pnet->afh = 0;
+	pnet->looks_like_afh = 0;
+	pnet->have_UAP = 0;
+	pnet->have_NAP = 0;
+	pnet->have_clk6 = 0;
+	pnet->have_clk27 = 0;
+}
+
 /* initialize the hop reversal process */
 int init_hop_reversal(int aliased, piconet *pnet)
 {
