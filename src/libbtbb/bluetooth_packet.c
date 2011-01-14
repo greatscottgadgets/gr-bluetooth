@@ -28,7 +28,7 @@
 #include "bluetooth_packet.h"
 
 /* search a symbol stream to find a packet, return index */
-packet *sniff_ac(char *stream, int stream_length)
+int sniff_ac(char *stream, int stream_length)
 {
 	/* Looks for an AC in the stream */
 	int count;
@@ -37,7 +37,6 @@ packet *sniff_ac(char *stream, int stream_length)
 	int max_distance = 2; // maximum number of bit errors to tolerate in preamble + trailer
 	uint32_t LAP;
 	char *symbols;
-	packet *pkt;
 
 	for(count = 0; count < stream_length; count ++)
 	{
@@ -49,24 +48,28 @@ packet *sniff_ac(char *stream, int stream_length)
 			LAP = air_to_host32(&symbols[38], 24);
 			if(check_ac(symbols, LAP))
 			{
-				pkt = (packet *) malloc(sizeof(packet));
-				if (pkt == NULL)
-					return NULL;
-
-				pkt->LAP = LAP;
-				pkt->whitened = 1;
-				pkt->have_UAP = 0;
-				pkt->have_NAP = 0;
-				pkt->have_clk6 = 0;
-				pkt->have_clk27 = 0;
-				pkt->have_payload = 0;
-				pkt->payload_length = 0;
-				pkt->start = symbols;
-				return pkt;
+				return count;
 			}
 		}
 	}
-	return NULL;
+	return -1;
+}
+
+void init_packet(packet *p, char *syms, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++)
+		p->symbols[i] = syms[i]; 
+	p->LAP = air_to_host32(&p->symbols[38], 24);
+	p->length = len;
+	p->whitened = 1;
+	p->have_UAP = 0;
+	p->have_NAP = 0;
+	p->have_clk6 = 0;
+	p->have_clk27 = 0;
+	p->have_payload = 0;
+	p->payload_length = 0;
 }
 
 /* A linear feedback shift register */
