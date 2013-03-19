@@ -17,10 +17,12 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 
-include(GrPython)
-
-GR_PYTHON_INSTALL(
-    PROGRAMS
-    btrx
-    DESTINATION bin
+install(FILES
+    bluetooth_gr_bluetooth_multi_block.xml
+    bluetooth_gr_bluetooth_multi_hopper.xml
+    bluetooth_gr_bluetooth_multi_LAP.xml
+    bluetooth_gr_bluetooth_multi_sniffer.xml
+    bluetooth_gr_bluetooth_multi_UAP.xml
+    bluetooth_gr_bluetooth_packet.xml
+    bluetooth_gr_bluetooth_piconet.xml DESTINATION share/gnuradio/grc/blocks
 )

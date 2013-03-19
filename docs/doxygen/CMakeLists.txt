@@ -17,30 +17,36 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 
-if(DEFINED __INCLUDED_GR_PLATFORM_CMAKE)
-    return()
-endif()
-set(__INCLUDED_GR_PLATFORM_CMAKE TRUE)
+########################################################################
+# Create the doxygen configuration file
+########################################################################
+file(TO_NATIVE_PATH ${CMAKE_SOURCE_DIR} top_srcdir)
+file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR} top_builddir)
+file(TO_NATIVE_PATH ${CMAKE_SOURCE_DIR} abs_top_srcdir)
+file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR} abs_top_builddir)
+
+set(HAVE_DOT ${DOXYGEN_DOT_FOUND})
+set(enable_html_docs YES)
+set(enable_latex_docs NO)
+set(enable_xml_docs YES)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+@ONLY)
+
+set(BUILT_DIRS ${CMAKE_CURRENT_BINARY_DIR}/xml ${CMAKE_CURRENT_BINARY_DIR}/html)
 
 ########################################################################
-# Setup additional defines for OS types
+# Make and install doxygen docs
 ########################################################################
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(LINUX TRUE)
-endif()
+add_custom_command(
+    OUTPUT ${BUILT_DIRS}
+    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating documentation with doxygen"
+)
 
-if(LINUX AND EXISTS "/etc/debian_version")
-    set(DEBIAN TRUE)
-endif()
+add_custom_target(doxygen_target ALL DEPENDS ${BUILT_DIRS})
 
-if(LINUX AND EXISTS "/etc/redhat-release")
-    set(REDHAT TRUE)
-endif()
-
-########################################################################
-# when the library suffix should be 64 (applies to redhat linux family)
-########################################################################
-if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
-    set(LIB_SUFFIX 64)
-endif()
-set(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
+install(DIRECTORY ${BUILT_DIRS} DESTINATION ${GR_PKG_DOC_DIR})

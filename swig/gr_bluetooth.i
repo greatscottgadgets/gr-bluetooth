@@ -1,45 +1,47 @@
 /* -*- c++ -*- */
 
-#define GR_BLUETOOTH_API
+#define BLUETOOTH_API
 
-%include "exception.i"
 %include "gnuradio.i"			// the common stuff
 
+#ifndef GR_SWIG_BLOCK_MAGIC2
+%define GR_SWIG_BLOCK_MAGIC2(PKG, BASE_NAME)
+%template(BASE_NAME ## _sptr) boost::shared_ptr<gr:: ## PKG ## :: ## BASE_NAME>;
+%pythoncode %{
+BASE_NAME ## _sptr.__repr__ = lambda self: "<gr_block %s (%d)>" % (self.name(), self.unique_id())
+BASE_NAME = BASE_NAME.make;
+%}
+%enddef
+#endif
+
+//load generated python docstrings
+%include "gr_bluetooth_doc.i"
+
 %{
-#pragma GCC diagnostic ignored "-Wuninitialized"
-#include "gr_bluetooth_multi_LAP.h"
-#include "gr_bluetooth_multi_UAP.h"
-#include "gr_bluetooth_multi_hopper.h"
-#include "gr_bluetooth_multi_sniffer.h"
-#include <stdexcept>
+#include "bluetooth/packet.h"
+#include "bluetooth/piconet.h"
+#include "bluetooth/multi_block.h"
+#include "bluetooth/multi_hopper.h"
+#include "bluetooth/multi_LAP.h"
+#include "bluetooth/multi_sniffer.h"
+#include "bluetooth/multi_UAP.h"
 %}
 
-// ----------------------------------------------------------------
+%include "bluetooth/packet.h"
+%include "bluetooth/piconet.h"
 
-/*
- * First arg is the package prefix.
- * Second arg is the name of the class minus the prefix.
- */
-%include "gr_bluetooth_multi_LAP.h"
-GR_SWIG_BLOCK_MAGIC(gr_bluetooth,multi_LAP);
+%include "bluetooth/multi_block.h"
 
-/*
- * First arg is the package prefix.
- * Second arg is the name of the class minus the prefix.
- */
-%include "gr_bluetooth_multi_UAP.h"
-GR_SWIG_BLOCK_MAGIC(gr_bluetooth,multi_UAP);
+%include "bluetooth/multi_hopper.h"
+GR_SWIG_BLOCK_MAGIC2(bluetooth, multi_hopper);
 
-/*
- * First arg is the package prefix.
- * Second arg is the name of the class minus the prefix.
- */
-%include "gr_bluetooth_multi_hopper.h"
-GR_SWIG_BLOCK_MAGIC(gr_bluetooth,multi_hopper);
+%include "bluetooth/multi_LAP.h"
+GR_SWIG_BLOCK_MAGIC2(bluetooth, multi_LAP);
 
-/*
- * First arg is the package prefix.
- * Second arg is the name of the class minus the prefix.
- */
-%include "gr_bluetooth_multi_sniffer.h"
-GR_SWIG_BLOCK_MAGIC(gr_bluetooth,multi_sniffer);
+%include "bluetooth/multi_sniffer.h"
+GR_SWIG_BLOCK_MAGIC2(bluetooth, multi_sniffer);
+
+%include "bluetooth/multi_UAP.h"
+GR_SWIG_BLOCK_MAGIC2(bluetooth, multi_UAP);
+
+
