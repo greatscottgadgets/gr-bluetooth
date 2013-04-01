@@ -72,11 +72,6 @@ namespace gr {
           if (check_basic_rate_squelch(input_items)) {
             int num_symbols = channel_symbols(freq, input_items, symbols, history());
           
-            /* completely skip this time slot if we didn't break squelch */
-            if (num_symbols == 0) {
-              break;
-            }
-            
             if (num_symbols >= SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE) {
               /* don't look beyond one slot for ACs */
               int latest_ac = ((num_symbols - SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE) < SYMBOLS_PER_BASIC_RATE_SLOT) ? 

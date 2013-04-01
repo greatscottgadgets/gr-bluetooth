@@ -192,8 +192,8 @@ namespace gr {
       /* lookup table for preamble hamming distance */
       static const uint8_t PREAMBLE_DISTANCE[32];
 
-      /* lookup table for trailer hamming distance */
-      static const uint8_t TRAILER_DISTANCE[2048];
+      /* lookup table for barker hamming distance */
+      static const uint8_t BARKER_DISTANCE[128];
 
       /* string representations of classic packet type */
       static const std::string TYPE_NAMES[16];

@@ -1,8 +1,8 @@
 /* -*- c++ -*- */
 /* 
  * Copyright 2013 Christopher D. Kilgour
- * Copyright 2008, 2009 Dominic Spill, Michael Ossmann                                                                                            
- * Copyright 2007 Dominic Spill                                                                                                                   
+ * Copyright 2008, 2009 Dominic Spill, Michael Ossmann
+ * Copyright 2007 Dominic Spill
  * Copyright 2005, 2006 Free Software Foundation, Inc.
  * 
  * This is free software; you can redistribute it and/or modify
@@ -98,6 +98,9 @@ namespace gr {
       /* channel filter coefficients for digital downconverter */
       std::vector<float> d_channel_filter;
 
+      /* noise power filter coefficients */
+      std::vector<float> d_noise_filter;
+
       /* quadrature frequency demodulator sensitivity */
       float d_demod_gain;
 
@@ -117,10 +120,13 @@ namespace gr {
        * Produce symbols stream for a particular channel pulled out of
        * the raw samples.
        */
-      int channel_symbols(double freq, gr_vector_const_void_star &in, 
-                          char *out, int ninput_items);
-      bool check_basic_rate_squelch(gr_vector_const_void_star &in);
-      bool check_low_energy_squelch(double freq, gr_vector_const_void_star &in);
+      int channel_symbols( double freq, 
+                           gr_vector_const_void_star &in, 
+                           char *out, 
+                           int ninput_items );
+      bool check_basic_rate_squelch( gr_vector_const_void_star &in );
+      bool check_low_energy_squelch( double freq, gr_vector_const_void_star &in );
+      bool check_snr( const double freq, const double tsnr, double& snr, gr_vector_const_void_star &in );
 
       /* add some number of symbols to the block's history requirement */
       void set_symbol_history(int num_symbols);

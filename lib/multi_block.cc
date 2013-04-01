@@ -34,6 +34,7 @@
 #include <gr_math.h>
 #include <stdio.h>
 #include <gr_freq_xlating_fir_filter_ccf.h>
+#include <gr_complex_to_xxx.h>
 
 namespace gr {
   namespace bluetooth {
@@ -69,6 +70,19 @@ namespace gr {
       d_channel_filter = gr_firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr_firdes::WIN_HANN);
       /* d_channel_filter.size() will be the history requirement of ddc */
       samples_required += (d_channel_filter.size() - 1);
+
+      /* noise filter coefficients */
+      double n_gain = 1;
+      double n_cutoff_freq = 22500;
+      double n_trans_width = 10000;
+      d_noise_filter = gr_firdes::low_pass( n_gain, 
+                                            sample_rate, 
+                                            n_cutoff_freq, 
+                                            n_trans_width, 
+                                            gr_firdes::WIN_HANN );
+      if (d_noise_filter.size( ) > samples_required) {
+        samples_required = d_noise_filter.size( ) - 1;
+      }
 
       /* we will decimate by the largest integer that results in enough samples per symbol */
       d_ddc_decimation_rate = (int) d_samples_per_symbol / 2;
@@ -163,7 +177,7 @@ namespace gr {
       gr_vector_void_star ddc_out_vector(1);
       ddc_out_vector[0] = ddc_out;
       ddc_noutput_items = ddc->work(ddc_noutput_items, in, ddc_out_vector);
-      
+
       /* fm demodulation */
       int demod_noutput_items = ddc_noutput_items - 1;
       float demod_out[demod_noutput_items];
@@ -204,7 +218,7 @@ namespace gr {
                                            gr_vector_const_void_star& in )
     {
       bool retval = false;
-      if (le_packet::freq2chan >= 0) {
+      if (le_packet::freq2chan( freq ) >= 0) {
         double pwr = 0; 
         gr_complex *raw_in = (gr_complex *) in[0];
         for (unsigned i=0; i<d_samples_per_slot; i++) {
@@ -213,6 +227,58 @@ namespace gr {
         retval = (pwr >= d_low_energy_squelch_threshold);
       }
       return retval;
+    }
+
+    bool 
+    multi_block::check_snr( const double   freq, 
+                            const double   tsnr, 
+                            double&        snr,
+                            gr_vector_const_void_star &in )
+    {
+      /* power on-channel */
+      gr_freq_xlating_fir_filter_ccf_sptr pddc =
+        gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
+                                             d_noise_filter, 
+                                             -(freq-d_center_freq), 
+                                             d_sample_rate );
+      
+      int ddc_noutput_items = pddc->fixed_rate_ninput_to_noutput( (int) d_samples_per_slot );
+      gr_complex ddc_out[ddc_noutput_items];
+      gr_vector_void_star ddc_out_vector( 1 );
+      gr_vector_const_void_star ddc_out_const( 1 );
+      ddc_out_vector[0] = &ddc_out[0];
+      ddc_out_const[0]  = &ddc_out[0];
+      (void) pddc->work( ddc_noutput_items, in, ddc_out_vector );
+
+      // average mag2 for on-channel
+      gr_complex_to_mag_squared_sptr mag2 = gr_make_complex_to_mag_squared( 1 );
+      float mag2_out[ddc_noutput_items];
+      gr_vector_void_star mag2_out_vector( 1 );
+      mag2_out_vector[0] = &mag2_out[0];
+      (void) mag2->work( ddc_noutput_items, ddc_out_const, mag2_out_vector );
+      double onpow = 0.0;
+      for( unsigned i=0; i<ddc_noutput_items; i++ ) {
+        onpow += mag2_out[i];
+      }
+
+      /* power at local valley */
+      gr_freq_xlating_fir_filter_ccf_sptr nddc =
+        gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
+                                             d_noise_filter, 
+                                             -(freq+790000.0-d_center_freq), 
+                                             d_sample_rate );
+      (void) nddc->work( ddc_noutput_items, in, ddc_out_vector );
+      
+      // average mag2 for valley
+      (void) mag2->work( ddc_noutput_items, ddc_out_const, mag2_out_vector );
+      double offpow = 0.0;
+      for( unsigned i=0; i<ddc_noutput_items; i++ ) {
+        offpow += mag2_out[i];
+      }
+
+      snr = 10.0 * log10( onpow / offpow );
+
+      return (snr >= tsnr);
     }
 
     /* add some number of symbols to the block's history requirement */

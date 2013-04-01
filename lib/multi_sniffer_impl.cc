@@ -78,9 +78,10 @@ namespace gr {
                              gr_vector_const_void_star &input_items,
                              gr_vector_void_star &output_items)
     {
-      for (double freq = d_low_freq; freq <= d_high_freq; freq += 1e6) {        
-        bool brok = check_basic_rate_squelch(input_items);
-        bool leok = true; //check_low_energy_squelch(freq, input_items);
+      for (double freq = d_low_freq; freq <= d_high_freq; freq += 1e6) {   
+        double snr;
+        bool brok; // = check_basic_rate_squelch(input_items);
+        bool leok = brok = check_snr( freq, 10.0, snr, input_items );
 
         /* number of symbols available */
         if (brok || leok) {
@@ -99,7 +100,7 @@ namespace gr {
               int i = classic_packet::sniff_ac(symp, limit);
               if (i >= 0) {
                 int step = i + SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE;
-                ac(&symp[i], len - i, freq);
+                ac(&symp[i], len - i, freq, snr);
                 len   -= step;
                 symp   = &symp[step];
                 limit -= step;
@@ -119,7 +120,7 @@ namespace gr {
               int i = le_packet::sniff_aa(symp, limit, freq);
               if (i >= 0) {
                 int step = i + SYMBOLS_PER_LOW_ENERGY_PREAMBLE_AA;
-                aa(&symp[i], len - i, freq);
+                aa(&symp[i], len - i, freq, snr);
                 len   -= step;
                 symp   = &symp[step];
                 limit -= step;
@@ -145,14 +146,15 @@ namespace gr {
 
     /* handle AC */
     void 
-    multi_sniffer_impl::ac(char *symbols, int len, double freq)
+    multi_sniffer_impl::ac(char *symbols, int len, double freq, double snr)
     {
       /* native (local) clock in 625 us */	
       uint32_t clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
       classic_packet::sptr pkt = classic_packet::make(symbols, len, clkn, freq);
       uint32_t lap = pkt->get_LAP();
 
-      printf("time %6d, channel %2d, LAP %06x ", clkn, pkt->get_channel( ), lap);
+      printf("time %6d, snr=%.1f, channel %2d, LAP %06x ", 
+             clkn, snr, pkt->get_channel( ), lap);
 
       if (pkt->header_present()) {
         if (!d_basic_rate_piconets[lap]) {
@@ -182,12 +184,12 @@ namespace gr {
 
     /* handle AA */
     void
-    multi_sniffer_impl::aa(char *symbols, int len, double freq)
+    multi_sniffer_impl::aa(char *symbols, int len, double freq, double snr)
     {
       le_packet::sptr pkt = le_packet::make(symbols, len, freq);
       uint32_t clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
 
-      printf("time %6d, ", clkn);
+      printf("time %6d, snr=%.1f, ", clkn, snr);
       pkt->print( );
 
       if (pkt->header_present()) {

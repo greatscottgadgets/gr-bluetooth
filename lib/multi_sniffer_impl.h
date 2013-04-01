@@ -56,10 +56,10 @@ namespace gr {
       std::map<uint32_t, low_energy_piconet::sptr> d_low_energy_piconets;
 
       /* handle AC */
-      void ac(char *symbols, int len, double freq);
+      void ac(char *symbols, int len, double freq, double snr);
 
       /* handle AA */
-      void aa(char *symbols, int len, double freq);
+      void aa(char *symbols, int len, double freq, double snr);
 
       /* handle ID packet (no header) */
       void id(uint32_t lap);
