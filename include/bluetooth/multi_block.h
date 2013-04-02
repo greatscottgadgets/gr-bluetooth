@@ -28,6 +28,7 @@
 #include <bluetooth/api.h>
 #include <gr_sync_block.h>
 #include <gri_mmse_fir_interpolator.h>
+#include <gr_freq_xlating_fir_filter_ccf.h>
 
 namespace gr {
   namespace bluetooth {
@@ -79,10 +80,6 @@ namespace gr {
       /* highest frequency we can decode */
       double d_high_freq;
 
-      /* power squelch threshold normalized for comparison in _channel_symbols() */
-      double d_basic_rate_squelch_threshold;
-      double d_low_energy_squelch_threshold;
-
       /* decimation rate of digital downconverter */
       int d_ddc_decimation_rate;
 
@@ -95,11 +92,22 @@ namespace gr {
       float d_omega_mid;		// average omega
       float d_last_sample;
 
+      /* target SNR */
+      double d_target_snr;
+
       /* channel filter coefficients for digital downconverter */
+      double d_channel_filter_width;
       std::vector<float> d_channel_filter;
+      std::map<int, gr_freq_xlating_fir_filter_ccf_sptr> d_channel_ddcs;
 
       /* noise power filter coefficients */
+      double d_noise_filter_width;
       std::vector<float> d_noise_filter;
+      std::map<int, gr_freq_xlating_fir_filter_ccf_sptr> d_noise_ddcs;
+
+      /* input sample offset where channel and noise extraction happens */
+      int d_first_channel_sample;
+      int d_first_noise_sample;
 
       /* quadrature frequency demodulator sensitivity */
       float d_demod_gain;
@@ -117,16 +125,27 @@ namespace gr {
       void slicer(const float *in, char *out, int noutput_items);
 
       /**
-       * Produce symbols stream for a particular channel pulled out of
-       * the raw samples.
+       * Extract a single BT channel's worth of samples from the wider
+       * bandwidth samples.
        */
-      int channel_symbols( double freq, 
-                           gr_vector_const_void_star &in, 
+      int channel_samples( const double               freq,
+                           gr_vector_const_void_star& in, 
+                           gr_vector_void_star&       out,
+                           double&                    energy,
+                           int                        ninput_items );
+
+      /**
+       * Produce symbols stream for a single BT channel, developed
+       * from of the raw samples for a single BT channel.
+       */
+      int channel_symbols( gr_vector_const_void_star &in, 
                            char *out, 
                            int ninput_items );
-      bool check_basic_rate_squelch( gr_vector_const_void_star &in );
-      bool check_low_energy_squelch( double freq, gr_vector_const_void_star &in );
-      bool check_snr( const double freq, const double tsnr, double& snr, gr_vector_const_void_star &in );
+
+      bool check_snr( const double               freq, 
+                      const double               on_channel_energy,
+                      double&                    snr, 
+                      gr_vector_const_void_star& in );
 
       /* add some number of symbols to the block's history requirement */
       void set_symbol_history(int num_symbols);
@@ -138,6 +157,8 @@ namespace gr {
       double channel_rel_freq(int channel);
 
       double channel_abs_freq(int channel);
+
+      int abs_freq_channel(double freq);
 
     public:
       virtual int work (int noutput_items,

@@ -69,8 +69,16 @@ namespace gr {
 
 	for (freq = d_low_freq; freq <= d_high_freq; freq += 1e6)
 	{
-          if (check_basic_rate_squelch(input_items)) {
-            int num_symbols = channel_symbols(freq, input_items, symbols, history());
+          gr_complex ch_samples[noutput_items];
+          gr_vector_void_star btch( 1 );
+          btch[0] = ch_samples;
+          double on_channel_energy, snr;
+          int ch_count = channel_samples( freq, input_items, btch, on_channel_energy, history() );
+
+          if (check_snr( freq, on_channel_energy, snr, input_items )) {
+            gr_vector_const_void_star cbtch( 1 );
+            cbtch[0] = ch_samples;
+            int num_symbols = channel_symbols( cbtch, symbols, ch_count );
           
             if (num_symbols >= SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE) {
               /* don't look beyond one slot for ACs */

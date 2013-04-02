@@ -517,13 +517,12 @@ namespace gr {
       index += skip;
       index %= 127;
 
-      for(count = 0; count < length; count++)
-	{
-          /* unwhiten if d_whitened, otherwise just copy input to output */
-          output[count] = (d_whitened) ? input[count] ^ WHITENING_DATA[index] : input[count];
-          index += 1;
-          index %= 127;
-	}
+      for(count = 0; count < length; count++) {
+        /* unwhiten if d_whitened, otherwise just copy input to output */
+        output[count] = (d_whitened) ? input[count] ^ WHITENING_DATA[index] : input[count];
+        index += 1;
+        index %= 127;
+      }
     }
 
     /* Pointer to start of packet, length of packet in bits, UAP */
@@ -1458,8 +1457,6 @@ namespace gr {
       int index = freq2index( freq );
       int distance = 0;
       const uint8_t *phlsb, *phmsb;
-      char hbuf[16];
-      unsigned hi, wi;
 
       if (index >= 37) {
         // access channel
@@ -1474,31 +1471,50 @@ namespace gr {
         phmsb = DATA_HEADER_DISTANCE_MSB;
       }
 
-      // de-whiten 
-      for( hi=0, wi=INDICES[index]; hi<16; hi++, wi=(wi+1)%127 ) {
-        hbuf[hi] = stream[hi+40] ^ WHITENING_DATA[wi];
-      }
-
       for( count=0; count<stream_length; count++ ) {
         char *   symbols    = &stream[count];
         uint16_t preamble   = air_to_host16(&symbols[0], 9);
+        char hbuf[16];
+        unsigned hi, wi;
+
+        // de-whiten 
+        for( hi=0, wi=INDICES[index]; hi<16; hi++, wi=(wi+1)%127 ) {
+          hbuf[hi] = symbols[hi+40] ^ WHITENING_DATA[wi];
+        }
+
         uint8_t  header_lsb = air_to_host8(&hbuf[0], 8);
         uint8_t  header_msb = air_to_host8(&hbuf[8], 8);
-        
-        int distance = PREAMBLE_DISTANCE[preamble] +
-          phlsb[header_lsb] + phmsb[header_msb];
+
+        int preamble_distance = PREAMBLE_DISTANCE[preamble];
+        int header_distance   = phlsb[header_lsb] + phmsb[header_msb];       
+        int distance          = preamble_distance + header_distance;
+
         int max_distance = 0;
 
         if (index >= 37) {
           // access channel
           uint8_t aabyte = air_to_host8(&symbols[8], 8);
-          distance += ACCESS_ADDRESS_DISTANCE_0[aabyte];
+          int aa_distance = ACCESS_ADDRESS_DISTANCE_0[aabyte];
           aabyte = air_to_host8(&symbols[16], 8);
-          distance += ACCESS_ADDRESS_DISTANCE_1[aabyte];
+          aa_distance += ACCESS_ADDRESS_DISTANCE_1[aabyte];
           aabyte = air_to_host8(&symbols[24], 8);
-          distance += ACCESS_ADDRESS_DISTANCE_2[aabyte];
+          aa_distance += ACCESS_ADDRESS_DISTANCE_2[aabyte];
           aabyte = air_to_host8(&symbols[32], 8);
-          distance += ACCESS_ADDRESS_DISTANCE_3[aabyte];
+          aa_distance += ACCESS_ADDRESS_DISTANCE_3[aabyte];
+          if (!aa_distance && distance) {
+            printf( "preamble_distance=%d, header_distance=%d, aa_distance=%d\n", 
+                    preamble_distance, header_distance, aa_distance );
+            if (preamble_distance) {
+              printf( "preamble=0x%03x\n", preamble );
+            }
+            if (header_distance) {
+              printf( "de_whitened: header_lsb=0x%02x, header_msb=0x%02x\n", header_lsb, header_msb );
+              uint8_t  raw_lsb = air_to_host8(&stream[40], 8);
+              uint8_t  raw_msb = air_to_host8(&stream[48], 8);
+              printf( "raw:         header_lsb=0x%02x, header_msb=0x%02x\n", raw_lsb, raw_msb );
+            }
+          }
+          distance += aa_distance;
           max_distance += 2;
         }
 

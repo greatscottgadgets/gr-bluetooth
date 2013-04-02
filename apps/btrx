@@ -53,8 +53,8 @@ class my_top_block(gr.top_block):
 						help="reverse hopping sequence to determine master clock")
 		parser.add_option("-s", "--input-shorts", action="store_true", default=False,
 						help="input interleaved shorts instead of complex floats")
-		parser.add_option("-t", "--squelch", type="eng_float", default=-1000,
-						help="power squelch threshold in dB (default=None)")
+		parser.add_option("-t", "--snr", type="eng_float", default=10.0,
+						help="SNR squelch threshold in dB (default=10.0)")
 		parser.add_option("-w","--wireshark", action="store_true", default=False,
 						help="direct output to a tun interface")
 
@@ -136,22 +136,22 @@ class my_top_block(gr.top_block):
 			# decode all packets from all piconets on all channels,
 			# discovering UAPs and clocks as necessary
 			dst = gr_bluetooth.multi_sniffer(options.samp_rate,
-                                                         options.freq, options.squelch,
+                                                         options.freq, options.snr,
                                                          options.wireshark)
 		elif options.lap is None:
 			# print out LAP for every frame detected
 			dst = gr_bluetooth.multi_LAP(options.samp_rate,
-                                                     options.freq, options.squelch)
+                                                     options.freq, options.snr)
 		elif options.hop:
 			# determine UAP and then master clock from hopping sequence
 			dst = gr_bluetooth.multi_hopper(options.samp_rate,
-                                                        options.freq, options.squelch,
+                                                        options.freq, options.snr,
                                                         int(options.lap, 16), options.aliased,
                                                         options.wireshark)
 		else:
 			# determine UAP from frames matching the user-specified LAP
 			dst = gr_bluetooth.multi_UAP(options.samp_rate,
-                                                     options.freq, options.squelch,
+                                                     options.freq, options.snr,
                                                      int(options.lap, 16))
 
 		# connect the blocks

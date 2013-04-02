@@ -33,7 +33,6 @@
 #include <gr_firdes.h>
 #include <gr_math.h>
 #include <stdio.h>
-#include <gr_freq_xlating_fir_filter_ccf.h>
 #include <gr_complex_to_xxx.h>
 
 namespace gr {
@@ -43,10 +42,12 @@ namespace gr {
                        gr_make_io_signature (1, 1, sizeof (gr_complex)),
                        gr_make_io_signature (0, 0, 0))
     {
+      d_target_snr = squelch_threshold;
+
       d_cumulative_count = 0;
       d_sample_rate = sample_rate;
       d_center_freq = center_freq;
-      set_channels();
+
       /*
        * how many time slots we attempt to decode on each hop:
        * 1 for now, could be as many as 5 plus a little slop
@@ -55,38 +56,33 @@ namespace gr {
       d_samples_per_symbol = sample_rate / SYMBOL_RATE;
       //FIXME make sure that d_samples_per_symbol >= 2 (requirement of clock_recovery_mm_ff)
       d_samples_per_slot = (int) SYMBOLS_PER_BASIC_RATE_SLOT * d_samples_per_symbol;
-      int samples_required = (int) slots * d_samples_per_slot;
-
-      /* power squelch: this is crude, but it works */
-      d_basic_rate_squelch_threshold = (double) std::pow(10.0, squelch_threshold/10) * d_samples_per_symbol * 
-        SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE; 
-      d_low_energy_squelch_threshold = (double) std::pow(10.0, squelch_threshold/10) * d_samples_per_symbol * 
-        SYMBOLS_PER_LOW_ENERGY_PREAMBLE_AA;
+      int history_required = (int) slots * d_samples_per_slot;
 
       /* channel filter coefficients */
       double gain = 1;
-      double cutoff_freq = 500000;
+      d_channel_filter_width = 500000;
       double transition_width = 300000;
-      d_channel_filter = gr_firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr_firdes::WIN_HANN);
-      /* d_channel_filter.size() will be the history requirement of ddc */
-      samples_required += (d_channel_filter.size() - 1);
+      d_channel_filter = gr_firdes::low_pass( gain, 
+                                              sample_rate, 
+                                              d_channel_filter_width, 
+                                              transition_width, 
+                                              gr_firdes::WIN_HANN);
 
       /* noise filter coefficients */
       double n_gain = 1;
-      double n_cutoff_freq = 22500;
+      d_noise_filter_width = 22500;
       double n_trans_width = 10000;
       d_noise_filter = gr_firdes::low_pass( n_gain, 
                                             sample_rate, 
-                                            n_cutoff_freq, 
+                                            d_noise_filter_width, 
                                             n_trans_width, 
                                             gr_firdes::WIN_HANN );
-      if (d_noise_filter.size( ) > samples_required) {
-        samples_required = d_noise_filter.size( ) - 1;
-      }
 
       /* we will decimate by the largest integer that results in enough samples per symbol */
       d_ddc_decimation_rate = (int) d_samples_per_symbol / 2;
       double channel_samples_per_symbol = d_samples_per_symbol / d_ddc_decimation_rate;
+
+      set_channels();
 
       /* fm demodulator */
       d_demod_gain = channel_samples_per_symbol / M_PI_2;
@@ -100,9 +96,27 @@ namespace gr {
       d_omega_mid = d_omega;
       d_interp = new gri_mmse_fir_interpolator();
       d_last_sample = 0;
-      samples_required += d_ddc_decimation_rate * d_interp->ntaps();
+      
+      /* the required history is the slot data + the max of either
+         channed DDC + demod, or noise DDC */
+      int channel_history = (int) (d_channel_filter.size( ) + 
+                                   d_ddc_decimation_rate * d_interp->ntaps());
+      int noise_history   = (int) d_noise_filter.size( );
+      if (channel_history > noise_history) {
+        history_required += channel_history;
+        d_first_channel_sample = 0;
+        d_first_noise_sample   = (channel_history - noise_history);
+      }
+      else {
+        history_required += noise_history;
+        d_first_noise_sample   = 0;
+        d_first_channel_sample = (noise_history - channel_history);
+      }
 
-      set_history(samples_required);
+      printf( "history set to %d samples: channel=%d, noise=%d\n", 
+              history_required, channel_history, noise_history );
+
+      set_history( history_required );
     }  
 
     static inline float slice(float x)
@@ -163,25 +177,57 @@ namespace gr {
     }
 
     int 
-    multi_block::channel_symbols( double                     freq, 
+    multi_block::channel_samples( double                     freq,
                                   gr_vector_const_void_star& in, 
+                                  gr_vector_void_star&       out,
+                                  double&                    energy,
+                                  int                        ninput_items )
+    {
+      int ddc_noutput_items       = 0;
+
+      int classic_chan = abs_freq_channel( freq );
+      std::map<int, gr_freq_xlating_fir_filter_ccf_sptr>::const_iterator ddci = 
+        d_channel_ddcs.find( classic_chan );
+
+      if (ddci != d_channel_ddcs.end( )) {
+        gr_freq_xlating_fir_filter_ccf_sptr ddc = ddci->second;
+        int ddc_samples = ninput_items - (ddc->history( ) - 1) - d_first_channel_sample;
+        gr_vector_const_void_star ddc_in( 1 );
+        ddc_in[0] = &(((gr_complex *) in[0])[d_first_channel_sample]);
+        ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput( ddc_samples );
+        ddc_noutput_items = ddc->work( ddc_noutput_items, ddc_in, out );
+
+        gr_complex_to_mag_squared_sptr mag2 = gr_make_complex_to_mag_squared( 1 );
+        float mag2_out[ddc_noutput_items];
+        gr_vector_void_star mag2_out_vector( 1 );
+        mag2_out_vector[0] = &mag2_out[0];
+        gr_vector_const_void_star ddc_out_const( 1 );
+        ddc_out_const[0] = out[0];
+        (void) mag2->work( ddc_noutput_items, ddc_out_const, mag2_out_vector );
+        energy = 0.0;
+        for( unsigned i=0; i<ddc_noutput_items; i++ ) {
+          energy += mag2_out[i];
+        }
+        energy /= ddc_noutput_items;
+        //energy /= d_channel_filter_width;
+      }
+      else {
+        energy = 1.0;
+      }
+
+      return ddc_noutput_items;
+    }
+
+    int 
+    multi_block::channel_symbols( gr_vector_const_void_star& in, 
                                   char *                     out, 
                                   int                        ninput_items )
     {
-      /* ddc */
-      gr_freq_xlating_fir_filter_ccf_sptr ddc =
-        gr_make_freq_xlating_fir_filter_ccf(d_ddc_decimation_rate, d_channel_filter, -(freq-d_center_freq), 
-                                            d_sample_rate);
-      int ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput(ninput_items - (ddc->history() - 1));
-      gr_complex ddc_out[ddc_noutput_items];
-      gr_vector_void_star ddc_out_vector(1);
-      ddc_out_vector[0] = ddc_out;
-      ddc_noutput_items = ddc->work(ddc_noutput_items, in, ddc_out_vector);
-
       /* fm demodulation */
-      int demod_noutput_items = ddc_noutput_items - 1;
+      int demod_noutput_items = ninput_items - 1;
       float demod_out[demod_noutput_items];
-      demod(ddc_out, demod_out, demod_noutput_items);
+      gr_complex *ch_samps = (gr_complex *) in[0];
+      demod( ch_samps, demod_out, demod_noutput_items );
       
       /* clock recovery */
       int cr_ninput_items = demod_noutput_items;
@@ -195,90 +241,49 @@ namespace gr {
       return noutput_items;
     }
 
-    /* produce symbols stream for a particular channel pulled out of the raw samples */
-    bool
-    multi_block::check_basic_rate_squelch( gr_vector_const_void_star& in )
-    {
-      /*
-       * squelch: this is a simple check to see if there is enough
-       * power in the first slot to bother looking for a packet.
-       */
-      double pwr = 0; //total power for the time slot (sum of power of every sample)
-      gr_complex *raw_in = (gr_complex *) in[0];
-      unsigned last_sq = d_samples_per_symbol * (SYMBOLS_PER_BASIC_RATE_SLOT + 
-                                                 SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE);
-      for (unsigned i=0; i<last_sq; i++) {
-        pwr += (raw_in[i].real() * raw_in[i].real() + raw_in[i].imag() * raw_in[i].imag());
-      }
-      return (pwr >= d_basic_rate_squelch_threshold);
-    }
-
-    bool
-    multi_block::check_low_energy_squelch( double                     freq, 
-                                           gr_vector_const_void_star& in )
-    {
-      bool retval = false;
-      if (le_packet::freq2chan( freq ) >= 0) {
-        double pwr = 0; 
-        gr_complex *raw_in = (gr_complex *) in[0];
-        for (unsigned i=0; i<d_samples_per_slot; i++) {
-          pwr += (raw_in[i].real() * raw_in[i].real() + raw_in[i].imag() * raw_in[i].imag());
-        }
-        retval = (pwr >= d_low_energy_squelch_threshold);
-      }
-      return retval;
-    }
-
     bool 
-    multi_block::check_snr( const double   freq, 
-                            const double   tsnr, 
-                            double&        snr,
-                            gr_vector_const_void_star &in )
+    multi_block::check_snr( const double               freq, 
+                            const double               on_channel_energy,
+                            double&                    snr,
+                            gr_vector_const_void_star& in )
     {
-      /* power on-channel */
-      gr_freq_xlating_fir_filter_ccf_sptr pddc =
-        gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
-                                             d_noise_filter, 
-                                             -(freq-d_center_freq), 
-                                             d_sample_rate );
-      
-      int ddc_noutput_items = pddc->fixed_rate_ninput_to_noutput( (int) d_samples_per_slot );
-      gr_complex ddc_out[ddc_noutput_items];
-      gr_vector_void_star ddc_out_vector( 1 );
-      gr_vector_const_void_star ddc_out_const( 1 );
-      ddc_out_vector[0] = &ddc_out[0];
-      ddc_out_const[0]  = &ddc_out[0];
-      (void) pddc->work( ddc_noutput_items, in, ddc_out_vector );
+      double off_channel_energy = 0.0;
 
-      // average mag2 for on-channel
-      gr_complex_to_mag_squared_sptr mag2 = gr_make_complex_to_mag_squared( 1 );
-      float mag2_out[ddc_noutput_items];
-      gr_vector_void_star mag2_out_vector( 1 );
-      mag2_out_vector[0] = &mag2_out[0];
-      (void) mag2->work( ddc_noutput_items, ddc_out_const, mag2_out_vector );
-      double onpow = 0.0;
-      for( unsigned i=0; i<ddc_noutput_items; i++ ) {
-        onpow += mag2_out[i];
+      int classic_chan = abs_freq_channel( freq );
+      std::map<int, gr_freq_xlating_fir_filter_ccf_sptr>::const_iterator nddci = 
+        d_noise_ddcs.find( classic_chan );
+
+      if (nddci != d_noise_ddcs.end( )) {
+        gr_freq_xlating_fir_filter_ccf_sptr nddc = nddci->second;
+        gr_vector_const_void_star ddc_in( 1 );
+        ddc_in[0] = &(((gr_complex *) in[0])[d_first_noise_sample]);
+        int ddc_noutput_items = nddc->fixed_rate_ninput_to_noutput( (int) d_samples_per_slot );
+        gr_complex ddc_out[ddc_noutput_items];
+        gr_vector_void_star ddc_out_vector( 1 );
+        gr_vector_const_void_star ddc_out_const( 1 );
+        ddc_out_vector[0] = &ddc_out[0];
+        ddc_out_const[0]  = &ddc_out[0];
+        ddc_noutput_items = nddc->work( ddc_noutput_items, ddc_in, ddc_out_vector );
+      
+        // average mag2 for valley
+        gr_complex_to_mag_squared_sptr mag2 = gr_make_complex_to_mag_squared( 1 );
+        float mag2_out[ddc_noutput_items];
+        gr_vector_void_star mag2_out_vector( 1 );
+        mag2_out_vector[0] = &mag2_out[0];
+        (void) mag2->work( ddc_noutput_items, ddc_out_const, mag2_out_vector );
+        for( unsigned i=0; i<ddc_noutput_items; i++ ) {
+          off_channel_energy += mag2_out[i];
+        }
+        off_channel_energy /= ddc_noutput_items;
+        //off_channel_energy /= d_noise_filter_width;
+      }
+      else {
+        off_channel_energy = 1.0;
       }
 
-      /* power at local valley */
-      gr_freq_xlating_fir_filter_ccf_sptr nddc =
-        gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
-                                             d_noise_filter, 
-                                             -(freq+790000.0-d_center_freq), 
-                                             d_sample_rate );
-      (void) nddc->work( ddc_noutput_items, in, ddc_out_vector );
-      
-      // average mag2 for valley
-      (void) mag2->work( ddc_noutput_items, ddc_out_const, mag2_out_vector );
-      double offpow = 0.0;
-      for( unsigned i=0; i<ddc_noutput_items; i++ ) {
-        offpow += mag2_out[i];
-      }
+      snr = 10.0 * log10( on_channel_energy / off_channel_energy );
 
-      snr = 10.0 * log10( onpow / offpow );
-
-      return (snr >= tsnr);
+      return (snr >= d_target_snr);
     }
 
     /* add some number of symbols to the block's history requirement */
@@ -311,6 +316,20 @@ namespace gr {
 
       d_low_freq = channel_abs_freq(low_classic_channel);
       d_high_freq = channel_abs_freq(high_classic_channel);
+
+      for( int ch=low_classic_channel; ch<=high_classic_channel; ch++ ) {
+        double freq = channel_abs_freq( ch );
+        d_channel_ddcs[ch] = 
+          gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
+                                               d_channel_filter, 
+                                               -(freq-d_center_freq), 
+                                               d_sample_rate );
+        d_noise_ddcs[ch] = 
+          gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
+                                               d_noise_filter, 
+                                               -(freq+790000.0-d_center_freq), 
+                                               d_sample_rate );
+      }
     }
 
     /* returns relative (with respect to d_center_freq) frequency in Hz of given channel */
@@ -324,6 +343,12 @@ namespace gr {
     multi_block::channel_abs_freq(int channel)
     {
       return BASE_FREQUENCY + (channel * CHANNEL_WIDTH);
+    }
+
+    int
+    multi_block::abs_freq_channel(double freq)
+    {
+      return (int) ((freq - BASE_FREQUENCY) / CHANNEL_WIDTH);
     }
   } /* namespace bluetooth */
 } /* namespace gr */
