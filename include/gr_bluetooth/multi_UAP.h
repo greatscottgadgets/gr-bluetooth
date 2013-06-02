@@ -5,8 +5,6 @@
  * Copyright 2007 Dominic Spill                                                                                                                   
  * Copyright 2005, 2006 Free Software Foundation, Inc.
  * 
- * This file is part of gr-bluetooth
- * 
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
@@ -24,11 +22,11 @@
  */
 
 
-#ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_HOPPER_H
-#define INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_HOPPER_H
+#ifndef INCLUDED_GR_BLUETOOTH_MULTI_UAP_H
+#define INCLUDED_GR_BLUETOOTH_MULTI_UAP_H
 
-#include <bluetooth/api.h>
-#include "bluetooth/multi_block.h"
+#include <gr_bluetooth/api.h>
+#include "gr_bluetooth/multi_block.h"
 
 namespace gr {
   namespace bluetooth {
@@ -37,24 +35,24 @@ namespace gr {
      * \brief Sniff Bluetooth packets.
      * \ingroup bluetooth
      */
-    class BLUETOOTH_API multi_hopper : virtual public multi_block
+    class GR_BLUETOOTH_API multi_UAP : virtual public multi_block
     {
     public:
-       typedef boost::shared_ptr<multi_hopper> sptr;
+       typedef boost::shared_ptr<multi_UAP> sptr;
 
        /*!
-        * \brief Return a shared_ptr to a new instance of gr::bluetooth::multi_hopper.
+        * \brief Return a shared_ptr to a new instance of gr::bluetooth::multi_UAP.
         *
-        * To avoid accidental use of raw pointers, gr::bluetooth::multi_hopper's
+        * To avoid accidental use of raw pointers, gr::bluetooth::multi_UAP's
         * constructor is in a private implementation
-        * class. gr::bluetooth::multi_hopper::make is the public interface for
+        * class. gr::bluetooth::multi_UAP::make is the public interface for
         * creating new instances.
         */
-       static sptr make(double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun);
-   };
+       static sptr make(double sample_rate, double center_freq, double squelch_threshold, int LAP);
+    };
 
   } // namespace bluetooth
 } // namespace gr
 
-#endif /* INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_HOPPER_H */
+#endif /* INCLUDED_GR_BLUETOOTH_MULTI_UAP_H */
 

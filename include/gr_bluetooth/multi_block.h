@@ -22,10 +22,10 @@
  */
 
 
-#ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_BLOCK_H
-#define INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_BLOCK_H
+#ifndef INCLUDED_GR_BLUETOOTH_MULTI_BLOCK_H
+#define INCLUDED_GR_BLUETOOTH_MULTI_BLOCK_H
 
-#include <bluetooth/api.h>
+#include <gr_bluetooth/api.h>
 #include <gr_sync_block.h>
 #include <gri_mmse_fir_interpolator.h>
 #include <gr_freq_xlating_fir_filter_ccf.h>
@@ -37,7 +37,7 @@ namespace gr {
      * \brief Bluetooth multi-channel parent class.
      * \ingroup bluetooth
      */
-    class BLUETOOTH_API multi_block : virtual public gr_sync_block
+    class  GR_BLUETOOTH_API multi_block : virtual public gr_sync_block
     {
     protected:
       multi_block() {} // to allow for pure virtual
@@ -169,5 +169,5 @@ namespace gr {
   } // namespace bluetooth
 } // namespace gr
 
-#endif /* INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_BLOCK_H */
+#endif /* INCLUDED_GR_BLUETOOTH_MULTI_BLOCK_H */
 

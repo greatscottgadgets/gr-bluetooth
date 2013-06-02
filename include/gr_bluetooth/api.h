@@ -19,15 +19,15 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_BLUETOOTH_API_H
-#define INCLUDED_BLUETOOTH_API_H
+#ifndef INCLUDED_GR_BLUETOOTH_API_H
+#define INCLUDED_GR_BLUETOOTH_API_H
 
 #include <gruel/attributes.h>
 
 #ifdef gnuradio_bluetooth_EXPORTS
-#  define BLUETOOTH_API __GR_ATTR_EXPORT
+#  define GR_BLUETOOTH_API __GR_ATTR_EXPORT
 #else
-#  define BLUETOOTH_API __GR_ATTR_IMPORT
+#  define GR_BLUETOOTH_API __GR_ATTR_IMPORT
 #endif
 
-#endif /* INCLUDED_BLUETOOTH_API_H */
+#endif /* INCLUDED_GR_BLUETOOTH_API_H */

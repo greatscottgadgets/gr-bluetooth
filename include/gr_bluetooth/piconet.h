@@ -24,16 +24,16 @@
  */
 
 
-#ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_PICONET_H
-#define INCLUDED_BLUETOOTH_GR_BLUETOOTH_PICONET_H
+#ifndef INCLUDED_GR_BLUETOOTH_PICONET_H
+#define INCLUDED_GR_BLUETOOTH_PICONET_H
 
-#include <bluetooth/api.h>
-#include "bluetooth/packet.h"
+#include <gr_bluetooth/api.h>
+#include "gr_bluetooth/packet.h"
 
 namespace gr {
   namespace bluetooth {
 
-    class BLUETOOTH_API piconet
+    class GR_BLUETOOTH_API piconet
     {
     private:
       friend class base_rate_piconet;
@@ -65,7 +65,7 @@ namespace gr {
       packet::sptr dequeue();
     };
 
-    class BLUETOOTH_API basic_rate_piconet : public piconet {
+    class GR_BLUETOOTH_API basic_rate_piconet : public piconet {
     public:
       typedef boost::shared_ptr<basic_rate_piconet> sptr;
 
@@ -125,7 +125,7 @@ namespace gr {
       virtual void reset() = 0;
     };
 
-    class BLUETOOTH_API low_energy_piconet : public piconet {
+    class GR_BLUETOOTH_API low_energy_piconet : public piconet {
     public:
       typedef boost::shared_ptr<low_energy_piconet> sptr;
 
@@ -158,5 +158,5 @@ namespace gr {
   } // namespace bluetooth
 } // namespace gr
 
-#endif /* INCLUDED_BLUETOOTH_GR_BLUETOOTH_PICONET_H */
+#endif /* INCLUDED_GR_BLUETOOTH_PICONET_H */
 

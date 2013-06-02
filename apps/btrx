@@ -20,21 +20,21 @@ class my_top_block(gr.top_block):
 
 		usage="%prog: [options]"
 		parser = OptionParser(option_class=eng_option, usage=usage)
-                parser.add_option("-a", "--args", type="string", default="",
-                                  help="UHD device address args , [default=%default]")
-                parser.add_option("", "--spec", type="string", default=None,
-                                  help="Subdevice of UHD device where appropriate")
-                parser.add_option("-A", "--antenna", type="string", default=None,
-                                  help="select Rx Antenna where appropriate")
-                parser.add_option("", "--samp-rate", type="eng_float", default=1e6,
-                                  help="set sample rate (bandwidth) [default=%default]")
-                parser.add_option("-f", "--freq", type="eng_float", default=None,
-                                  help="set frequency to FREQ", metavar="FREQ")
-                parser.add_option("-g", "--gain", type="eng_float", default=None,
-                                  help="set gain in dB (default is midpoint)")
-                parser.add_option("-N", "--nsamples", type="eng_float", default=None,
-                                  help="number of samples to collect [default=+inf]")
-                
+		parser.add_option("-a", "--args", type="string", default="",
+						help="UHD device address args , [default=%default]")
+		parser.add_option("", "--spec", type="string", default=None,
+						help="Subdevice of UHD device where appropriate")
+		parser.add_option("-A", "--antenna", type="string", default=None,
+						help="select Rx Antenna where appropriate")
+		parser.add_option("", "--samp-rate", type="eng_float", default=2e6,
+						help="set sample rate (bandwidth) [default=%default]")
+		parser.add_option("-f", "--freq", type="eng_float", default=None,
+						help="set frequency to FREQ", metavar="FREQ")
+		parser.add_option("-g", "--gain", type="eng_float", default=None,
+						help="set gain in dB (default is midpoint)")
+		parser.add_option("-N", "--nsamples", type="eng_float", default=None,
+						help="number of samples to collect [default=+inf]")
+
 		parser.add_option("-S", "--sniff", action="store_true", default=False,
 						help="all-piconet sniffer")
 		parser.add_option("", "--aliased", action="store_true", default=False,
@@ -71,7 +71,7 @@ class my_top_block(gr.top_block):
 		min_sample_rate = symbol_rate * min_samples_per_symbol
 
 		# use options.sample_rate unless not provided by user
-                if options.samp_rate is None:
+		if options.samp_rate is None:
 			raise ValueError, "Sample rate must be provided"
 
 		# make sure we have a high enough sample rate
@@ -85,29 +85,29 @@ class my_top_block(gr.top_block):
 
 		# select input source
 		if options.input_file is None:
-                        try:
-                                from gnuradio import uhd
-                        except:
-                                print 'Unable to import uhd module, please make sure it was installed and try again'
-                                raise SystemExit, 1
-                        try:
-                                src = uhd.usrp_source(device_addr=options.args,
-                                                      stream_args=uhd.stream_args('fc32',
-                                                                                  options.wire_format, args=scalar))
-                                print "Using RX board id 0x%04X" % (src.daughterboard_id(),)
-                                src.set_decim(options.decim)
-                                r = src.set_center_freq(options.freq)
-                        except:
-                                print 'Error accessing USRP, ensure it is plugged in and switched on and try again'
-                                parser.print_help()
-                                raise SystemExit, 1
-                        if r == None:
-                                raise SystemExit, "Failed to set USRP frequency"
-                        if options.gain is None:
-                                # if no gain was specified, use the mid-point in dB
-                                g = src.gain_range()
-                                options.gain = float(g[0]+g[1])/2
-                        src.set_gain(options.gain)
+			try:
+					from gnuradio import uhd
+			except:
+					print 'Unable to import uhd module, please make sure it was installed and try again'
+					raise SystemExit, 1
+			try:
+					src = uhd.usrp_source(device_addr=options.args,
+										stream_args=uhd.stream_args('fc32',
+																	options.wire_format, args=scalar))
+					print "Using RX board id 0x%04X" % (src.daughterboard_id(),)
+					src.set_decim(options.decim)
+					r = src.set_center_freq(options.freq)
+			except:
+					print 'Error accessing USRP, ensure it is plugged in and switched on and try again'
+					parser.print_help()
+					raise SystemExit, 1
+			if r == None:
+					raise SystemExit, "Failed to set USRP frequency"
+			if options.gain is None:
+					# if no gain was specified, use the mid-point in dB
+					g = src.gain_range()
+					options.gain = float(g[0]+g[1])/2
+			src.set_gain(options.gain)
 		elif options.input_file == '-':
 			# input from stdin
 			src = gr.file_descriptor_source(input_size, 0)
@@ -135,24 +135,21 @@ class my_top_block(gr.top_block):
 		if options.sniff:
 			# decode all packets from all piconets on all channels,
 			# discovering UAPs and clocks as necessary
-			dst = gr_bluetooth.multi_sniffer(options.samp_rate,
-                                                         options.freq, options.snr,
-                                                         options.wireshark)
+			dst = gr_bluetooth.multi_sniffer(options.samp_rate, options.freq,
+											 options.snr, options.wireshark)
 		elif options.lap is None:
 			# print out LAP for every frame detected
-			dst = gr_bluetooth.multi_LAP(options.samp_rate,
-                                                     options.freq, options.snr)
+			dst = gr_bluetooth.multi_LAP(options.samp_rate, options.freq,
+										 options.snr)
 		elif options.hop:
 			# determine UAP and then master clock from hopping sequence
-			dst = gr_bluetooth.multi_hopper(options.samp_rate,
-                                                        options.freq, options.snr,
-                                                        int(options.lap, 16), options.aliased,
-                                                        options.wireshark)
+			dst = gr_bluetooth.multi_hopper(options.samp_rate, options.freq,
+											options.snr, int(options.lap, 16),
+											options.aliased, options.wireshark)
 		else:
 			# determine UAP from frames matching the user-specified LAP
-			dst = gr_bluetooth.multi_UAP(options.samp_rate,
-                                                     options.freq, options.snr,
-                                                     int(options.lap, 16))
+			dst = gr_bluetooth.multi_UAP(options.samp_rate, options.freq,
+										 options.snr, int(options.lap, 16))
 
 		# connect the blocks
 		self.connect(stage2, dst)

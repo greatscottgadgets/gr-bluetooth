@@ -28,21 +28,21 @@ description here (python/__init__.py).
 import sys
 _RTLD_GLOBAL = 0
 try:
-    from dl import RTLD_GLOBAL as _RTLD_GLOBAL
+	from dl import RTLD_GLOBAL as _RTLD_GLOBAL
 except ImportError:
-    try:
-	from DLFCN import RTLD_GLOBAL as _RTLD_GLOBAL
-    except ImportError:
-	pass
+	try:
+		from DLFCN import RTLD_GLOBAL as _RTLD_GLOBAL
+	except ImportError:
+		pass
 
 if _RTLD_GLOBAL != 0:
-    _dlopenflags = sys.getdlopenflags()
-    sys.setdlopenflags(_dlopenflags|_RTLD_GLOBAL)
+	_dlopenflags = sys.getdlopenflags()
+	sys.setdlopenflags(_dlopenflags|_RTLD_GLOBAL)
 # ----------------------------------------------------------------
 
 
 # import swig generated symbols into the bluetooth namespace
-from bluetooth_swig import *
+from gr_bluetooth import *
 
 # import any pure python here
 #
@@ -50,5 +50,5 @@ from bluetooth_swig import *
 # ----------------------------------------------------------------
 # Tail of workaround
 if _RTLD_GLOBAL != 0:
-    sys.setdlopenflags(_dlopenflags)      # Restore original flags
+	sys.setdlopenflags(_dlopenflags)      # Restore original flags
 # ----------------------------------------------------------------

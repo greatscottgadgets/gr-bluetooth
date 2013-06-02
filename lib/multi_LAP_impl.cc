@@ -27,7 +27,7 @@
 
 #include <gr_io_signature.h>
 #include "multi_LAP_impl.h"
-#include "bluetooth/packet.h"
+#include "gr_bluetooth/packet.h"
 #include <stdio.h>
 
 namespace gr {

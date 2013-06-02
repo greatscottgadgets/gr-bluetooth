@@ -28,8 +28,8 @@
 #endif
 
 #include <gr_io_signature.h>
-#include "bluetooth/multi_block.h"
-#include "bluetooth/packet.h"
+#include "gr_bluetooth/multi_block.h"
+#include "gr_bluetooth/packet.h"
 #include <gr_firdes.h>
 #include <gr_math.h>
 #include <stdio.h>

@@ -19,7 +19,7 @@
 # 
 
 from gnuradio import gr, gr_unittest
-import bluetooth_swig as bluetooth
+import bluetooth.swig as bluetooth
 
 class qa_gr_bluetooth_multi_sniffer (gr_unittest.TestCase):
 

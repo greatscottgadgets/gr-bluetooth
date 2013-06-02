@@ -48,7 +48,7 @@ GR_SWIG_MAKE(gr_bluetooth gr_bluetooth.i)
 ########################################################################
 # Install the build swig module
 ########################################################################
-GR_SWIG_INSTALL(TARGETS gr_bluetooth DESTINATION ${GR_PYTHON_DIR}/bluetooth)
+GR_SWIG_INSTALL(TARGETS gr_bluetooth DESTINATION ${GR_PYTHON_DIR}/gr_bluetooth)
 
 ########################################################################
 # Install swig .i files for development
@@ -57,5 +57,5 @@ install(
     FILES
     gr_bluetooth.i
     ${CMAKE_CURRENT_BINARY_DIR}/gr_bluetooth_doc.i
-    DESTINATION ${GR_INCLUDE_DIR}/bluetooth/swig
+    DESTINATION ${GR_INCLUDE_DIR}/gr_bluetooth/swig
 )

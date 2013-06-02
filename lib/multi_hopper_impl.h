@@ -26,8 +26,8 @@
 #ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_HOPPER_IMPL_H
 #define INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_HOPPER_IMPL_H
 
-#include <bluetooth/multi_hopper.h>
-#include "bluetooth/piconet.h"
+#include "gr_bluetooth/multi_hopper.h"
+#include "gr_bluetooth/piconet.h"
 #include "tun.h"
 
 namespace gr {

@@ -22,11 +22,11 @@
 ########################################################################
 install(FILES
     api.h
-    gr_bluetooth_multi_block.h
-    gr_bluetooth_multi_hopper.h
-    gr_bluetooth_multi_LAP.h
-    gr_bluetooth_multi_sniffer.h
-    gr_bluetooth_multi_UAP.h
-    gr_bluetooth_packet.h
-    gr_bluetooth_piconet.h DESTINATION include/bluetooth
+    multi_block.h
+    multi_hopper.h
+    multi_LAP.h
+    multi_sniffer.h
+    multi_UAP.h
+    packet.h
+    piconet.h DESTINATION include/bluetooth
 )
