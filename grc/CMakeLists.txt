@@ -18,11 +18,11 @@
 # Boston, MA 02110-1301, USA.
 
 install(FILES
-    bluetooth_gr_bluetooth_multi_block.xml
-    bluetooth_gr_bluetooth_multi_hopper.xml
-    bluetooth_gr_bluetooth_multi_LAP.xml
-    bluetooth_gr_bluetooth_multi_sniffer.xml
-    bluetooth_gr_bluetooth_multi_UAP.xml
-    bluetooth_gr_bluetooth_packet.xml
-    bluetooth_gr_bluetooth_piconet.xml DESTINATION share/gnuradio/grc/blocks
+    gr_bluetooth_multi_block.xml
+    gr_bluetooth_multi_hopper.xml
+    gr_bluetooth_multi_LAP.xml
+    gr_bluetooth_multi_sniffer.xml
+    gr_bluetooth_multi_UAP.xml
+    gr_bluetooth_packet.xml
+    gr_bluetooth_piconet.xml DESTINATION share/gnuradio/grc/blocks
 )
