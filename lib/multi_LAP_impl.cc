@@ -27,7 +27,10 @@
 
 #include <gr_io_signature.h>
 #include "multi_LAP_impl.h"
-#include "gr_bluetooth/packet.h"
+extern "C"
+{
+  #include <btbb.h>
+}
 #include <stdio.h>
 
 namespace gr {
@@ -49,6 +52,7 @@ namespace gr {
                        gr_make_io_signature (0, 0, 0))
     {
       set_symbol_history(SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE);
+	  btbb_init(1);
     }
 
     /*
@@ -63,9 +67,11 @@ namespace gr {
                          gr_vector_const_void_star &input_items,
                          gr_vector_void_star &output_items)
     {
-        int retval;
-        double freq;
-	char symbols[history()]; //poor estimate but safe
+	  int offset;
+	  double freq;
+	  char symbols[history()]; //poor estimate but safe
+	  btbb_packet *pkt = NULL;
+	  int max_ac_errs = 1;
 
 	for (freq = d_low_freq; freq <= d_high_freq; freq += 1e6)
 	{
@@ -84,13 +90,13 @@ namespace gr {
               /* don't look beyond one slot for ACs */
               int latest_ac = ((num_symbols - SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE) < SYMBOLS_PER_BASIC_RATE_SLOT) ? 
                 (num_symbols - SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE) : SYMBOLS_PER_BASIC_RATE_SLOT;
-              retval = classic_packet::sniff_ac(symbols, latest_ac);
-              if (retval > -1) {
-                classic_packet::sptr packet = classic_packet::make(&symbols[retval], 
-                                                                   num_symbols - retval, 
-                                                                   0, freq);
-                printf("GOT CLASSIC PACKET on channel %d, LAP = %06x at time slot %d\n",
-                       packet->get_channel( ), (int) packet->get_LAP(), 
+			  offset = btbb_find_ac(symbols, latest_ac, LAP_ANY, max_ac_errs, &pkt);
+              if (offset >= 0) {
+				// Don't know clkn
+				btbb_packet_set_data(pkt, symbols + offset, num_symbols - offset, (freq/1e6)-2402, 0);
+                printf("GOT PACKET: ch=%d, LAP=%06x, err=%u at time slot %d\n",
+                       btbb_packet_get_channel(pkt), btbb_packet_get_lap(pkt),
+					   btbb_packet_get_ac_errors(pkt),
                        (int) (d_cumulative_count / d_samples_per_slot));
               }
             }

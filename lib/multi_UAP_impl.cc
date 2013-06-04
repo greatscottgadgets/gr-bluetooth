@@ -49,9 +49,11 @@ namespace gr {
                        gr_make_io_signature (1, 1, sizeof (gr_complex)),
                        gr_make_io_signature (0, 0, 0))
     {
-        d_LAP = LAP;
-	set_symbol_history(SYMBOLS_FOR_BASIC_RATE_HISTORY);
-	d_piconet = basic_rate_piconet::make(d_LAP);
+	  d_LAP = LAP;
+	  set_symbol_history(SYMBOLS_FOR_BASIC_RATE_HISTORY);
+	  d_piconet = btbb_piconet_new();
+	  btbb_init_piconet(d_piconet, LAP);
+	  btbb_init(2);
     }
 
     /*
@@ -66,10 +68,11 @@ namespace gr {
                          gr_vector_const_void_star &input_items,
                          gr_vector_void_star &output_items)
     {
-      int retval;
+      int offset, max_ac_errs = 2;
       uint32_t clkn; /* native (local) clock in 625 us */
       double freq;
       char symbols[history()]; //poor estimate but safe
+	  btbb_packet *pkt = NULL;
 
       clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
 
@@ -89,12 +92,12 @@ namespace gr {
               /* don't look beyond one slot for ACs */
               int latest_ac = ((num_symbols - SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE) < SYMBOLS_PER_BASIC_RATE_SLOT) ? 
                 (num_symbols - SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE) : SYMBOLS_PER_BASIC_RATE_SLOT;
-              retval = classic_packet::sniff_ac(symbols, latest_ac);
-              if (retval > -1) {
-                classic_packet::sptr packet = classic_packet::make( &symbols[retval], num_symbols - retval,
-                                                                    clkn, freq );
-                if (packet->get_LAP() == d_LAP && packet->header_present()) {
-                  if (d_piconet->UAP_from_header(packet))
+			  offset = btbb_find_ac(symbols, latest_ac, d_LAP, max_ac_errs, &pkt);
+              if (offset >= 0) {
+				// Don't know clkn
+				btbb_packet_set_data(pkt, symbols + offset, num_symbols - offset, (freq/1e6)-2402, 0);
+                if (btbb_header_present(pkt)) {
+                  if (btbb_uap_from_header(pkt, d_piconet))
                     exit(0);
                   break;
                 }

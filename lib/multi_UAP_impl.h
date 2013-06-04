@@ -27,7 +27,10 @@
 #define INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_UAP_IMPL_H
 
 #include "gr_bluetooth/multi_UAP.h"
-#include "gr_bluetooth/piconet.h"
+extern "C"
+{
+  #include <btbb.h>
+}
 
 namespace gr {
   namespace bluetooth {
@@ -39,7 +42,7 @@ namespace gr {
       uint32_t d_LAP;
 
       /* the piconet we are monitoring */
-      basic_rate_piconet::sptr d_piconet;
+      btbb_piconet *d_piconet;
 
     public:
       multi_UAP_impl(double sample_rate, double center_freq, double squelch_threshold, int LAP);
