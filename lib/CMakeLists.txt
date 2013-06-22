@@ -21,8 +21,9 @@
 # Setup library
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
+find_package(BTBB REQUIRED)
 
-include_directories(${Boost_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIR} ${LIBBTBB_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
 add_library(gnuradio-bluetooth SHARED
@@ -34,7 +35,7 @@ add_library(gnuradio-bluetooth SHARED
     multi_UAP_impl.cc
     packet_impl.cc
     piconet_impl.cc )
-target_link_libraries(gnuradio-bluetooth btbb ${Boost_LIBRARIES} ${GRUEL_LIBRARIES} ${GNURADIO_CORE_LIBRARIES})
+target_link_libraries(gnuradio-bluetooth btbb ${Boost_LIBRARIES} ${GRUEL_LIBRARIES} ${GNURADIO_CORE_LIBRARIES} ${LIBBTBB_LIBRARIES})
 set_target_properties(gnuradio-bluetooth PROPERTIES DEFINE_SYMBOL "gnuradio_bluetooth_EXPORTS")
 
 ########################################################################
@@ -46,26 +47,3 @@ install(TARGETS gnuradio-bluetooth
     RUNTIME DESTINATION bin              # .dll file
 )
 
-########################################################################
-# Build and register unit test
-########################################################################
-#include(GrTest)
-#
-#include_directories(${CPPUNIT_INCLUDE_DIRS})
-#
-#list(APPEND test_bluetooth_sources
-#  ${CMAKE_CURRENT_SOURCE_DIR}/test_bluetooth.cc
-#  ${CMAKE_CURRENT_SOURCE_DIR}/qa_bluetooth.cc
-#)
-#
-#add_executable(test-bluetooth ${test_bluetooth_sources})
-#
-#target_link_libraries(
-#  test-bluetooth
-#  ${GNURADIO_CORE_LIBRARIES}
-#  ${Boost_LIBRARIES}
-#  ${CPPUNIT_LIBRARIES}
-#  gnuradio-bluetooth
-#)
-#
-#GR_ADD_TEST(test_bluetooth test-bluetooth)
