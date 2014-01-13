@@ -15,11 +15,13 @@ gr-bluetooth currently requires gnuradio 3.6.5 to run, it will not build
 correctly against other versions.
 
 To build gr-bluetooth:
+```
   mkdir build
   cd build
   cmake ..
   make
   sudo make install
+```
 
 License
 -------
