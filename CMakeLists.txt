@@ -83,16 +83,11 @@ set(GRC_BLOCKS_DIR      ${GR_PKG_DATA_DIR}/grc/blocks)
 ########################################################################
 # Find gnuradio build dependencies
 ########################################################################
-find_package(Gruel)
-find_package(GnuradioCore)
+find_package(GnuradioRuntime)
 find_package(CppUnit)
 
-if(NOT GRUEL_FOUND)
-    message(FATAL_ERROR "Gruel required to compile gr-bluetooth")
-endif()
-
-if(NOT GNURADIO_CORE_FOUND)
-    message(FATAL_ERROR "GnuRadio Core required to compile gr-bluetooth")
+if(NOT GNURADIO_RUNTIME_FOUND)
+    message(FATAL_ERROR "GnuRadio Runtime required to compile gr-bluetooth")
 endif()
 
 if(NOT CPPUNIT_FOUND)
