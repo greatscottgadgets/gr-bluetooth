@@ -22,7 +22,7 @@
 #ifndef INCLUDED_GR_BLUETOOTH_API_H
 #define INCLUDED_GR_BLUETOOTH_API_H
 
-#include <gruel/attributes.h>
+#include <gnuradio/attributes.h>
 
 #ifdef gnuradio_bluetooth_EXPORTS
 #  define GR_BLUETOOTH_API __GR_ATTR_EXPORT
