@@ -1650,7 +1650,7 @@ namespace gr {
             uint8_t  SCA       = (d_pdu[33] >> 5) & 7;
             printf( "  AA=%08x, CRCInit=%06x, WinSize=%d, WinOffset=%d\n",
                     AA, CRCInit, WinSize, WinOffset );
-            printf( "  Interval=%d, Latency=%d, Timeout=%d, ChM=%010x, Hop=%d, SCA=%d\n",
+            printf( "  Interval=%d, Latency=%d, Timeout=%d, ChM=%010lx, Hop=%d, SCA=%d\n",
                     Interval, Latency, Timeout, ChM, Hop, SCA );
           }
           break;
