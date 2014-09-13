@@ -35,7 +35,7 @@ add_library(gnuradio-bluetooth SHARED
     multi_UAP_impl.cc
     packet_impl.cc
     piconet_impl.cc )
-target_link_libraries(gnuradio-bluetooth btbb ${Boost_LIBRARIES} ${GRUEL_LIBRARIES} ${GNURADIO_CORE_LIBRARIES} ${LIBBTBB_LIBRARIES})
+target_link_libraries(gnuradio-bluetooth btbb ${Boost_LIBRARIES} ${GNURADIO_CORE_LIBRARIES} ${LIBBTBB_LIBRARIES})
 set_target_properties(gnuradio-bluetooth PROPERTIES DEFINE_SYMBOL "gnuradio_bluetooth_EXPORTS")
 
 ########################################################################
