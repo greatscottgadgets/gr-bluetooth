@@ -31,9 +31,9 @@
 
 /* constructor */
 bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_freq, double squelch_threshold)
-  : gr_sync_block ("bluetooth multi block",
-	      gr_make_io_signature (1, 1, sizeof (gr_complex)),
-	      gr_make_io_signature (0, 0, 0))
+  : gr::sync_block ("bluetooth multi block",
+	      gr::io_signature::make (1, 1, sizeof (gr_complex)),
+	      gr::io_signature::make (0, 0, 0))
 {
 	d_cumulative_count = 0;
 	d_sample_rate = sample_rate;
@@ -56,7 +56,7 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	double gain = 1;
 	double cutoff_freq = 500000;
 	double transition_width = 300000;
-	d_channel_filter = gr_firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr_firdes::WIN_HANN);
+	d_channel_filter = gr::filter::firdes::low_pass(gain, sample_rate, cutoff_freq, transition_width, gr::filter::firdes::WIN_HANN);
 	/* d_channel_filter.size() will be the history requirement of ddc */
 	samples_required += (d_channel_filter.size() - 1);
 
@@ -74,7 +74,7 @@ bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_f
 	d_omega = channel_samples_per_symbol;
 	d_gain_omega = .25 * d_gain_mu * d_gain_mu;
 	d_omega_mid = d_omega;
-	d_interp = new gri_mmse_fir_interpolator();
+	d_interp = new gr::filter::mmse_fir_interpolator_ff();
 	d_last_sample = 0;
 	samples_required += d_ddc_decimation_rate * d_interp->ntaps();
 
@@ -103,7 +103,7 @@ int bluetooth_multi_block::mm_cr(const float *in, int ninput_items, float *out, 
 		d_last_sample = out[oo];
 
 		d_omega += d_gain_omega * mm_val;
-		d_omega = d_omega_mid + gr_branchless_clip(d_omega-d_omega_mid, d_omega_relative_limit);   // make sure we don't walk away
+		d_omega = d_omega_mid + gr::branchless_clip(d_omega-d_omega_mid, d_omega_relative_limit);   // make sure we don't walk away
 		d_mu += d_omega + d_gain_mu * mm_val;
 
 		ii += (int) floor(d_mu);
@@ -126,7 +126,7 @@ void bluetooth_multi_block::demod(const gr_complex *in, float *out, int noutput_
 	for (i = 1; i < noutput_items; i++)
 	{
 		gr_complex product = in[i] * conj (in[i-1]);
-		out[i] = d_demod_gain * gr_fast_atan2f(imag(product), real(product));
+		out[i] = d_demod_gain * gr::fast_atan2f(imag(product), real(product));
 	}
 }
 
@@ -160,8 +160,8 @@ int bluetooth_multi_block::channel_symbols(int channel, gr_vector_const_void_sta
 
 	/* ddc */
 	double ddc_center_freq = channel_freq(channel);
-	gr_freq_xlating_fir_filter_ccf_sptr ddc =
-		gr_make_freq_xlating_fir_filter_ccf(d_ddc_decimation_rate, d_channel_filter, ddc_center_freq, d_sample_rate);
+	gr::filter::freq_xlating_fir_filter_ccf::sptr ddc =
+		gr::freq_xlating_fir_filter_ccf::make(d_ddc_decimation_rate, d_channel_filter, ddc_center_freq, d_sample_rate);
 	int ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput(ninput_items - (ddc->history() - 1));
 	gr_complex ddc_out[ddc_noutput_items];
 	gr_vector_void_star ddc_out_vector(1);

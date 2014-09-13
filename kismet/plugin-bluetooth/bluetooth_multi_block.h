@@ -38,7 +38,7 @@
  * \brief Bluetooth multi-channel parent class.
  * \ingroup block
  */
-class bluetooth_multi_block : public gr_sync_block
+class bluetooth_multi_block : public gr::sync_block
 {
 protected:
 	/* constructor */
@@ -99,7 +99,7 @@ protected:
 	float d_demod_gain;
 
 	/* interpolator M&M clock recovery block */
-	gri_mmse_fir_interpolator *d_interp;
+	gr::filter::mmse_fir_interpolator_ff *d_interp;
 
 	/* M&M clock recovery, adapted from gr_clock_recovery_mm_ff */
 	int mm_cr(const float *in, int ninput_items, float *out, int noutput_items);
