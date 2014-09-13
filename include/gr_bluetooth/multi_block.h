@@ -26,9 +26,9 @@
 #define INCLUDED_GR_BLUETOOTH_MULTI_BLOCK_H
 
 #include <gr_bluetooth/api.h>
-#include <gr_sync_block.h>
-#include <gri_mmse_fir_interpolator.h>
-#include <gr_freq_xlating_fir_filter_ccf.h>
+#include <gnuradio/sync_block.h>
+#include <gnuradio/filter/mmse_fir_interpolator_ff.h>
+#include <gnuradio/filter/freq_xlating_fir_filter_ccf.h>
 
 namespace gr {
   namespace bluetooth {

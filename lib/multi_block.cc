@@ -27,13 +27,13 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "gr_bluetooth/multi_block.h"
 #include "gr_bluetooth/packet.h"
-#include <gr_firdes.h>
-#include <gr_math.h>
+#include <gnuradio/filter/firdes.h>
+#include <gnuradio/math.h>
 #include <stdio.h>
-#include <gr_complex_to_xxx.h>
+#include <gnuradio/blocks/complex_to_mag_squared.h>
 
 namespace gr {
   namespace bluetooth {

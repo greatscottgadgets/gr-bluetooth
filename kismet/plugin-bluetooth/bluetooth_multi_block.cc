@@ -24,10 +24,10 @@
 
 //FIXME this file should not be here - copied from gr-bluetooth/src/lib
 #include "bluetooth_multi_block.h"
-#include <gr_io_signature.h>
-#include <gr_firdes.h>
+#include <gnuradio/io_signature.h>
+#include <gnuradio/filter/firdes.h>
 #include <math.h>
-#include <gr_math.h>
+#include <gnuradio/math.h>
 
 /* constructor */
 bluetooth_multi_block::bluetooth_multi_block(double sample_rate, double center_freq, double squelch_threshold)

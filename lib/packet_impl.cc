@@ -27,7 +27,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "packet_impl.h"
 #include <stdio.h>
 #include <string.h>
