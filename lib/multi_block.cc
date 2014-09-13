@@ -322,12 +322,12 @@ namespace gr {
         d_channel_ddcs[ch] = 
           gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
                                                d_channel_filter, 
-                                               -(freq-d_center_freq), 
+                                               freq-d_center_freq, 
                                                d_sample_rate );
         d_noise_ddcs[ch] = 
           gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
                                                d_noise_filter, 
-                                               -(freq+790000.0-d_center_freq), 
+                                               freq+790000.0-d_center_freq, 
                                                d_sample_rate );
       }
     }

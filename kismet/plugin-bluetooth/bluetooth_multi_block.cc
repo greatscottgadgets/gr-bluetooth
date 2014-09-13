@@ -161,7 +161,7 @@ int bluetooth_multi_block::channel_symbols(int channel, gr_vector_const_void_sta
 	/* ddc */
 	double ddc_center_freq = channel_freq(channel);
 	gr_freq_xlating_fir_filter_ccf_sptr ddc =
-		gr_make_freq_xlating_fir_filter_ccf(d_ddc_decimation_rate, d_channel_filter, -ddc_center_freq, d_sample_rate);
+		gr_make_freq_xlating_fir_filter_ccf(d_ddc_decimation_rate, d_channel_filter, ddc_center_freq, d_sample_rate);
 	int ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput(ninput_items - (ddc->history() - 1));
 	gr_complex ddc_out[ddc_noutput_items];
 	gr_vector_void_star ddc_out_vector(1);
