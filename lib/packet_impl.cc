@@ -1666,7 +1666,7 @@ namespace gr {
       
     char *le_packet_impl::tun_format()
     {
-      return ""; // FIXME: TODO
+      return (char*)calloc(256,1); // FIXME: TODO
     }
       
     bool le_packet_impl::header_present()
