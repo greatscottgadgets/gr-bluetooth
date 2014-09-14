@@ -23,7 +23,7 @@
 #ifndef _QA_BLUETOOTH_H_
 #define _QA_BLUETOOTH_H_
 
-#include <gruel/attributes.h>
+#include <gnuradio/attributes.h>
 #include <cppunit/TestSuite.h>
 
 //! collect all the tests for the gr-filter directory

@@ -25,7 +25,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "multi_LAP_impl.h"
 extern "C"
 {
@@ -47,9 +47,9 @@ namespace gr {
      */
     multi_LAP_impl::multi_LAP_impl(double sample_rate, double center_freq, double squelch_threshold)
       : multi_block(sample_rate, center_freq, squelch_threshold),
-        gr_sync_block ("bluetooth multi LAP block",
-                       gr_make_io_signature (1, 1, sizeof (gr_complex)),
-                       gr_make_io_signature (0, 0, 0))
+        gr::sync_block ("bluetooth multi LAP block",
+                       gr::io_signature::make (1, 1, sizeof (gr_complex)),
+                       gr::io_signature::make (0, 0, 0))
     {
       set_symbol_history(SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE);
 	  btbb_init(1);

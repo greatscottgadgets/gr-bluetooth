@@ -27,7 +27,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "packet_impl.h"
 #include <stdio.h>
 #include <string.h>
@@ -1650,7 +1650,7 @@ namespace gr {
             uint8_t  SCA       = (d_pdu[33] >> 5) & 7;
             printf( "  AA=%08x, CRCInit=%06x, WinSize=%d, WinOffset=%d\n",
                     AA, CRCInit, WinSize, WinOffset );
-            printf( "  Interval=%d, Latency=%d, Timeout=%d, ChM=%010x, Hop=%d, SCA=%d\n",
+            printf( "  Interval=%d, Latency=%d, Timeout=%d, ChM=%010lx, Hop=%d, SCA=%d\n",
                     Interval, Latency, Timeout, ChM, Hop, SCA );
           }
           break;
@@ -1666,7 +1666,7 @@ namespace gr {
       
     char *le_packet_impl::tun_format()
     {
-      return ""; // FIXME: TODO
+      return (char*)calloc(256,1); // FIXME: TODO
     }
       
     bool le_packet_impl::header_present()

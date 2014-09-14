@@ -25,20 +25,20 @@
 #ifndef INCLUDED_BLUETOOTH_MULTI_BLOCK_H
 #define INCLUDED_BLUETOOTH_MULTI_BLOCK_H
 
-#include <gr_sync_block.h>
+#include <gnuradio/sync_block.h>
 #include <stdint.h>
-#include <gr_pwr_squelch_cc.h>
-#include <gr_freq_xlating_fir_filter_ccf.h>
-#include <gr_quadrature_demod_cf.h>
-#include <gr_clock_recovery_mm_ff.h>
-#include <gr_binary_slicer_fb.h>
-#include <gri_mmse_fir_interpolator.h>
+#include <gnuradio/analog/pwr_squelch_cc.h>
+#include <gnuradio/filter/freq_xlating_fir_filter_ccf.h>
+#include <gnuradio/analog/quadrature_demod_cf.h>
+#include <gnuradio/digital/clock_recovery_mm_ff.h>
+#include <gnuradio/digital/binary_slicer_fb.h>
+#include <gnuradio/filter/mmse_fir_interpolator_ff.h>
 
 /*!
  * \brief Bluetooth multi-channel parent class.
  * \ingroup block
  */
-class bluetooth_multi_block : public gr_sync_block
+class bluetooth_multi_block : public gr::sync_block
 {
 protected:
 	/* constructor */
@@ -99,7 +99,7 @@ protected:
 	float d_demod_gain;
 
 	/* interpolator M&M clock recovery block */
-	gri_mmse_fir_interpolator *d_interp;
+	gr::filter::mmse_fir_interpolator_ff *d_interp;
 
 	/* M&M clock recovery, adapted from gr_clock_recovery_mm_ff */
 	int mm_cr(const float *in, int ninput_items, float *out, int noutput_items);

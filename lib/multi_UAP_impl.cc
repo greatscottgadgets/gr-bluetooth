@@ -27,7 +27,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "multi_UAP_impl.h"
 #include <stdio.h>
 
@@ -45,9 +45,9 @@ namespace gr {
      */
     multi_UAP_impl::multi_UAP_impl(double sample_rate, double center_freq, double squelch_threshold, int LAP)
       : multi_block(sample_rate, center_freq, squelch_threshold),
-        gr_sync_block ("bluetooth multi UAP block",
-                       gr_make_io_signature (1, 1, sizeof (gr_complex)),
-                       gr_make_io_signature (0, 0, 0))
+        gr::sync_block ("bluetooth multi UAP block",
+                       gr::io_signature::make (1, 1, sizeof (gr_complex)),
+                       gr::io_signature::make (0, 0, 0))
     {
 	  d_LAP = LAP;
 	  set_symbol_history(SYMBOLS_FOR_BASIC_RATE_HISTORY);

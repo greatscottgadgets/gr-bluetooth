@@ -28,7 +28,7 @@
 #define INCLUDED_GR_BLUETOOTH_PACKET_H
 
 #include <gr_bluetooth/api.h>
-#include <gr_sync_block.h>
+#include <gnuradio/sync_block.h>
 #include <string>
 
 namespace gr {

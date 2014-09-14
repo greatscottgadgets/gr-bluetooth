@@ -27,20 +27,20 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "gr_bluetooth/multi_block.h"
 #include "gr_bluetooth/packet.h"
-#include <gr_firdes.h>
-#include <gr_math.h>
+#include <gnuradio/filter/firdes.h>
+#include <gnuradio/math.h>
 #include <stdio.h>
-#include <gr_complex_to_xxx.h>
+#include <gnuradio/blocks/complex_to_mag_squared.h>
 
 namespace gr {
   namespace bluetooth {
     multi_block::multi_block(double sample_rate, double center_freq, double squelch_threshold)
-      : gr_sync_block ("bluetooth multi block",
-                       gr_make_io_signature (1, 1, sizeof (gr_complex)),
-                       gr_make_io_signature (0, 0, 0))
+      : gr::sync_block ("bluetooth multi block",
+                       gr::io_signature::make (1, 1, sizeof (gr_complex)),
+                       gr::io_signature::make (0, 0, 0))
     {
       d_target_snr = squelch_threshold;
 
@@ -62,21 +62,21 @@ namespace gr {
       double gain = 1;
       d_channel_filter_width = 500000;
       double transition_width = 300000;
-      d_channel_filter = gr_firdes::low_pass( gain, 
+      d_channel_filter = gr::filter::firdes::low_pass( gain, 
                                               sample_rate, 
                                               d_channel_filter_width, 
                                               transition_width, 
-                                              gr_firdes::WIN_HANN);
+                                              gr::filter::firdes::WIN_HANN);
 
       /* noise filter coefficients */
       double n_gain = 1;
       d_noise_filter_width = 22500;
       double n_trans_width = 10000;
-      d_noise_filter = gr_firdes::low_pass( n_gain, 
+      d_noise_filter = gr::filter::firdes::low_pass( n_gain, 
                                             sample_rate, 
                                             d_noise_filter_width, 
                                             n_trans_width, 
-                                            gr_firdes::WIN_HANN );
+                                            gr::filter::firdes::WIN_HANN );
 
       /* we will decimate by the largest integer that results in enough samples per symbol */
       d_ddc_decimation_rate = (int) d_samples_per_symbol / 2;
@@ -94,7 +94,7 @@ namespace gr {
       d_omega = channel_samples_per_symbol;
       d_gain_omega = .25 * d_gain_mu * d_gain_mu;
       d_omega_mid = d_omega;
-      d_interp = new gri_mmse_fir_interpolator();
+      d_interp = new gr::filter::mmse_fir_interpolator_ff();
       d_last_sample = 0;
       
       /* the required history is the slot data + the max of either
@@ -140,7 +140,7 @@ namespace gr {
         d_last_sample = out[oo];
         
         d_omega += d_gain_omega * mm_val;
-        d_omega  = d_omega_mid + gr_branchless_clip( d_omega-d_omega_mid, 
+        d_omega  = d_omega_mid + gr::branchless_clip( d_omega-d_omega_mid, 
                                                      d_omega_relative_limit );   // make sure we don't walk away
         d_mu    += d_omega + d_gain_mu * mm_val;
 
@@ -162,7 +162,7 @@ namespace gr {
 
       for (i = 1; i < noutput_items; i++) {
         gr_complex product = in[i] * conj (in[i-1]);
-        out[i] = d_demod_gain * gr_fast_atan2f(imag(product), real(product));
+        out[i] = d_demod_gain * gr::fast_atan2f(imag(product), real(product));
       }
     }
 
@@ -186,18 +186,18 @@ namespace gr {
       int ddc_noutput_items       = 0;
 
       int classic_chan = abs_freq_channel( freq );
-      std::map<int, gr_freq_xlating_fir_filter_ccf_sptr>::const_iterator ddci = 
+      std::map<int, gr::filter::freq_xlating_fir_filter_ccf::sptr>::const_iterator ddci = 
         d_channel_ddcs.find( classic_chan );
 
       if (ddci != d_channel_ddcs.end( )) {
-        gr_freq_xlating_fir_filter_ccf_sptr ddc = ddci->second;
+        gr::filter::freq_xlating_fir_filter_ccf::sptr ddc = ddci->second;
         int ddc_samples = ninput_items - (ddc->history( ) - 1) - d_first_channel_sample;
         gr_vector_const_void_star ddc_in( 1 );
         ddc_in[0] = &(((gr_complex *) in[0])[d_first_channel_sample]);
         ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput( ddc_samples );
         ddc_noutput_items = ddc->work( ddc_noutput_items, ddc_in, out );
 
-        gr_complex_to_mag_squared_sptr mag2 = gr_make_complex_to_mag_squared( 1 );
+        gr::blocks::complex_to_mag_squared::sptr mag2 = gr::blocks::complex_to_mag_squared::make( 1 );
         float mag2_out[ddc_noutput_items];
         gr_vector_void_star mag2_out_vector( 1 );
         mag2_out_vector[0] = &mag2_out[0];
@@ -250,11 +250,11 @@ namespace gr {
       double off_channel_energy = 0.0;
 
       int classic_chan = abs_freq_channel( freq );
-      std::map<int, gr_freq_xlating_fir_filter_ccf_sptr>::const_iterator nddci = 
+      std::map<int, gr::filter::freq_xlating_fir_filter_ccf::sptr>::const_iterator nddci = 
         d_noise_ddcs.find( classic_chan );
 
       if (nddci != d_noise_ddcs.end( )) {
-        gr_freq_xlating_fir_filter_ccf_sptr nddc = nddci->second;
+        gr::filter::freq_xlating_fir_filter_ccf::sptr nddc = nddci->second;
         gr_vector_const_void_star ddc_in( 1 );
         ddc_in[0] = &(((gr_complex *) in[0])[d_first_noise_sample]);
         int ddc_noutput_items = nddc->fixed_rate_ninput_to_noutput( (int) d_samples_per_slot );
@@ -266,7 +266,7 @@ namespace gr {
         ddc_noutput_items = nddc->work( ddc_noutput_items, ddc_in, ddc_out_vector );
       
         // average mag2 for valley
-        gr_complex_to_mag_squared_sptr mag2 = gr_make_complex_to_mag_squared( 1 );
+        gr::blocks::complex_to_mag_squared::sptr mag2 = gr::blocks::complex_to_mag_squared::make( 1 );
         float mag2_out[ddc_noutput_items];
         gr_vector_void_star mag2_out_vector( 1 );
         mag2_out_vector[0] = &mag2_out[0];
@@ -320,14 +320,14 @@ namespace gr {
       for( int ch=low_classic_channel; ch<=high_classic_channel; ch++ ) {
         double freq = channel_abs_freq( ch );
         d_channel_ddcs[ch] = 
-          gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
+          gr::filter::freq_xlating_fir_filter_ccf::make( d_ddc_decimation_rate, 
                                                d_channel_filter, 
-                                               -(freq-d_center_freq), 
+                                               freq-d_center_freq, 
                                                d_sample_rate );
         d_noise_ddcs[ch] = 
-          gr_make_freq_xlating_fir_filter_ccf( d_ddc_decimation_rate, 
+          gr::filter::freq_xlating_fir_filter_ccf::make( d_ddc_decimation_rate, 
                                                d_noise_filter, 
-                                               -(freq+790000.0-d_center_freq), 
+                                               freq+790000.0-d_center_freq, 
                                                d_sample_rate );
       }
     }

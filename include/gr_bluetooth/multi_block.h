@@ -26,9 +26,9 @@
 #define INCLUDED_GR_BLUETOOTH_MULTI_BLOCK_H
 
 #include <gr_bluetooth/api.h>
-#include <gr_sync_block.h>
-#include <gri_mmse_fir_interpolator.h>
-#include <gr_freq_xlating_fir_filter_ccf.h>
+#include <gnuradio/sync_block.h>
+#include <gnuradio/filter/mmse_fir_interpolator_ff.h>
+#include <gnuradio/filter/freq_xlating_fir_filter_ccf.h>
 
 namespace gr {
   namespace bluetooth {
@@ -37,7 +37,7 @@ namespace gr {
      * \brief Bluetooth multi-channel parent class.
      * \ingroup bluetooth
      */
-    class  GR_BLUETOOTH_API multi_block : virtual public gr_sync_block
+    class  GR_BLUETOOTH_API multi_block : virtual public gr::sync_block
     {
     protected:
       multi_block() {} // to allow for pure virtual
@@ -98,12 +98,12 @@ namespace gr {
       /* channel filter coefficients for digital downconverter */
       double d_channel_filter_width;
       std::vector<float> d_channel_filter;
-      std::map<int, gr_freq_xlating_fir_filter_ccf_sptr> d_channel_ddcs;
+      std::map<int, gr::filter::freq_xlating_fir_filter_ccf::sptr> d_channel_ddcs;
 
       /* noise power filter coefficients */
       double d_noise_filter_width;
       std::vector<float> d_noise_filter;
-      std::map<int, gr_freq_xlating_fir_filter_ccf_sptr> d_noise_ddcs;
+      std::map<int, gr::filter::freq_xlating_fir_filter_ccf::sptr> d_noise_ddcs;
 
       /* input sample offset where channel and noise extraction happens */
       int d_first_channel_sample;
@@ -113,7 +113,7 @@ namespace gr {
       float d_demod_gain;
 
       /* interpolator M&M clock recovery block */
-      gri_mmse_fir_interpolator *d_interp;
+      gr::filter::mmse_fir_interpolator_ff *d_interp;
 
       /* M&M clock recovery, adapted from gr_clock_recovery_mm_ff */
       int mm_cr(const float *in, int ninput_items, float *out, int noutput_items);

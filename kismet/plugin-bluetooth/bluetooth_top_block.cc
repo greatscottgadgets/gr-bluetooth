@@ -21,7 +21,7 @@
  */
 
 #include "bluetooth_top_block.h"
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include <usrp_source_c.h>
 
 // Shared pointer constructor
