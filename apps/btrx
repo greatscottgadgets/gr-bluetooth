@@ -2,7 +2,7 @@
 # Copyright 2008, 2009 Dominic Spill, Michael Ossmann
 """
 Bluetooth monitoring utility.
-Receives samples from USRP, file (as created by uhd_rx_cfile.py), or standard input.
+Receives samples from radio, file (as created by osmo_sdr), or standard input.
 If LAP is unspecified, LAP detection mode is enabled.
 If LAP is specified without UAP, UAP detection mode is enabled.
 """
@@ -86,21 +86,30 @@ class my_top_block(gr.top_block):
 		# select input source
 		if options.input_file is None:
 			try:
-					from gnuradio import uhd
+				import osmosdr
 			except:
-					print 'Unable to import uhd module, please make sure it was installed and try again'
-					raise SystemExit, 1
+				print 'Unable to import osmosdr module, please make sure it was installed and try again'
+				raise SystemExit, 1
 			try:
-					src = uhd.usrp_source(device_addr=options.args,
-										stream_args=uhd.stream_args('fc32',
-																	options.wire_format, args=scalar))
-					print "Using RX board id 0x%04X" % (src.daughterboard_id(),)
-					src.set_decim(options.decim)
-					r = src.set_center_freq(options.freq)
+				src = osmosdr.source(args=options.args)
+				src.set_sample_rate(options.samp_rate)
+				src.set_freq_corr(0, 0)
+				src.set_dc_offset_mode(0, 0)
+				src.set_iq_balance_mode(0, 0)
+				src.set_gain_mode(False, 0)
+				src.set_gain(options.gain, 0)
+				src.set_if_gain(20, 0)
+				src.set_bb_gain(20, 0)
+				src.set_antenna("", 0)
+				src.set_bandwidth(0, 0)
+				#print "Using RX board id 0x%04X" % (src.daughterboard_id(),)
+				#src.set_decim(options.decim)
+				r = src.set_center_freq(options.freq, 0)
 			except:
-					print 'Error accessing USRP, ensure it is plugged in and switched on and try again'
-					parser.print_help()
-					raise SystemExit, 1
+				raise
+				print 'Error accessing USRP, ensure it is plugged in and switched on and try again'
+				parser.print_help()
+				raise SystemExit, 1
 			if r == None:
 					raise SystemExit, "Failed to set USRP frequency"
 			if options.gain is None:
