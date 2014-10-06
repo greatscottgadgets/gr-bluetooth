@@ -7,7 +7,7 @@ If LAP is unspecified, LAP detection mode is enabled.
 If LAP is specified without UAP, UAP detection mode is enabled.
 """
 
-from gnuradio import gr
+from gnuradio import gr, blocks
 
 import gr_bluetooth
 from gnuradio.eng_option import eng_option
@@ -34,7 +34,7 @@ class my_top_block(gr.top_block):
 						help="set gain in dB (default is midpoint)")
 		parser.add_option("-N", "--nsamples", type="eng_float", default=None,
 						help="number of samples to collect [default=+inf]")
-
+		
 		parser.add_option("-S", "--sniff", action="store_true", default=False,
 						help="all-piconet sniffer")
 		parser.add_option("", "--aliased", action="store_true", default=False,
@@ -51,6 +51,8 @@ class my_top_block(gr.top_block):
 						help="channel number for hop reversal (0-78) (default=None)") 
 		parser.add_option("-p", "--hop", action="store_true", default=False,
 						help="reverse hopping sequence to determine master clock")
+		parser.add_option("-r", "--sample-rate", type="eng_float", default=None,
+						  help="sample rate of input (default: use DECIM)")
 		parser.add_option("-s", "--input-shorts", action="store_true", default=False,
 						help="input interleaved shorts instead of complex floats")
 		parser.add_option("-t", "--snr", type="eng_float", default=10.0,
@@ -82,6 +84,8 @@ class my_top_block(gr.top_block):
 			input_size = gr.sizeof_short
 		else:
 			input_size = gr.sizeof_gr_complex
+
+		stages = []
 
 		# select input source
 		if options.input_file is None:
@@ -119,26 +123,22 @@ class my_top_block(gr.top_block):
 			src.set_gain(options.gain)
 		elif options.input_file == '-':
 			# input from stdin
-			src = gr.file_descriptor_source(input_size, 0)
+			src = blocks.file_descriptor_source(input_size, 0)
 		else:
 			# input from file
-			src = gr.file_source(input_size, options.input_file)
+			src = blocks.file_source(input_size, options.input_file)
 
 		# stage 1: limit input to desired number of samples
-		if options.nsamples is None:
-			stage1 = src
-		else:
-			head = gr.head(input_size, int(options.nsamples))
+		if options.nsamples:
+			head = blocks.head(input_size, int(options.nsamples))
 			self.connect(src, head)
-			stage1 = head
+			src = head
 	
 		# stage 2: convert input from shorts if necessary
 		if options.input_shorts:
-			s2c = gr.interleaved_short_to_complex()
-			self.connect(stage1, s2c)
-			stage2 = s2c
-		else:
-			stage2 = stage1
+			s2c = blocks.interleaved_short_to_complex()
+			self.connect(src, s2c)
+			src = s2c
 
 		# bluetooth decoding
 		if options.sniff:
@@ -159,9 +159,7 @@ class my_top_block(gr.top_block):
 			# determine UAP from frames matching the user-specified LAP
 			dst = gr_bluetooth.multi_UAP(options.samp_rate, options.freq,
 										 options.snr, int(options.lap, 16))
-
-		# connect the blocks
-		self.connect(stage2, dst)
+		self.connect(src, dst)
 
 if __name__ == '__main__':
 	try:
