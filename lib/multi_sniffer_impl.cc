@@ -33,6 +33,12 @@
 namespace gr {
   namespace bluetooth {
 
+	void error_out(const char *s)
+	{
+		fprintf(stderr, "Error: %s\n", s);
+		abort();
+	}
+	  
     multi_sniffer::sptr
     multi_sniffer::make(double sample_rate, double center_freq,
                         double squelch_threshold, bool tun)
@@ -79,7 +85,7 @@ namespace gr {
                               gr_vector_void_star&       output_items )
     {
       for (double freq = d_low_freq; freq <= d_high_freq; freq += 1e6) {   
-        gr_complex ch_samples[noutput_items];
+        gr_complex *ch_samples = new gr_complex[noutput_items+100];
         gr_vector_void_star btch( 1 );
         btch[0] = ch_samples;
         double on_channel_energy, snr;
@@ -89,12 +95,14 @@ namespace gr {
 
         /* number of symbols available */
         if (brok || leok) {
-          char symbols[history()];
+          int sym_length = history();
+          char *symbols = new char[sym_length];
           /* pointer to our starting place for sniff_ */
           char *symp = symbols;
           gr_vector_const_void_star cbtch( 1 );
           cbtch[0] = ch_samples;
           int len = channel_symbols( cbtch, symbols, ch_count );
+          delete [] ch_samples;
           
           if (brok) {
             int limit = ((len - SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE) < SYMBOLS_PER_BASIC_RATE_SLOT) ? 
@@ -108,6 +116,7 @@ namespace gr {
                 int step = i + SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE;
                 ac(&symp[i], len - i, freq, snr);
                 len   -= step;
+				if(step >= sym_length) error_out("Bad step");
                 symp   = &symp[step];
                 limit -= step;
               } 
@@ -128,6 +137,7 @@ namespace gr {
                 int step = i + SYMBOLS_PER_LOW_ENERGY_PREAMBLE_AA;
                 aa(&symp[i], len - i, freq, snr);
                 len   -= step;
+				if(step >= sym_length) error_out("Bad step");
                 symp   = &symp[step];
                 limit -= step;
               }
@@ -136,6 +146,10 @@ namespace gr {
               }
             }
           }
+          delete [] symbols;
+        }
+        else {
+          delete [] ch_samples;
         }
       }
       d_cumulative_count += (int) d_samples_per_slot;

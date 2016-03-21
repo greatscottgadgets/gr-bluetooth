@@ -81,7 +81,7 @@ namespace gr {
       int retval, latest_ac;
       uint32_t clkn; /* native (local) clock in 625 us */
       double freq;
-      char symbols[history()]; //poor estimate but safe
+      char symbols[history()+40]; //poor estimate but safe
 
       clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
 

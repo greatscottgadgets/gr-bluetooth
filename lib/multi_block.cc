@@ -192,13 +192,17 @@ namespace gr {
       if (ddci != d_channel_ddcs.end( )) {
         gr::filter::freq_xlating_fir_filter_ccf::sptr ddc = ddci->second;
         int ddc_samples = ninput_items - (ddc->history( ) - 1) - d_first_channel_sample;
+		// This changes how many iterations it takes to crash... Definitely on to something.
+		//printf("ddc_samples: %i\n", ddc_samples);
         gr_vector_const_void_star ddc_in( 1 );
         ddc_in[0] = &(((gr_complex *) in[0])[d_first_channel_sample]);
-        ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput( ddc_samples );
+        ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput( ddc_samples-695 ); // ddc_samples
+		//printf("ddc_noutput_items: %i\n", ddc_noutput_items);
         ddc_noutput_items = ddc->work( ddc_noutput_items, ddc_in, out );
-
+		//printf("after work %i\n", ddc_noutput_items);
         gr::blocks::complex_to_mag_squared::sptr mag2 = gr::blocks::complex_to_mag_squared::make( 1 );
-        float mag2_out[ddc_noutput_items];
+		//printf("past\n");
+        float *mag2_out = new float[ddc_noutput_items];
         gr_vector_void_star mag2_out_vector( 1 );
         mag2_out_vector[0] = &mag2_out[0];
         gr_vector_const_void_star ddc_out_const( 1 );
@@ -209,6 +213,7 @@ namespace gr {
           energy += mag2_out[i];
         }
         energy /= ddc_noutput_items;
+		delete [] mag2_out;
         //energy /= d_channel_filter_width;
       }
       else {
