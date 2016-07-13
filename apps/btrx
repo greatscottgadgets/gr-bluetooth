@@ -28,9 +28,9 @@ class my_top_block(gr.top_block):
 						help="select Rx Antenna where appropriate")
 		parser.add_option("", "--samp-rate", type="eng_float", default=2e6,
 						help="set sample rate (bandwidth) [default=%default]")
-		parser.add_option("-f", "--freq", type="eng_float", default=None,
+		parser.add_option("-f", "--freq", type="eng_float", default=2.476e9,
 						help="set frequency to FREQ", metavar="FREQ")
-		parser.add_option("-g", "--gain", type="eng_float", default=None,
+		parser.add_option("-g", "--gain", type="eng_float", default=0.0,
 						help="set gain in dB (default is midpoint)")
 		parser.add_option("-N", "--nsamples", type="eng_float", default=None,
 						help="number of samples to collect [default=+inf]")
@@ -162,6 +162,7 @@ class my_top_block(gr.top_block):
 		self.connect(src, dst)
 
 if __name__ == '__main__':
+	#raw_input("Press return to continue...")
 	try:
 		my_top_block().run()
 	except KeyboardInterrupt:
