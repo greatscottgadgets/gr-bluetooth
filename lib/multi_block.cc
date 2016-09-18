@@ -135,6 +135,7 @@ namespace gr {
 
       while ((oo < noutput_items) && (ii < ni)) {
         // produce output sample
+		//printf("d_mu %3.3f\n", d_mu);
         out[oo]       = d_interp->interpolate( &in[ii], d_mu );
         mm_val        = slice(d_last_sample) * out[oo] - slice(out[oo]) * d_last_sample;
         d_last_sample = out[oo];
@@ -184,7 +185,6 @@ namespace gr {
                                   int                        ninput_items )
     {
       int ddc_noutput_items       = 0;
-
       int classic_chan = abs_freq_channel( freq );
       std::map<int, gr::filter::freq_xlating_fir_filter_ccf::sptr>::const_iterator ddci = 
         d_channel_ddcs.find( classic_chan );
@@ -194,10 +194,13 @@ namespace gr {
         int ddc_samples = ninput_items - (ddc->history( ) - 1) - d_first_channel_sample;
 		// This changes how many iterations it takes to crash... Definitely on to something.
 		//printf("ddc_samples: %i\n", ddc_samples);
+		//printf("fcs: %i\n", d_first_channel_sample);
         gr_vector_const_void_star ddc_in( 1 );
         ddc_in[0] = &(((gr_complex *) in[0])[d_first_channel_sample]);
-        ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput( ddc_samples-695 ); // ddc_samples
+        ddc_noutput_items = ddc->fixed_rate_ninput_to_noutput( ddc_samples ); // ddc_samples
 		//printf("ddc_noutput_items: %i\n", ddc_noutput_items);
+		//gr_vector_void_star ddc_out( 1 );
+		//ddc_out[0] = out[0];//malloc(100000);
         ddc_noutput_items = ddc->work( ddc_noutput_items, ddc_in, out );
 		//printf("after work %i\n", ddc_noutput_items);
         gr::blocks::complex_to_mag_squared::sptr mag2 = gr::blocks::complex_to_mag_squared::make( 1 );
@@ -214,6 +217,7 @@ namespace gr {
         }
         energy /= ddc_noutput_items;
 		delete [] mag2_out;
+		//free(ddc_out[0]);
         //energy /= d_channel_filter_width;
       }
       else {

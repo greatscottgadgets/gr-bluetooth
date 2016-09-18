@@ -78,7 +78,7 @@ namespace gr {
 
       for (freq = d_low_freq; freq <= d_high_freq; freq += 1e6)
 	{
-          gr_complex ch_samples[noutput_items];
+          gr_complex *ch_samples = new gr_complex[noutput_items+10000];
           gr_vector_void_star btch( 1 );
           btch[0] = ch_samples;
           double on_channel_energy, snr;
@@ -104,6 +104,7 @@ namespace gr {
               }
             }
           }
+          delete [] ch_samples;
 	}
       d_cumulative_count += (int) d_samples_per_slot;
 

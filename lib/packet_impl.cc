@@ -1080,7 +1080,7 @@ namespace gr {
           d_packet_type = air_to_host8(&d_packet_header[3], 4);
           return true;
         } else {
-          printf("bad HEC! ");
+          printf("bad HEC! %02x %02x %i ", UAP, d_UAP, air_to_host8(&d_packet_header[3], 4));
         }
       }
 	
@@ -1531,10 +1531,10 @@ namespace gr {
     {
       d_index = freq2index( freq );
 
-      (void) ::memcpy( &d_link_symbols[0], stream, MAX_SYMBOLS );
+      (void) ::memcpy( &d_link_symbols[0], stream, LE_MAX_SYMBOLS );
 
       unsigned i, wi = INDICES[d_index];
-      for( i=40; i<MAX_SYMBOLS; i++, wi=(wi+1)%127 ) {
+      for( i=40; i<LE_MAX_SYMBOLS; i++, wi=(wi+1)%127 ) {
         d_link_symbols[i] ^= WHITENING_DATA[wi];
       }
 
@@ -1559,7 +1559,7 @@ namespace gr {
       }
 
       unsigned pi;
-      for( pi=0, i=56; i<MAX_SYMBOLS; pi++, i+=8 ) {
+      for( pi=0, i=56; i+8<LE_MAX_SYMBOLS; pi++, i+=8 ) {
         d_pdu[pi] = air_to_host8(&d_link_symbols[i], 8);
       }
     }

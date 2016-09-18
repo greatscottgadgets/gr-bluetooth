@@ -85,7 +85,7 @@ namespace gr {
                               gr_vector_void_star&       output_items )
     {
       for (double freq = d_low_freq; freq <= d_high_freq; freq += 1e6) {   
-        gr_complex *ch_samples = new gr_complex[noutput_items+100];
+        gr_complex *ch_samples = new gr_complex[noutput_items+100000];
         gr_vector_void_star btch( 1 );
         btch[0] = ch_samples;
         double on_channel_energy, snr;
@@ -135,6 +135,7 @@ namespace gr {
               int i = le_packet::sniff_aa(symp, limit, freq);
               if (i >= 0) {
                 int step = i + SYMBOLS_PER_LOW_ENERGY_PREAMBLE_AA;
+				//printf("symp[%i], len-i = %i\n", i, len-i);
                 aa(&symp[i], len - i, freq, snr);
                 len   -= step;
 				if(step >= sym_length) error_out("Bad step");
