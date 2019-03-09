@@ -28,5 +28,5 @@ install(FILES
     multi_sniffer.h
     multi_UAP.h
     packet.h
-    piconet.h DESTINATION include/bluetooth
+    piconet.h DESTINATION include/gr_bluetooth
 )
