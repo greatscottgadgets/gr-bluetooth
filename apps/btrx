@@ -26,15 +26,12 @@ class my_top_block(gr.top_block):
 						help="Subdevice of UHD device where appropriate")
 		parser.add_option("-A", "--antenna", type="string", default=None,
 						help="select Rx Antenna where appropriate")
-		parser.add_option("", "--samp-rate", type="eng_float", default=2e6,
-						help="set sample rate (bandwidth) [default=%default]")
 		parser.add_option("-f", "--freq", type="eng_float", default=2.476e9,
 						help="set frequency to FREQ", metavar="FREQ")
 		parser.add_option("-g", "--gain", type="eng_float", default=0.0,
 						help="set gain in dB (default is midpoint)")
 		parser.add_option("-N", "--nsamples", type="eng_float", default=None,
 						help="number of samples to collect [default=+inf]")
-		
 		parser.add_option("-S", "--sniff", action="store_true", default=False,
 						help="all-piconet sniffer")
 		parser.add_option("", "--aliased", action="store_true", default=False,
@@ -73,12 +70,12 @@ class my_top_block(gr.top_block):
 		min_sample_rate = symbol_rate * min_samples_per_symbol
 
 		# use options.sample_rate unless not provided by user
-		if options.samp_rate is None:
+		if options.sample_rate is None:
 			raise ValueError, "Sample rate must be provided"
 
 		# make sure we have a high enough sample rate
-		if options.samp_rate < min_sample_rate:
-			raise ValueError, "Sample rate (%d) below minimum (%d)\n" % (options.samp_rate, min_sample_rate)
+		if options.sample_rate < min_sample_rate:
+			raise ValueError, "Sample rate (%d) below minimum (%d)\n" % (options.sample_rate, min_sample_rate)
 
 		if options.input_shorts:
 			input_size = gr.sizeof_short
@@ -96,7 +93,7 @@ class my_top_block(gr.top_block):
 				raise SystemExit, 1
 			try:
 				src = osmosdr.source(args=options.args)
-				src.set_sample_rate(options.samp_rate)
+				src.set_sample_rate(options.sample_rate)
 				src.set_freq_corr(0, 0)
 				src.set_dc_offset_mode(0, 0)
 				src.set_iq_balance_mode(0, 0)
@@ -144,20 +141,20 @@ class my_top_block(gr.top_block):
 		if options.sniff:
 			# decode all packets from all piconets on all channels,
 			# discovering UAPs and clocks as necessary
-			dst = gr_bluetooth.multi_sniffer(options.samp_rate, options.freq,
+			dst = gr_bluetooth.multi_sniffer(options.sample_rate, options.freq,
 											 options.snr, options.wireshark)
 		elif options.lap is None:
 			# print out LAP for every frame detected
-			dst = gr_bluetooth.multi_LAP(options.samp_rate, options.freq,
+			dst = gr_bluetooth.multi_LAP(options.sample_rate, options.freq,
 										 options.snr)
 		elif options.hop:
 			# determine UAP and then master clock from hopping sequence
-			dst = gr_bluetooth.multi_hopper(options.samp_rate, options.freq,
+			dst = gr_bluetooth.multi_hopper(options.sample_rate, options.freq,
 											options.snr, int(options.lap, 16),
 											options.aliased, options.wireshark)
 		else:
 			# determine UAP from frames matching the user-specified LAP
-			dst = gr_bluetooth.multi_UAP(options.samp_rate, options.freq,
+			dst = gr_bluetooth.multi_UAP(options.sample_rate, options.freq,
 										 options.snr, int(options.lap, 16))
 		self.connect(src, dst)
 
