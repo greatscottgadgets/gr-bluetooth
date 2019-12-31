@@ -28,7 +28,7 @@
 #include <gr_bluetooth/api.h>
 #include <gnuradio/sync_block.h>
 #include <gnuradio/filter/mmse_fir_interpolator_ff.h>
-#include <gnuradio/filter/freq_xlating_fir_filter_ccf.h>
+#include <gnuradio/filter/freq_xlating_fir_filter.h>
 
 namespace gr {
   namespace bluetooth {

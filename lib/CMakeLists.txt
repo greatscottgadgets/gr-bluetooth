@@ -35,7 +35,11 @@ add_library(gnuradio-bluetooth SHARED
     multi_UAP_impl.cc
     packet_impl.cc
     piconet_impl.cc )
-target_link_libraries(gnuradio-bluetooth btbb ${Boost_LIBRARIES} ${GNURADIO_RUNTIME_LIBRARIES} ${GNURADIO_ALL_LIBRARIES} ${LIBBTBB_LIBRARIES})
+target_link_libraries(gnuradio-bluetooth btbb ${Boost_LIBRARIES} gnuradio::gnuradio-runtime gnuradio::gnuradio-blocks gnuradio::gnuradio-filter gnuradio::gnuradio-blocks gnuradio::gnuradio-fft volk)
+target_include_directories(gnuradio-bluetooth
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    PUBLIC $<INSTALL_INTERFACE:include>
+  )
 set_target_properties(gnuradio-bluetooth PROPERTIES DEFINE_SYMBOL "gnuradio_bluetooth_EXPORTS")
 
 ########################################################################

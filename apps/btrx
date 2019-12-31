@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2008, 2009 Dominic Spill, Michael Ossmann
 """
 Bluetooth monitoring utility.
@@ -60,7 +60,7 @@ class my_top_block(gr.top_block):
 		(options, args) = parser.parse_args ()
 		if len(args) != 0:
 			parser.print_help()
-			raise SystemExit, 1
+			raise SystemExit(1)
 
 		# Bluetooth operates at 1 million symbols per second
 		symbol_rate = 1e6
@@ -71,11 +71,11 @@ class my_top_block(gr.top_block):
 
 		# use options.sample_rate unless not provided by user
 		if options.sample_rate is None:
-			raise ValueError, "Sample rate must be provided"
+			raise ValueError("Sample rate must be provided")
 
 		# make sure we have a high enough sample rate
 		if options.sample_rate < min_sample_rate:
-			raise ValueError, "Sample rate (%d) below minimum (%d)\n" % (options.sample_rate, min_sample_rate)
+			raise ValueError("Sample rate (%d) below minimum (%d)\n" % (options.sample_rate, min_sample_rate))
 
 		if options.input_shorts:
 			input_size = gr.sizeof_short
@@ -89,8 +89,8 @@ class my_top_block(gr.top_block):
 			try:
 				import osmosdr
 			except:
-				print 'Unable to import osmosdr module, please make sure it was installed and try again'
-				raise SystemExit, 1
+				print('Unable to import osmosdr module, please make sure it was installed and try again')
+				raise SystemExit(1)
 			try:
 				src = osmosdr.source(args=options.args)
 				src.set_sample_rate(options.sample_rate)
@@ -108,11 +108,11 @@ class my_top_block(gr.top_block):
 				r = src.set_center_freq(options.freq, 0)
 			except:
 				raise
-				print 'Error accessing USRP, ensure it is plugged in and switched on and try again'
+				print('Error accessing USRP, ensure it is plugged in and switched on and try again')
 				parser.print_help()
-				raise SystemExit, 1
+				raise SystemExit(1)
 			if r == None:
-					raise SystemExit, "Failed to set USRP frequency"
+					raise SystemExit("Failed to set USRP frequency")
 			if options.gain is None:
 					# if no gain was specified, use the mid-point in dB
 					g = src.gain_range()

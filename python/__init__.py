@@ -42,7 +42,7 @@ if _RTLD_GLOBAL != 0:
 
 
 # import swig generated symbols into the bluetooth namespace
-from gr_bluetooth import *
+from gr_bluetooth.gr_bluetooth import *
 
 # import any pure python here
 #
