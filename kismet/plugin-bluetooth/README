@@ -24,10 +24,10 @@ near future:
 1.  What is Kismet-Bluetooth
 
 	Kismet-Bluetooth is a Kismet plugin which provides Bluetooth support in
-	Kismet.  It relies on gr-bluetooth (http://gr-bluetooth.sourceforge.net/)
-	which uses the GNU Radio (http://gnuradio.org/) to perform passive
-	monitoring of Bluetooth networks using a USRP or USRP2
-	(http://www.ettus.com/).
+	Kismet.  It relies on gr-bluetooth
+	(https://github.com/greatscottgadgets/gr-bluetooth) which uses the GNU
+	Radio (http://gnuradio.org/) to perform passive monitoring of Bluetooth
+	networks using a USRP or USRP2 (http://www.ettus.com/).
 
 	It CAN NOT BE USED with 802.11 wi-fi cards, it is a completely different
 	protocol.  If you do not have a USRP but have a Bluetooth adapter, try the

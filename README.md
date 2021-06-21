@@ -7,7 +7,7 @@ for experimentation and teaching students about Software Defined Radio, it
 should not be used for Bluetooth communications as it is not a complete
 software stack.
 
-The gr-bluetooth web site is: http://gr-bluetooth.sourceforge.net
+https://github.com/greatscottgadgets/gr-bluetooth
 
 Building
 --------

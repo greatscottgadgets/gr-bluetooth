@@ -25,7 +25,7 @@ for experimentation and teaching students about Software Defined Radio, it
 should not be used for Bluetooth communications as it is not a complete
 software stack.
 
-The gr-bluetooth web site is: http://sourceforge.net/projects/gr-bluetooth/
+https://github.com/greatscottgadgets/gr-bluetooth
 
 The software consists of signal processing blocks written in C++ (in src/lib)
 and front-end command line tools written in Python (in src/python).
