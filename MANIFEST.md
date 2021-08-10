@@ -18,4 +18,4 @@ icon:
 
 gr-bluetooth is an implementation of the Bluetooth baseband layer for GNU Radio for experimentation and teaching students about Software Defined Radio, it should not be used for Bluetooth communications as it is not a complete software stack.
 
-The gr-bluetooth web site is: http://gr-bluetooth.sourceforge.net
+The gr-bluetooth web site is: https://github.com/greatscottgadgets/gr-bluetooth
