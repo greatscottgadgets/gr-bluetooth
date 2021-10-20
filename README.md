@@ -11,7 +11,7 @@ https://github.com/greatscottgadgets/gr-bluetooth
 
 Building
 --------
-gr-bluetooth currently requires gnuradio 3.7.0 or later.
+gr-bluetooth currently requires gnuradio 3.7.
 
 To build gr-bluetooth:
 ```
