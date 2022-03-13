@@ -2,7 +2,7 @@
 
 id: bluetooth_gr_bluetooth_piconet
 label: gr_bluetooth_piconet
-category: bluetooth
+category: '[Bluetooth]'
 
 parameters:
 -   id: LAP

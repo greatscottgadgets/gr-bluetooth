@@ -26,9 +26,9 @@
 #ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_SNIFFER_IMPL_H
 #define INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_SNIFFER_IMPL_H
 
-#include "gr_bluetooth/multi_sniffer.h"
-#include "gr_bluetooth/packet.h"
-#include "gr_bluetooth/piconet.h"
+#include "bluetooth/multi_sniffer.h"
+#include "bluetooth/packet.h"
+#include "bluetooth/piconet.h"
 #include "tun.h"
 #include <map>
 

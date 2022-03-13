@@ -2,7 +2,7 @@
 
 id: bluetooth_gr_bluetooth_multi_UAP
 label: gr_bluetooth_multi_UAP
-category: bluetooth
+category: '[Bluetooth]'
 
 parameters:
 -   id: sample_rate

@@ -24,7 +24,7 @@
 #ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_LAP_IMPL_H
 #define INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_LAP_IMPL_H
 
-#include "gr_bluetooth/multi_LAP.h"
+#include "bluetooth/multi_LAP.h"
 
 namespace gr {
   namespace bluetooth {

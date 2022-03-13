@@ -26,7 +26,7 @@
 #ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_UAP_IMPL_H
 #define INCLUDED_BLUETOOTH_GR_BLUETOOTH_MULTI_UAP_IMPL_H
 
-#include "gr_bluetooth/multi_UAP.h"
+#include "bluetooth/multi_UAP.h"
 extern "C"
 {
   #include <btbb.h>

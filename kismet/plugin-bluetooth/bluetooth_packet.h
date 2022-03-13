@@ -33,7 +33,7 @@
 using namespace std;
 
 class bluetooth_packet;
-typedef boost::shared_ptr<bluetooth_packet> bluetooth_packet_sptr;
+typedef std::shared_ptr<bluetooth_packet> bluetooth_packet_sptr;
 
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_packet.

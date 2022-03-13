@@ -24,7 +24,7 @@
 #include "bluetooth_kismet_block.h"
 
 class bluetooth_top_block;
-typedef boost::shared_ptr<bluetooth_top_block> bluetooth_top_block_sptr;
+typedef std::shared_ptr<bluetooth_top_block> bluetooth_top_block_sptr;
 bluetooth_top_block_sptr bluetooth_make_top_block();
 
 class bluetooth_top_block : public gr::top_block

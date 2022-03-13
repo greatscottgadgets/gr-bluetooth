@@ -28,8 +28,8 @@
 #endif
 
 #include <gnuradio/io_signature.h>
-#include "gr_bluetooth/multi_block.h"
-#include "gr_bluetooth/packet.h"
+#include "bluetooth/multi_block.h"
+#include "bluetooth/packet.h"
 #include <gnuradio/filter/firdes.h>
 #include <gnuradio/math.h>
 #include <stdio.h>
@@ -66,7 +66,7 @@ namespace gr {
                                               sample_rate, 
                                               d_channel_filter_width, 
                                               transition_width, 
-                                              gr::filter::firdes::WIN_HANN);
+                                              gr::fft::window::WIN_HANN);
 
       /* noise filter coefficients */
       double n_gain = 1;
@@ -76,7 +76,7 @@ namespace gr {
                                             sample_rate, 
                                             d_noise_filter_width, 
                                             n_trans_width, 
-                                            gr::filter::firdes::WIN_HANN );
+                                            gr::fft::window::WIN_HANN );
 
       /* we will decimate by the largest integer that results in enough samples per symbol */
       d_ddc_decimation_rate = (int) d_samples_per_symbol / 2;

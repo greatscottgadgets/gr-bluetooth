@@ -2,7 +2,7 @@
 
 id: bluetooth_gr_bluetooth_multi_hopper
 label: gr_bluetooth_multi_hopper
-category: bluetooth
+category: '[Bluetooth]'
 
 parameters:
 -   id: sample_rate

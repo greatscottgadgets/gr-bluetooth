@@ -26,7 +26,7 @@
 #ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_PACKET_IMPL_H
 #define INCLUDED_BLUETOOTH_GR_BLUETOOTH_PACKET_IMPL_H
 
-#include "gr_bluetooth/packet.h"
+#include "bluetooth/packet.h"
 #include <string>
 
 namespace gr {

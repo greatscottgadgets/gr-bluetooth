@@ -308,7 +308,7 @@ namespace gr {
       printf("Decoding queued packets\n");
       
       while (pkt = pn->dequeue()) {
-        classic_packet::sptr cpkt = boost::dynamic_pointer_cast<classic_packet>(pkt);
+        classic_packet::sptr cpkt = std::dynamic_pointer_cast<classic_packet>(pkt);
         printf("time %6d, channel %2d, LAP %06x ", cpkt->d_clkn,
                cpkt->get_channel(), cpkt->get_LAP());
         decode(cpkt, pn, false);

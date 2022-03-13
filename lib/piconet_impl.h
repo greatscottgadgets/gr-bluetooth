@@ -26,8 +26,8 @@
 #ifndef INCLUDED_BLUETOOTH_GR_BLUETOOTH_PICONET_IMPL_H
 #define INCLUDED_BLUETOOTH_GR_BLUETOOTH_PICONET_IMPL_H
 
-#include "gr_bluetooth/piconet.h"
-#include "gr_bluetooth/packet.h"
+#include "bluetooth/piconet.h"
+#include "bluetooth/packet.h"
 #include <vector>
 
 namespace gr {

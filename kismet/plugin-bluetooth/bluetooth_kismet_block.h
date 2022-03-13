@@ -31,7 +31,7 @@
 #include <vector>
 
 class bluetooth_kismet_block;
-typedef boost::shared_ptr<bluetooth_kismet_block> bluetooth_kismet_block_sptr;
+typedef std::shared_ptr<bluetooth_kismet_block> bluetooth_kismet_block_sptr;
 
 /*!
  * \brief Return a shared_ptr to a new instance of bluetooth_kismet_block.
