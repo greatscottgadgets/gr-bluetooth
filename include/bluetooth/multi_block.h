@@ -163,7 +163,7 @@ namespace gr {
     public:
       virtual int work (int noutput_items,
                         gr_vector_const_void_star &input_items,
-                        gr_vector_void_star &output_items) = 0;
+                        gr_vector_void_star &output_items);
     };
 
   } // namespace bluetooth

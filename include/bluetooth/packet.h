@@ -233,13 +233,13 @@ namespace gr {
 
       /* decode the classic packet header */
       virtual bool decode_header() = 0;
-        
+
       /* decode the classic packet header */
       virtual void decode_payload() = 0;
-        
+
       /* print classic packet information */
       virtual void print() = 0;
-        
+
       /* format payload for tun interface */
       virtual char *tun_format() = 0;
 
@@ -324,16 +324,16 @@ namespace gr {
 
       /* decode the packet header */
       virtual bool decode_header() = 0;
-       
+
       /* decode the packet header */
       virtual void decode_payload() = 0;
-             
+
       /* print packet information */
       virtual void print() = 0;
-       
+
       /* format payload for tun interface */
       virtual char *tun_format() = 0;
-       
+
       /* check to see if the packet has a header */
       virtual bool header_present() = 0;
 

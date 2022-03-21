@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(multi_block.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(38afd5745079f239370ca404e7b04236)                     */
+/* BINDTOOL_HEADER_FILE_HASH(6885a043602007e804e1da85f5f9fa45)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -36,9 +36,6 @@ void bind_multi_block(py::module& m)
     py::class_<multi_block, gr::sync_block, gr::block, gr::basic_block,
         std::shared_ptr<multi_block>>(m, "multi_block", D(multi_block))
 
-        .def(py::init<gr::bluetooth::multi_block const &>(),           py::arg("arg0"),
-           D(multi_block,multi_block,0)
-        )
 
 
         

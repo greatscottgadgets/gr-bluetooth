@@ -19,9 +19,6 @@
  static const char *__doc_gr_bluetooth_multi_block = R"doc()doc";
 
 
- static const char *__doc_gr_bluetooth_multi_block_multi_block = R"doc()doc";
-
-
  static const char *__doc_gr_bluetooth_multi_block_work = R"doc()doc";
 
   
