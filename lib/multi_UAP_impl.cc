@@ -44,10 +44,10 @@ namespace gr {
      * The private constructor
      */
     multi_UAP_impl::multi_UAP_impl(double sample_rate, double center_freq, double squelch_threshold, int LAP)
-      : multi_block(sample_rate, center_freq, squelch_threshold),
-        gr::sync_block ("bluetooth multi UAP block",
+      : gr::sync_block ("bluetooth multi UAP block",
                        gr::io_signature::make (1, 1, sizeof (gr_complex)),
-                       gr::io_signature::make (0, 0, 0))
+                       gr::io_signature::make (0, 0, 0)),
+        multi_block(sample_rate, center_freq, squelch_threshold)
     {
 	  d_LAP = LAP;
 	  set_symbol_history(SYMBOLS_FOR_BASIC_RATE_HISTORY);
@@ -69,12 +69,12 @@ namespace gr {
                          gr_vector_void_star &output_items)
     {
       int offset, max_ac_errs = 2;
-      uint32_t clkn; /* native (local) clock in 625 us */
+      // uint32_t clkn; /* native (local) clock in 625 us */
       double freq;
       char symbols[history()]; //poor estimate but safe
 	  btbb_packet *pkt = NULL;
 
-      clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
+      // clkn = (int) (d_cumulative_count / d_samples_per_slot) & 0x7ffffff;
 
       for (freq = d_low_freq; freq <= d_high_freq; freq += 1e6)
 	{
