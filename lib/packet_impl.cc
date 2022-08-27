@@ -1487,7 +1487,7 @@ namespace gr {
 
         int preamble_distance = PREAMBLE_DISTANCE[preamble];
         int header_distance   = phlsb[header_lsb] + phmsb[header_msb];       
-        int distance          = preamble_distance + header_distance;
+        distance              = preamble_distance + header_distance;
 
         int max_distance = 0;
 

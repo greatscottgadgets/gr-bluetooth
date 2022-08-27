@@ -52,10 +52,10 @@ namespace gr {
      */
     multi_sniffer_impl::multi_sniffer_impl(double sample_rate, double center_freq,
                                            double squelch_threshold, bool tun)
-      : multi_block(sample_rate, center_freq, squelch_threshold),
-        gr::sync_block ("bluetooth multi sniffer block",
+      : gr::sync_block ("bluetooth multi sniffer block",
                        gr::io_signature::make (1, 1, sizeof (gr_complex)),
-                       gr::io_signature::make (0, 0, 0))
+                       gr::io_signature::make (0, 0, 0)),
+        multi_block(sample_rate, center_freq, squelch_threshold)
     {
       d_tun = tun;
       set_symbol_history(SYMBOLS_FOR_BASIC_RATE_HISTORY);

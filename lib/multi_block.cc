@@ -212,7 +212,7 @@ namespace gr {
         ddc_out_const[0] = out[0];
         (void) mag2->work( ddc_noutput_items, ddc_out_const, mag2_out_vector );
         energy = 0.0;
-        for( unsigned i=0; i<ddc_noutput_items; i++ ) {
+        for( signed i=0; i<ddc_noutput_items; i++ ) {
           energy += mag2_out[i];
         }
         energy /= ddc_noutput_items;
@@ -280,7 +280,7 @@ namespace gr {
         gr_vector_void_star mag2_out_vector( 1 );
         mag2_out_vector[0] = &mag2_out[0];
         (void) mag2->work( ddc_noutput_items, ddc_out_const, mag2_out_vector );
-        for( unsigned i=0; i<ddc_noutput_items; i++ ) {
+        for( signed i=0; i<ddc_noutput_items; i++ ) {
           off_channel_energy += mag2_out[i];
         }
         off_channel_energy /= ddc_noutput_items;

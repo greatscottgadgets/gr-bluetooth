@@ -43,10 +43,10 @@ namespace gr {
      * The private constructor
      */
     multi_hopper_impl::multi_hopper_impl(double sample_rate, double center_freq, double squelch_threshold, int LAP, bool aliased, bool tun)
-      : multi_block(sample_rate, center_freq, squelch_threshold),
-        gr::sync_block ("bluetooth multi hopper block",
+      : gr::sync_block ("bluetooth multi hopper block",
                        gr::io_signature::make (1, 1, sizeof (gr_complex)),
-                       gr::io_signature::make (0, 0, 0))
+                       gr::io_signature::make (0, 0, 0)),
+        multi_block(sample_rate, center_freq, squelch_threshold)
     {
         d_LAP = LAP;
 	d_aliased = aliased;

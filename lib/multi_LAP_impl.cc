@@ -46,10 +46,10 @@ namespace gr {
      * The private constructor
      */
     multi_LAP_impl::multi_LAP_impl(double sample_rate, double center_freq, double squelch_threshold)
-      : multi_block(sample_rate, center_freq, squelch_threshold),
-        gr::sync_block ("bluetooth multi LAP block",
+      : gr::sync_block ("bluetooth multi LAP block",
                        gr::io_signature::make (1, 1, sizeof (gr_complex)),
-                       gr::io_signature::make (0, 0, 0))
+                       gr::io_signature::make (0, 0, 0)),
+        multi_block(sample_rate, center_freq, squelch_threshold)
     {
       set_symbol_history(SYMBOLS_PER_BASIC_RATE_SHORTENED_ACCESS_CODE);
 	  btbb_init(1);

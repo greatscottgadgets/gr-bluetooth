@@ -185,11 +185,23 @@ void bind_packet(py::module& m)
     py::class_<classic_packet, gr::bluetooth::packet,
         std::shared_ptr<classic_packet>>(m, "classic_packet", D(classic_packet))
 
-        .def(py::init(&classic_packet::make),
-           py::arg("stream"),
-           py::arg("length"),
-           D(classic_packet,make)
-        )
+        // NOTE: issue with overloaded functions, automated tools don't
+        // generate correct code
+        // https://lists.gnu.org/archive/html/discuss-gnuradio/2021-01/msg00206.html
+        .def(py::init((std::shared_ptr<classic_packet>(*)(char*, int)) &
+                      classic_packet::make),
+             py::arg("stream"),
+             py::arg("length"),
+             D(classic_packet, make, 0))
+
+
+        .def(py::init((std::shared_ptr<classic_packet>(*)(char*, int, uint32_t, double)) &
+                      classic_packet::make),
+             py::arg("stream"),
+             py::arg("length"),
+             py::arg("clkn"),
+             py::arg("freq"),
+             D(classic_packet, make, 1))
         
 
 
