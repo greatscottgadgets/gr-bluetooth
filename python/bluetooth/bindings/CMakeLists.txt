@@ -35,7 +35,7 @@ list(APPEND bluetooth_python_files
     multi_sniffer_python.cc
     multi_UAP_python.cc
     packet_python.cc
-    #piconet_python.cc
+    piconet_python.cc
     python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(bluetooth

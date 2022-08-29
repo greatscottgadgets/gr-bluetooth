@@ -38,19 +38,7 @@ void bind_packet(py::module& m)
     py::class_<packet,
         std::shared_ptr<packet>>(m, "packet", D(packet))
 
-        .def(py::init<>(),D(packet,packet,0))
-        .def(py::init<char *,int,double>(),           py::arg("stream"),
-           py::arg("length"),
-           py::arg("freq") = 0.,
-           D(packet,packet,1)
-        )
-        .def(py::init<gr::bluetooth::packet const &>(),           py::arg("arg0"),
-           D(packet,packet,2)
-        )
-
-
-        
-        .def_static("sniff_packet",&packet::sniff_packet,       
+        .def_static("sniff_packet",&packet::sniff_packet,
             py::arg("stream"),
             py::arg("stream_length"),
             py::arg("freq"),
