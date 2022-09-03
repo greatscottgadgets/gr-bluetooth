@@ -166,8 +166,9 @@ namespace gr {
                         gr_vector_void_star &output_items);
     };
 
-  } // namespace bluetooth
+} // namespace bluetooth
 } // namespace gr
+
 
 #endif /* INCLUDED_GR_BLUETOOTH_MULTI_BLOCK_H */
 

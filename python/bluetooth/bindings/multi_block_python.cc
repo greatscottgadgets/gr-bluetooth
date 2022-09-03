@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(multi_block.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(6885a043602007e804e1da85f5f9fa45)                     */
+/* BINDTOOL_HEADER_FILE_HASH(d443652e44a58f77afd083265d2103e8)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -30,33 +30,22 @@ namespace py = pybind11;
 void bind_multi_block(py::module& m)
 {
 
-    using multi_block    = ::gr::bluetooth::multi_block;
+    using multi_block = ::gr::bluetooth::multi_block;
 
 
-    py::class_<multi_block, gr::sync_block, gr::block, gr::basic_block,
-        std::shared_ptr<multi_block>>(m, "multi_block", D(multi_block))
+    py::class_<multi_block,
+               gr::sync_block,
+               gr::block,
+               gr::basic_block,
+               std::shared_ptr<multi_block>>(m, "multi_block", D(multi_block))
 
 
-
-        
-        .def("work",&multi_block::work,       
-            py::arg("noutput_items"),
-            py::arg("input_items"),
-            py::arg("output_items"),
-            D(multi_block,work)
-        )
+        .def("work",
+             &multi_block::work,
+             py::arg("noutput_items"),
+             py::arg("input_items"),
+             py::arg("output_items"),
+             D(multi_block, work))
 
         ;
-
-
-
-
 }
-
-
-
-
-
-
-
-
